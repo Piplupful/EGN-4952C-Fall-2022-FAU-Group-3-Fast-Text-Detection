@@ -7,7 +7,7 @@ Device version: OpenCL 3.0 NEO
 Device vendor: Intel(R) Corporation
 Device profile: FULL_PROFILE
 
-avgFrame info:
+avgFrame16 info:
 	Maximum work-group size: 256
 	Compiler work-group size: (0, 0, 0)
 	Local memory size: 0
@@ -15,7 +15,23 @@ avgFrame info:
 	Minimum amount of private memory: 0
 	Amount of spill memory used by the kernel: 0
 
-avgFrameWrite info:
+avgFrameWrite16 info:
+	Maximum work-group size: 256
+	Compiler work-group size: (0, 0, 0)
+	Local memory size: 0
+	Preferred multiple of work-group size: 32
+	Minimum amount of private memory: 0
+	Amount of spill memory used by the kernel: 0
+
+avgFrame8 info:
+	Maximum work-group size: 256
+	Compiler work-group size: (0, 0, 0)
+	Local memory size: 0
+	Preferred multiple of work-group size: 32
+	Minimum amount of private memory: 0
+	Amount of spill memory used by the kernel: 0
+
+avgFrameWrite8 info:
 	Maximum work-group size: 256
 	Compiler work-group size: (0, 0, 0)
 	Local memory size: 0
@@ -39,7 +55,7 @@ avgFrameWriteFlex info:
 	Minimum amount of private memory: 0
 	Amount of spill memory used by the kernel: 0
 
-avgFrame2D info:
+avgFrame2D8 info:
 	Maximum work-group size: 256
 	Compiler work-group size: (0, 0, 0)
 	Local memory size: 0
@@ -47,7 +63,7 @@ avgFrame2D info:
 	Minimum amount of private memory: 0
 	Amount of spill memory used by the kernel: 0
 
-avgFrameWrite2D info:
+avgFrameWrite2D8 info:
 	Maximum work-group size: 256
 	Compiler work-group size: (0, 0, 0)
 	Local memory size: 0

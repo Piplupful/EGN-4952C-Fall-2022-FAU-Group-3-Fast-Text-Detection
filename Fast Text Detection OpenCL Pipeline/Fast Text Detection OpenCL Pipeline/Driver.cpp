@@ -1,3 +1,11 @@
+//TODO:
+//	-look into how Local Work Group Size affects performance. Might be easier done on future dummy function.
+//	-Dummy OpenCL Functions: Based off getting Range of each macroblock (Max - Min Luma Value, and writing 1 or 0 to a binary map
+//		(for the sake of simplicity, write to a text file), 1 being the Range is above some threshold.)
+//			Text File will be numbered per frame.
+//			Idea: create array of Total Number of Block 0's, overwrite 1 in respective position if block number's range is above some threshold.
+//				At end, write to text file. Reset array at start for new frame.
+
 //USE THIS AS REFERENCE FOR FUTURE DEVELOPMENT
 //HOW TO SETUP OPENCL ENVIROMENT
 //HOW TO WORK WITH YUV 4:2:0
@@ -38,7 +46,7 @@ using std::chrono::milliseconds;
 
 //for File Browser Functionality
 #include <ShObjIdl.h>
-#include <regex>;
+#include <regex>
 
 const COMDLG_FILTERSPEC c_rgSaveTypes[] =
 {
@@ -101,6 +109,7 @@ int main()	//MAKE INTO A PROPER FUNCTION LATER
 		CoUninitialize();
 	}
 	
+	//Pull Width x Height from YUV file name.	File name format: Name_With_No_Numbers_WidthxHeight_etc.yuv
 	char filePath[1000];
 	wcstombs(filePath, pszFilePath, 1000);	//file path for fopen_s
 	char fileName[1000];
@@ -135,14 +144,15 @@ int main()	//MAKE INTO A PROPER FUNCTION LATER
 	_fseeki64(fp, 0, SEEK_END);
 	uint64_t size = _ftelli64(fp);
 
+	//Width x Height from File Name
 	int width = stoi(widthS);
 	int height = stoi(heightS);
 
-	int64_t frameSize = (width * height * 1.5);
+	uint64_t frameSize = (width * height * 1.5);
 	uint64_t sizeOfY = width * height; //Size of Y layer, without U and V (YUV 4:2:0)
 
 	int frames = size / frameSize;
-	uint64_t calculatedSize = (width * height * 1.5) * frames;
+	uint64_t calculatedSize = (width * height * 1.5) * frames;	//For Error Checking
 
 	int frameNum = 0; //KEEP TRACK OF FRAME NUMBER
 
@@ -156,20 +166,12 @@ int main()	//MAKE INTO A PROPER FUNCTION LATER
 	cout << fileName << " " << width << "x" << height << ", Frames = " << frames << endl;
 	cout << "=================================================================" << endl;
 
-	//PUT FRAME INTO BUFFER, READ INTO MAIN MEMORY
-	//Only LUMA (Y)
-	unsigned char* frameBuffer;
-	frameBuffer = new unsigned char[sizeOfY];
-
-	_fseeki64(fp, frameSize * frameNum, SEEK_SET);
-	int r = fread(frameBuffer, 1, sizeOfY, fp);
-
-	//Y,U,V
+	//Y,U,V	(For Full Frame info, use frameSize. For only Y (Luma), use sizeOfY)
 	unsigned char* fullFrameBuffer;
 	fullFrameBuffer = new unsigned char[frameSize];
 
 	_fseeki64(fp, frameSize * frameNum, SEEK_SET);
-	fread(fullFrameBuffer, 1, frameSize, fp);
+	int r = fread(fullFrameBuffer, 1, frameSize, fp);
 
 	if (r < sizeOfY)
 	{
@@ -178,17 +180,12 @@ int main()	//MAKE INTO A PROPER FUNCTION LATER
 
 	}
 	
-	int blockSize = 8; //blockSize x blockSize
-	int x = 0, y = 0;
-	unsigned char* blockData;
-	blockData = new unsigned char[blockSize * blockSize]; //2^8 = 256
-
-	//TO CHECK VALUES IN VOOYA: OPEN UP YUV IN VOOYA, CHECK Y VALUES WITH MAGNIFIER (SCROLL WHEEL UP TO ACTIVATE)
-	//MAGNIFIER CONTROLS PER PIXEL:		W - UP		S - DOWN		Q - LEFT		E - RIGHT
-
-	x, y = 0;
-	setFrame(fp, frameBuffer, width, height, &frameNum, frames, 0);
+	//Create Block Buffer
+	int blockSize = 16; //blockSize x blockSize
 	int numBlocks = sizeOfY / (blockSize * blockSize);
+	int x = 0, y = 0;
+
+	setFullFrame(fp, fullFrameBuffer, width, height, &frameNum, frames, 0);
 
 	//OPENCL START
 	//Var
@@ -234,12 +231,12 @@ int main()	//MAKE INTO A PROPER FUNCTION LATER
 	{
 		program = clCreateProgramWithSource(context, 1, (const char**)&source, &src_size, &err);
 		err = clBuildProgram(program, 1, &device, "", NULL, NULL);
-		kernel = clCreateKernel(program, "avgFrame", &err);
+		kernel = clCreateKernel(program, "avgFrame16", &err);
 	}
 	
 	//Memory Buffers
-	cl_mem clFrameBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, sizeOfY, frameBuffer, &err);
-	cl_mem clAvgBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, averages, &err);
+	cl_mem clFrameBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, frameSize, fullFrameBuffer, &err);
+	cl_mem clAvgBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks * 8, averages, &err);
 	
 	//Kernel Arguements
 	err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &clFrameBuffer);
@@ -249,20 +246,21 @@ int main()	//MAKE INTO A PROPER FUNCTION LATER
 
 	//Enqueue and wait
 	size_t global[] = { numBlocks };
-	size_t local[] = { 16 };
+	size_t local[] = { 16 };		//Local Size can be finicky, if left out, OpenCL will choose an appropriate value on it's own, but this may decrease performance.
 
 	auto t1 = high_resolution_clock::now();	//TIMER AROUND OPERATION ONLY
-	err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, global, local, 0, NULL, &event);
+	err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, global, NULL, 0, NULL, &event);
 	clFinish(queue);
 	auto t2 = high_resolution_clock::now();
 
 	//Read
-	err = clEnqueueReadBuffer(queue, clAvgBuffer, CL_TRUE, 0, numBlocks, averages, 0, NULL, &event);
+	err = clEnqueueReadBuffer(queue, clAvgBuffer, CL_TRUE, 0, numBlocks * 8, averages, 0, NULL, &event);
+	//numBlocks * 8, as before, only 1/8th of the averages were being written to the averages array. This fixed the error, but I am unsure why it works.
 
 	//print
-	for (int i = 0; i < 10; i++)
+	for (int i = numBlocks - 10; i < numBlocks; i++)
 	{
-		//cout << "Average for Block "<< i << " = " << averages[i] << "\n";
+		cout << "Average for Block "<< i << " = " << averages[i] << "\n";
 	}
 	duration<double, std::milli> ms_double = t2 - t1;
 	cout << "\nOPENCL RUNTIME (AVERAGES)\t\t= " << ms_double.count() << " ms\n\n";
@@ -270,15 +268,15 @@ int main()	//MAKE INTO A PROPER FUNCTION LATER
 	//NONPARALLEL FOR COMPARISON
 	if (avgFrameNonPara)
 	{
-		std::vector<double> frameAverages(numBlocks, 0);
+		vector<double> frameAverages(numBlocks, 0);
 
 		t1 = high_resolution_clock::now();	//TIMER AROUND OPERATION ONLY
-		frameAverages = averageBlocksFrame(frameBuffer, width, height, blockSize);
+		frameAverages = averageBlocksFrame(fullFrameBuffer, width, height, blockSize);
 		t2 = high_resolution_clock::now();
 
-		for (int i = 0; i < 10; i++)
+		for (int i = numBlocks - 10; i < numBlocks; i++)
 		{
-			//std::cout << "Average for Block " << i << " = " << frameAverages[i] << "\n";
+			cout << "Average for Block " << i << " = " << frameAverages[i] << "\n";
 		}
 		duration<double, std::milli> ms_double = t2 - t1;
 		cout << "NON PARALLEL RUNTIME (AVERAGES)\t\t= " << ms_double.count() << " ms\n\n";
@@ -289,7 +287,7 @@ int main()	//MAKE INTO A PROPER FUNCTION LATER
 	{
 		//Context and Program previously created
 		//Kernel
-		kernel = clCreateKernel(program, "avgFrameWrite", &err);
+		kernel = clCreateKernel(program, "avgFrameWrite16", &err);
 
 		//Memory Buffers
 		cl_mem clFullFrameBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, frameSize, fullFrameBuffer, &err);
@@ -300,7 +298,7 @@ int main()	//MAKE INTO A PROPER FUNCTION LATER
 
 		//Global/Local
 		size_t globalWork[] = { numBlocks };
-		size_t localWork[] = { 16 };
+		size_t localWork[] = { 4 };
 
 		//Loop
 		FILE* avgOutputPara;
@@ -323,7 +321,7 @@ int main()	//MAKE INTO A PROPER FUNCTION LATER
 			clSetKernelArg(kernel, 0, sizeof(cl_mem), &clFullFrameBuffer);	//Send current frame to GPU
 
 			t1 = high_resolution_clock::now();
-			err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, globalWork, localWork, 0, NULL, &event);
+			err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, globalWork, NULL, 0, NULL, &event);
 			clFinish(queue); //Wait to finish
 			t2 = high_resolution_clock::now();
 
@@ -331,7 +329,7 @@ int main()	//MAKE INTO A PROPER FUNCTION LATER
 
 			if (err != CL_SUCCESS)
 			{
-				cout << "Error enqueuing back.";
+				cout << "Error enqueuing back. " << err << endl;
 				exit(2);
 			}
 
@@ -379,24 +377,5 @@ int main()	//MAKE INTO A PROPER FUNCTION LATER
 //X = Block Number * BlockSize % Width
 //Y = (Integer Truncate)((Block Number / (Width / BlockSize)) * blockSize)
 
-/*
-//FULL FRAME TEST
-printf("X = %d, Y = %d, Frame = %d\n", x, y, frameNum);
-getBlock(fullFrameBuffer, blockData, blockSize, x, y, width);
-printBlock(blockData, blockSize);
-printf("\n");
-
-incrementFullFrame(fp, fullFrameBuffer, width, height, &frameNum, frames);
-
-printf("X = %d, Y = %d, Frame = %d\n", x, y, frameNum);
-getBlock(fullFrameBuffer, blockData, blockSize, x, y, width);
-printBlock(blockData, blockSize);
-printf("\n");
-
-setFullFrame(fp, fullFrameBuffer, width, height, &frameNum, frames, 3);
-
-printf("X = %d, Y = %d, Frame = %d\n", x, y, frameNum);
-getBlock(fullFrameBuffer, blockData, blockSize, x, y, width);
-printBlock(blockData, blockSize);
-printf("\n");
-*/
+//TO CHECK VALUES IN VOOYA: OPEN UP YUV IN VOOYA, CHECK Y VALUES WITH MAGNIFIER (SCROLL WHEEL UP TO ACTIVATE)
+//MAGNIFIER CONTROLS PER PIXEL:		W - UP		S - DOWN		Q - LEFT		E - RIGHT

@@ -1,6 +1,91 @@
-// TODO: Add OpenCL kernel code here.
+__kernel void avgFrame16(__global unsigned char* frame,__global double* avgArray, const int width)	//16x16 ONLY
+{
+    int b = get_global_id(0);
 
-__kernel void avgFrame(__global unsigned char* frame,__global double* avgArray, const int width)	//8x8 ONLY
+	int x = b * 16 % width;
+	int y = (int)((b / (width / 16)) * 16);
+
+	double sum = 0;
+
+	int offset = y * width + x;
+
+	for (int i = 0; i < 16; i++)			//over every x value
+	{
+		sum += frame[offset + (i * width + 0)];
+		sum += frame[offset + (i * width + 1)];
+		sum += frame[offset + (i * width + 2)];
+		sum += frame[offset + (i * width + 3)];
+		sum += frame[offset + (i * width + 4)];
+		sum += frame[offset + (i * width + 5)];
+		sum += frame[offset + (i * width + 6)];
+		sum += frame[offset + (i * width + 7)];
+		sum += frame[offset + (i * width + 8)];
+		sum += frame[offset + (i * width + 9)];
+		sum += frame[offset + (i * width + 10)];
+		sum += frame[offset + (i * width + 11)];
+		sum += frame[offset + (i * width + 12)];
+		sum += frame[offset + (i * width + 13)];
+		sum += frame[offset + (i * width + 14)];
+		sum += frame[offset + (i * width + 15)];
+	}
+
+	avgArray[b] = sum / 256;
+}
+
+__kernel void avgFrameWrite16(__global unsigned char* frame, const int width) //16x16 ONLY
+{
+	int b = get_global_id(0);
+	int x = b * 16 % width;
+	int y = (int)((b / (width / 16)) * 16);
+
+	int sum = 0;
+
+	int offset = y * width + x;
+
+	for (int i = 0; i < 16; i++)			//over every x value
+	{
+		sum += frame[offset + (i * width + 0)];
+		sum += frame[offset + (i * width + 1)];
+		sum += frame[offset + (i * width + 2)];
+		sum += frame[offset + (i * width + 3)];
+		sum += frame[offset + (i * width + 4)];
+		sum += frame[offset + (i * width + 5)];
+		sum += frame[offset + (i * width + 6)];
+		sum += frame[offset + (i * width + 7)];
+		sum += frame[offset + (i * width + 8)];
+		sum += frame[offset + (i * width + 9)];
+		sum += frame[offset + (i * width + 10)];
+		sum += frame[offset + (i * width + 11)];
+		sum += frame[offset + (i * width + 12)];
+		sum += frame[offset + (i * width + 13)];
+		sum += frame[offset + (i * width + 14)];
+		sum += frame[offset + (i * width + 15)];
+	}
+
+	int avg = sum / 256;
+
+	for (int i = 0; i < 16; i++)			//over every x value
+	{
+		frame[offset + (i * width + 0)] = avg;
+		frame[offset + (i * width + 1)] = avg;
+		frame[offset + (i * width + 2)] = avg;
+		frame[offset + (i * width + 3)] = avg;
+		frame[offset + (i * width + 4)] = avg;
+		frame[offset + (i * width + 5)] = avg;
+		frame[offset + (i * width + 6)] = avg;
+		frame[offset + (i * width + 7)] = avg;
+		frame[offset + (i * width + 8)] = avg;
+		frame[offset + (i * width + 9)] = avg;
+		frame[offset + (i * width + 10)] = avg;
+		frame[offset + (i * width + 11)] = avg;
+		frame[offset + (i * width + 12)] = avg;
+		frame[offset + (i * width + 13)] = avg;
+		frame[offset + (i * width + 14)] = avg;
+		frame[offset + (i * width + 15)] = avg;
+	}
+}
+
+__kernel void avgFrame8(__global unsigned char* frame,__global double* avgArray, const int width)	//8x8 ONLY
 {
     int b = get_global_id(0);
 
@@ -26,7 +111,7 @@ __kernel void avgFrame(__global unsigned char* frame,__global double* avgArray, 
 	avgArray[b] = sum / 64;
 }
 
-__kernel void avgFrameWrite(__global unsigned char* frame, const int width) //8x8 ONLY
+__kernel void avgFrameWrite8(__global unsigned char* frame, const int width) //8x8 ONLY
 {
 	int b = get_global_id(0);
 	int x = b * 8 % width;
@@ -120,7 +205,7 @@ __kernel void avgFrameWriteFlex(__global unsigned char* frame, const int width, 
 //size_t globalWork[] = { height / 8, width / 8 };
 //avgFrame2D's avgArray buffer should be given number of blocks * 8 size.
 //Both work correctly, however worse performance than 1D global size
-__kernel void avgFrame2D(__global unsigned char* frame,__global double* avgArray, const int width)	//8x8 ONLY
+__kernel void avgFrame2D8(__global unsigned char* frame,__global double* avgArray, const int width)	//8x8 ONLY
 {
     int a = get_global_id(0);
 	int b = get_global_id(1);
@@ -149,7 +234,7 @@ __kernel void avgFrame2D(__global unsigned char* frame,__global double* avgArray
 	avgArray[calculatedBlockNumber] = sum / 64.0;
 }
 
-__kernel void avgFrameWrite2D(__global unsigned char* frame, const int width) //8x8 ONLY
+__kernel void avgFrameWrite2D8(__global unsigned char* frame, const int width) //8x8 ONLY
 {
 	int a = get_global_id(0);
 	int b = get_global_id(1);
