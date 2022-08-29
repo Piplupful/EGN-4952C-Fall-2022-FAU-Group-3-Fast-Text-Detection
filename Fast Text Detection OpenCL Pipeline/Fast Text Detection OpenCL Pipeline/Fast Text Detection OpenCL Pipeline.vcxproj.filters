@@ -18,7 +18,13 @@
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Driver.cpp">
+    <ClCompile Include="avgDriver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="driver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pipelineTemplate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -27,6 +33,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimpleYUV.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="averageLumaExample.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yuvFileOpenUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

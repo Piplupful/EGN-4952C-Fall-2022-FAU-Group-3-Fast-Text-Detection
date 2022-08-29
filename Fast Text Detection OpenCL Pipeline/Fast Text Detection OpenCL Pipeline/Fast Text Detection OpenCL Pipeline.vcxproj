@@ -185,12 +185,16 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Driver.cpp" />
+    <ClCompile Include="avgDriver.cpp" />
+    <ClCompile Include="driver.cpp" />
+    <ClCompile Include="pipelineTemplate.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="averageLumaExample.h" />
     <ClInclude Include="SimpleYUV.h" />
     <ClInclude Include="utils.h" />
+    <ClInclude Include="yuvFileOpenUtil.h" />
   </ItemGroup>
   <ItemGroup>
     <Intel_OpenCL_Build_Rules Include="avgBlocks.cl" />

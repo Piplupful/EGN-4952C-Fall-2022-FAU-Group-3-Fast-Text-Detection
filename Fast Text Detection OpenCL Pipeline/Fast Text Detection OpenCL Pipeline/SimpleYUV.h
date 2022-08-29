@@ -68,7 +68,7 @@ void printCurFrame(unsigned char* frameData, int blockSize, int width, int heigh
 
 //FULL = full YUV (U and V included (W * H * 1.5)
 //NOT FULL = only Luma Y (size of Y = W * H)
-void incrementFrame(FILE* fp, unsigned char* frameBuffer, int width, int height, int* frameNum, int totalFrames)
+void incrementFrame(FILE* fp, unsigned char* frameBuffer, uint64_t width, uint64_t height, int* frameNum, int totalFrames)
 {
 	*frameNum = *frameNum + 1;
 
@@ -79,9 +79,9 @@ void incrementFrame(FILE* fp, unsigned char* frameBuffer, int width, int height,
 		return;
 	}
 
-	uint32_t frameSize = (width * height * 1.5);
-	_fseeki64(fp, frameSize * *frameNum, SEEK_SET);
-	fread(frameBuffer, 1, width * height, fp);
+	uint64_t frameSize = (width * height * 1.5);
+	_fseeki64(fp, frameSize * (uint64_t)*frameNum, SEEK_SET);
+	fread(frameBuffer, 1, (uint64_t)width * (uint64_t)height, fp);
 }
 
 void incrementFullFrame(FILE* fp, unsigned char* frameBuffer, int width, int height, int* frameNum, int totalFrames)
@@ -95,12 +95,12 @@ void incrementFullFrame(FILE* fp, unsigned char* frameBuffer, int width, int hei
 		return;
 	}
 
-	uint32_t frameSize = (width * height * 1.5);
-	_fseeki64(fp, frameSize * *frameNum, SEEK_SET);
+	uint64_t frameSize = (width * height * 1.5);
+	_fseeki64(fp, frameSize * (uint64_t)*frameNum, SEEK_SET);
 	fread(frameBuffer, 1, frameSize, fp);
 }
 
-void setFrame(FILE* fp, unsigned char* frameBuffer, int width, int height, int* frameNum, int totalFrames, int SET)
+void setFrame(FILE* fp, unsigned char* frameBuffer, uint64_t width, uint64_t height, int* frameNum, int totalFrames, int SET)
 {
 	*frameNum = SET;
 
@@ -111,9 +111,9 @@ void setFrame(FILE* fp, unsigned char* frameBuffer, int width, int height, int* 
 		return;
 	}
 
-	uint32_t frameSize = (width * height * 1.5);
-	_fseeki64(fp, frameSize * *frameNum, SEEK_SET);
-	fread(frameBuffer, 1, width * height, fp);
+	uint64_t frameSize = (width * height * 1.5);
+	_fseeki64(fp, frameSize * (uint64_t)*frameNum, SEEK_SET);
+	fread(frameBuffer, 1, (uint64_t)width * (uint64_t)height, fp);
 }
 
 void setFullFrame(FILE* fp, unsigned char* frameBuffer, int width, int height, int* frameNum, int totalFrames, int SET)
@@ -128,7 +128,7 @@ void setFullFrame(FILE* fp, unsigned char* frameBuffer, int width, int height, i
 	}
 
 	int frameSize = (width * height * 1.5);
-	_fseeki64(fp, frameSize * *frameNum, SEEK_SET);
+	_fseeki64(fp, frameSize * (uint64_t)*frameNum, SEEK_SET);
 	fread(frameBuffer, 1, frameSize, fp);
 }
 
@@ -144,7 +144,7 @@ double averageYValOfBlock(unsigned char* blockData, int blockSize)
 	return sum/valCount;
 }
 
-void grayScaleConverter(FILE* fp,int width, int height, int totalFrames)
+void grayScaleConverter(FILE* fp, uint64_t width, uint64_t height, int totalFrames)
 {
 	FILE* gray;
 	errno_t error = fopen_s(&gray, "../GrayOut.yuv", "wb");	//Make Name Dynamic Later
@@ -155,7 +155,7 @@ void grayScaleConverter(FILE* fp,int width, int height, int totalFrames)
 		exit(2);
 	}
 
-	uint32_t frameSize = (width * height * 1.5);
+	uint64_t frameSize = (width * height * 1.5);
 	int sizeOfY = width * height; //Size of Y later, without U and V (YUV 4:2:0)
 
 	unsigned char* frameBuffer;
@@ -163,16 +163,16 @@ void grayScaleConverter(FILE* fp,int width, int height, int totalFrames)
 
 	for (int i = 0; i < totalFrames; i++)
 	{
-		_fseeki64(fp, frameSize * i, SEEK_SET);		//Seek current frame raw data
+		_fseeki64(fp, frameSize * (uint64_t)i, SEEK_SET);		//Seek current frame raw data
 		fread(frameBuffer, 1, sizeOfY, fp);		//read ONLY Y VALUES
 		fwrite(frameBuffer, 1, sizeOfY, gray);	//write ONLY Y VALUES to new file
 	}
 }
 
 //Create Copy (Useless, but basis for below functions)
-void copyYUV(FILE* fp, int width, int height, int totalFrames)
+void copyYUV(FILE* fp, uint64_t width, uint64_t height, int totalFrames)
 {
-	FILE* copy;
+	FILE* copy = NULL;
 	errno_t error = fopen_s(&copy, "../copy.yuv", "wb");	//Make Name Dynamic Later
 
 	if (fp == NULL)
@@ -181,7 +181,7 @@ void copyYUV(FILE* fp, int width, int height, int totalFrames)
 		exit(2);
 	}
 
-	uint32_t frameSize = (width * height * 1.5);
+	uint64_t frameSize = (width * height * 1.5);
 	int sizeOfY = width * height; //Size of Y, without U and V (YUV 4:2:0)
 
 	unsigned char* frameBuffer;
@@ -189,48 +189,12 @@ void copyYUV(FILE* fp, int width, int height, int totalFrames)
 
 	for (int i = 0; i < totalFrames; i++)
 	{
-		_fseeki64(fp, frameSize * i, SEEK_SET);		//Seek current frame raw data
+		_fseeki64(fp, frameSize * (uint64_t)i, SEEK_SET);		//Seek current frame raw data
 		fread(frameBuffer, 1, frameSize, fp);		//read ONLY Y VALUES
-		fwrite(frameBuffer, 1, frameSize, copy);	//write ONLY Y VALUES to new file
+		if(copy != NULL)
+			fwrite(frameBuffer, 1, frameSize, copy);	//write ONLY Y VALUES to new file
 	}
 }
-
-//Write to a new YUV file, that increases Luma Y by 20 for each Y in frame
-void saturateBy20(FILE* fp, int width, int height, int totalFrames)
-{
-	FILE* satBy20;
-	errno_t error = fopen_s(&satBy20, "../saturateUp.yuv", "wb");	//Make Name Dynamic Later
-
-	if (fp == NULL)
-	{
-		printf("Error, Returned NULL fp.\n");
-		exit(2);
-	}
-
-	uint32_t frameSize = (width * height * 1.5);
-	int sizeOfY = width * height; //Size of Y, without U and V (YUV 4:2:0)
-
-	unsigned char* frameBuffer;
-	frameBuffer = new unsigned char[frameSize];
-
-	for (int i = 0; i < totalFrames; i++)
-	{
-		_fseeki64(fp, frameSize * i, SEEK_SET);		//Seek current frame raw data
-		fread(frameBuffer, 1, frameSize, fp);		//read all Values
-
-		for (int j = 0; j < sizeOfY; j++)
-		{
-			frameBuffer[j] += 20;			//NOT SAFE, CAUSES ARTIFACTING
-			if (frameBuffer[j] > 255)
-			{
-				frameBuffer[j] = 255;
-			}
-		}
-
-		fwrite(frameBuffer, 1, frameSize, satBy20);	//write ONLY Y VALUES to new file
-	}
-}
-//Above code was to figure out how to write and change Y values, for loop implmentation is very unsecure, causes artifacting.
 
 //Write to a new YUV file, that increases Luma Y by N for each Y in frame
 void saturateUpByN(FILE* fp, int width, int height, int totalFrames, int N)
@@ -250,13 +214,13 @@ void saturateUpByN(FILE* fp, int width, int height, int totalFrames, int N)
 		exit(2);
 	}
 
-	uint32_t frameSize = (width * height * 1.5);
+	uint64_t frameSize = (width * height * 1.5);
 	int sizeOfY = width * height; //Size of Y, without U and V (YUV 4:2:0)
 
 	unsigned char* frameBuffer;
 	frameBuffer = new unsigned char[frameSize];
 
-	for (int i = 0; i < totalFrames; i++)
+	for (uint64_t i = 0; i < totalFrames; i++)
 	{
 		_fseeki64(fp, frameSize * i, SEEK_SET);		//Seek current frame raw data
 		fread(frameBuffer, 1, frameSize, fp);		//read all Values
@@ -337,7 +301,7 @@ vector<bool> rangeMapFrame(unsigned char* frameBuffer, int width, int height, in
 	return map;
 }
 
-std::vector<double> averageBlocksFrame(unsigned char* frameBuffer, int width, int height, int blockSize)
+std::vector<double> averageBlocksFrame(unsigned char* frameBuffer, int width, int height, uint64_t blockSize)
 {
 	int x, y;
 	int numBlocks = (width * height) / (blockSize * blockSize);
@@ -365,7 +329,7 @@ void getBlockFromNum(unsigned char* frameData, unsigned char* blockData, int blo
 	getBlock(frameData, blockData, blockSize, x, y, width);
 }
 
-duration<double, std::milli> writeAvgBlockYUV(FILE* fp, int width, int height, int totalFrames, int blockSize)
+duration<double, std::milli> writeAvgBlockYUV(FILE* fp, uint64_t width, uint64_t height, int totalFrames, uint64_t blockSize)
 {
 	FILE* avgOutput;
 	errno_t error = fopen_s(&avgOutput, "../avgOutput.yuv", "wb");	//Make Name Dynamic Later
