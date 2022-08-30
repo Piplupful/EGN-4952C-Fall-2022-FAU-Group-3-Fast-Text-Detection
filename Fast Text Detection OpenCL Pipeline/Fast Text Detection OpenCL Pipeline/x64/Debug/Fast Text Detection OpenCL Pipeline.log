@@ -78,14 +78,10 @@ cl : command line warning D9035: option 'Gm' has been deprecated and will be rem
   pipelineTemplate.cpp
 D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\yuvFileOpenUtil.h(66,2): warning C4996: 'wcstombs': This function or variable may be unsafe. Consider using wcstombs_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\yuvFileOpenUtil.h(68,2): warning C4996: 'wcstombs': This function or variable may be unsafe. Consider using wcstombs_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(73,21): warning C4244: 'initializing': conversion from 'double' to 'uint64_t', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(76,13): warning C4244: 'initializing': conversion from 'uint64_t' to 'int', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(77,26): warning C4244: 'initializing': conversion from 'double' to 'uint64_t', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(94,50): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(104,16): warning C4244: 'initializing': conversion from 'uint64_t' to 'int', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(172,22): warning C4838: conversion from 'int' to 'size_t' requires a narrowing conversion
-  driver.cpp
-  Generating Code...
+D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(162,21): warning C4244: 'initializing': conversion from 'double' to 'uint64_t', possible loss of data
+D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(165,13): warning C4244: 'initializing': conversion from 'uint64_t' to 'int', possible loss of data
+D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(166,26): warning C4244: 'initializing': conversion from 'double' to 'uint64_t', possible loss of data
+D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(185,50): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
   Fast Text Detection OpenCL Pipeline.vcxproj -> D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\x64\Debug\Fast Text Detection OpenCL Pipeline.exe
   avgBlocks.cl
           1 file(s) copied.

@@ -1,3 +1,11 @@
+//Block Number = (x / block size) + ((y / blockSize) * (width / blockSize));
+//From block number to X and Y
+//X = Block Number * BlockSize % Width
+//Y = (Integer Truncate)((Block Number / (Width / BlockSize)) * blockSize)
+
+//TO CHECK VALUES IN VOOYA: OPEN UP YUV IN VOOYA, CHECK Y VALUES WITH MAGNIFIER (SCROLL WHEEL UP TO ACTIVATE)
+//MAGNIFIER CONTROLS PER PIXEL:		W - UP		S - DOWN		Q - LEFT		E - RIGHT
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +49,87 @@ using std::chrono::milliseconds;
 
 using namespace std;
 
+class OpenCL
+{
+public:
+	OpenCL(string clFile)
+	{
+		int err;
+		char* source = NULL;	//Used by util.cpp, from Intel OpenCL SDK. Stores .cl files for use in program and kernel creation.
+		size_t src_size = 0;
+
+		//Platform/Device Creation
+		err = clGetPlatformIDs(1, &platform, NULL);
+		if (err != CL_SUCCESS) {
+			cerr << "Error: Cant get platform id.\n";
+			exit(err);
+		}
+
+		err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);	//CL_DEVICE_TYPE_GPU, picks first GPU device. CL_DEVICE_TYPE_CPU, picks processor.
+		if (err != CL_SUCCESS)
+		{
+			cerr << "Error: Failed to create a device group.\n";
+			exit(err);
+		}
+
+		//Context/Command Queue Creation
+		context = clCreateContext(0, 1, &device, NULL, NULL, &err);
+		if (err != CL_SUCCESS)
+		{
+			cerr << "Error: Failed to create context.\n";
+			exit(err);
+		}
+
+		queue = clCreateCommandQueue(context, device, 0, &err);
+		if (err != CL_SUCCESS)
+		{
+			cerr << "Error: Failed to create command queue.\n";
+			exit(err);
+		}
+
+		//Read source file, create/build program with source flle
+		err = ReadSourceFromFile(clFile.c_str(), &source, &src_size); //Read .cl file
+		if (err != CL_SUCCESS)
+		{
+			cerr << "Error: Failed to read Source File.\n";
+			exit(err);
+		}
+
+		program = clCreateProgramWithSource(context, 1, (const char**)&source, &src_size, &err);
+		if (err != CL_SUCCESS)
+		{
+			cerr << "Error: Failed to create program from source file.\n";
+			exit(err);
+		}
+
+		err = clBuildProgram(program, 1, &device, "", NULL, NULL);
+		if (err != CL_SUCCESS)
+		{
+			cerr << "Error: Failed to build program.\n";
+			exit(err);
+		}
+
+		event = NULL;
+		kernel = NULL;
+	}
+	~OpenCL()
+	{
+		clReleaseEvent(event);
+		clReleaseKernel(kernel);
+		clReleaseCommandQueue(queue);
+		clReleaseContext(context);
+		clReleaseProgram(program);
+	}
+
+	cl_platform_id platform;
+	cl_device_id device;
+	cl_context context;
+	cl_command_queue queue;
+	cl_program program;
+	cl_kernel kernel;
+	cl_event event;
+};
+
 int templateMain()
 {
 	FILE* fp = NULL;
@@ -78,10 +167,12 @@ int templateMain()
 
 	if (size != calculatedSize)
 	{
-		cout << "Wrong size of yuv read : " << (int)size << " bytes, expected " << (int)calculatedSize << " bytes\n";
+		cerr << "Wrong size of yuv read : " << (int)size << " bytes, expected " << (int)calculatedSize << " bytes\n";
 		fclose(fp);
 		exit(2);
 	}
+
+	uint64_t numBlocks = lumaSize / (blockSize * blockSize);
 
 	cout << fileName << " " << width << "x" << height << ", Frames = " << frames << endl;
 	cout << "=================================================================" << endl;
@@ -95,124 +186,71 @@ int templateMain()
 
 	if (r < lumaSize)
 	{
+		cerr << "Read wrong frame size, error in reading YUV properly.";
 		fclose(fp);
 		exit(2);
-
 	}
-
-	//Create Block Buffer
-	int numBlocks = lumaSize / (blockSize * blockSize);
-	int x = 0, y = 0;
 
 	//OPENCL START
 	int err;	// error code returned from api calls
-	cl_event event;
+	auto startTime = high_resolution_clock::now();
 
-	cl_platform_id platform;
-	cl_device_id device;
-	cl_context context;
-	cl_command_queue queue;
-	cl_program program;
-	cl_kernel kernel;
+	OpenCL ocl("VALID_OPENCL_FILE.cl");
+	
+	//INSERT VALID FUNCTION FROM VALID OPENCL FILE, STRING IN 2ND PARAMETER = FUNCTION NAME
+	ocl.kernel = clCreateKernel(ocl.program, "VALID OPENCL KERNEL FUNCTION", &err);
 
-	char* source = NULL;	//Used by util.cpp, from Intel OpenCL SDK. Stores .cl files for use in program and kernel creation.
-	size_t src_size = 0;
-
-	//Platform/Device Creation
-	err = clGetPlatformIDs(1, &platform, NULL);
-	if (err != CL_SUCCESS) {
-		cout << "Error: Cant get platform id!";
-		fclose(fp);
-		exit(1);
-	}
-
-	err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
 	if (err != CL_SUCCESS)
 	{
-		cout << "Error: Failed to create a device group!";
+		cerr << "Error: Failed to create kernel.\n";
 		fclose(fp);
-		exit(1);
-	}
-
-	//IDEA: OpenCL object creation parameter can be just valid openCL file. Constructor will handle boilerplate. Developer should pick out
-	// Kernel function by accessing OpenCL object's kernel variable.
-
-	//Context/Command Queue Creation
-	context = clCreateContext(0, 1, &device, NULL, NULL, NULL);
-	queue = clCreateCommandQueue(context, device, 0, NULL);
-
-	//Read Source -> Program/Kernel, from utils.cpp, provided by Intel OpenCL SDK
-	//INSERT VALID .CL FILE NAME IN FIRST PARAMETER
-	err = ReadSourceFromFile("VALID OPENCL FILE NAME.cl", &source, &src_size); //Read .cl file			//Can be abstracted out
-
-	if (!err)
-	{
-		program = clCreateProgramWithSource(context, 1, (const char**)&source, &src_size, &err);		//Can be abstracted out
-		err = clBuildProgram(program, 1, &device, "", NULL, NULL);
-		//INSERT VALID FUNCTION FROM VALID OPENCL FILE, STRING IN 2ND PARAMETER = FUNCTION NAME
-		kernel = clCreateKernel(program, "INSERT VALID OPENCL KERNEL FUNCTION NAME HERE", &err);		//Cannot be abstracted out !!!
-	}
-	else
-	{
-		cout << "Error reading Source from .cl file.\n";
-		fclose(fp);
-		exit(2);
+		exit(err);
 	}
 
 	//Memory Buffers
-	cl_mem clFrameBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, frameSize, fullFrameBuffer, &err);
-		//Include more cl_mem buffers before if necessary/
+	cl_mem clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, frameSize, fullFrameBuffer, &err);	//CL_MEM_READ_WRITE, if writing back frame data.
+		//Include more cl_mem buffers before if necessary
+		//	Example: cl_mem clAvgBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks * 8, averages, &err);
+
 
 	//Kernel Arguements
-	err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &clFrameBuffer);
+	err = clSetKernelArg(ocl.kernel, 0, sizeof(cl_mem), &clFrameBuffer);
 		//Include more Kernel Arguements if necessary. Must include all memory buffers created previously. Single variables (Such as Width), can be directly accessed
-		//									Example: err = clSetKernelArg(kernel, 2, sizeof(int), &width);
+		//	Example: err = clSetKernelArg(kernel, 2, sizeof(int), &width);
+
 
 	//Enqueue and wait
 	size_t global[] = { numBlocks };	//For 1 Dimensionality, global[] = { Total Number of Blocks }.
-										//For 2 Dimensionaltiy, globalWork[] = { height / blockSize, width / blockSize };, make sure to change 3rd parameter in clEnqueueNDRangeKernel() to 2.
+										//For 2 Dimensionaltiy, globalWork[] = { width / blockSize, height / blockSize};, make sure to change 3rd parameter in clEnqueueNDRangeKernel() to 2.
 
 	size_t local[] = { 16 };			//Local Size can be finicky, if left out, OpenCL will choose an appropriate value on it's own, but this may decrease performance.
+		//CL_DEVICE_MAX_WORK_GROUP_SIZE can be used to return maximum local work group size that your device may handle, but depending on the input, this may cause errors.
 
-	auto t1 = high_resolution_clock::now();	//TIMER AROUND OPERATION ONLY
-	err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, global, NULL, 0, NULL, &event);
-	clFinish(queue);
-	auto t2 = high_resolution_clock::now();
-	duration<double, std::milli> ms_double = t2 - t1;
+	//Enqueue Loop Example in comments at bottom of code. Refer to that or avgDriver.cpp.
+	auto enqueueTime1 = high_resolution_clock::now();	//TIMER AROUND OPERATION ONLY, this times OpenCL runtime, not that of memory transfering.
+
+	err = clEnqueueNDRangeKernel(ocl.queue, ocl.kernel, 1, NULL, global, NULL, 0, NULL, &ocl.event);
+	clFinish(ocl.queue);
+
+	auto enqueueTime2 = high_resolution_clock::now();
+	duration<double, std::milli> ms_double = enqueueTime2 - enqueueTime1;
 
 	//Read back to main memory (For output and checking)
-	//Example: err = clEnqueueReadBuffer(queue, clAvgBuffer, CL_TRUE, 0, numBlocks * 8, averages, 0, NULL, &event);
+	//	Example: err = clEnqueueReadBuffer(queue, clAvgBuffer, CL_TRUE, 0, numBlocks * 8, averages, 0, NULL, &event);
 
 
-	clReleaseEvent(event);		//Deconstructor for OpenCL Object
-	clReleaseKernel(kernel);
-	clReleaseCommandQueue(queue);
-	clReleaseContext(context);
-	clReleaseProgram(program);
 	clReleaseMemObject(clFrameBuffer);
 	//RELEASE ANY OTHER CL_MEM OBJECTS BELOW
-	//EXAMPLE:	clReleaseMemObject(clAvgBuffer);
-
-	
-
-	//OpenCL Template from Intel OpenCL SDK automatically shuts down debug CMD window on completion, even if set to not do so in Debug Settings. This fixes that issue to allow for
-	//	post-debug run analysis.
-	std::string holdOutput;
-	std::cout << "Press enter to end.";
-	std::getline(std::cin, holdOutput);
+	//	Example:	clReleaseMemObject(clAvgBuffer);
 
 	fclose(fp);
+	
+	auto finalTime = high_resolution_clock::now();
+	duration<double, std::milli> finalRuntime = startTime - finalTime;
+	cout << "\nFinal Total Runtime = " << finalRuntime.count() << "\n";
 
 	return 0;
 }
-
-//Block Number = (x / block size) + ((y / blockSize) * (width / blockSize));
-//From block number
-//X = Block Number * BlockSize % Width
-//Y = (Integer Truncate)((Block Number / (Width / BlockSize)) * blockSize)
-
-//TO CHECK VALUES IN VOOYA: OPEN UP YUV IN VOOYA, CHECK Y VALUES WITH MAGNIFIER (SCROLL WHEEL UP TO ACTIVATE)
-//MAGNIFIER CONTROLS PER PIXEL:		W - UP		S - DOWN		Q - LEFT		E - RIGHT
 
 //OpenCL Example, using for loop for output (From avgDriver):
 /*

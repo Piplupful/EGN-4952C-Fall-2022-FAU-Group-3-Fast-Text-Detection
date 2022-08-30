@@ -1,3 +1,5 @@
+//OLD CODE FROM ENGINEERING DESIGN 1, SUMMER 2022 FAU SEMESTER
+
 //TODO:
 //	-look into how Local Work Group Size affects performance. Might be easier done on future dummy function.
 //	-Dummy OpenCL Functions: Based off getting Range of each macroblock (Max - Min Luma Value, and writing 1 or 0 to a binary map
