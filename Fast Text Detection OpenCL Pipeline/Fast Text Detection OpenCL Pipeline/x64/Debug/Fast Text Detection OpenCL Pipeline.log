@@ -1,4 +1,5 @@
 ﻿  Preprocessing: avgBlocks.cl
+  Preprocessing: rangeDummy.cl
   Ignoring -TARGETOS option - not supported for 64-bit version of this tool 
   
   Using build options:  -I "D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline"
@@ -74,14 +75,32 @@
   
   Build succeeded!
   
+  Ignoring -TARGETOS option - not supported for 64-bit version of this tool 
+  
+  Using build options:  -I "D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline"
+  Platform name: Intel(R) OpenCL HD Graphics
+  Device name: Intel(R) HD Graphics 630
+  Device version: OpenCL 3.0 NEO 
+  Device vendor: Intel(R) Corporation
+  Device profile: FULL_PROFILE
+  
+  rangeThresh info:
+  	Maximum work-group size: 256
+  	Compiler work-group size: (0, 0, 0)
+  	Local memory size: 0
+  	Preferred multiple of work-group size: 32
+  	Minimum amount of private memory: 0
+  	Amount of spill memory used by the kernel: 0
+  
+  Build succeeded!
+  
 cl : command line warning D9035: option 'Gm' has been deprecated and will be removed in a future release
-  pipelineTemplate.cpp
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\yuvFileOpenUtil.h(66,2): warning C4996: 'wcstombs': This function or variable may be unsafe. Consider using wcstombs_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\yuvFileOpenUtil.h(68,2): warning C4996: 'wcstombs': This function or variable may be unsafe. Consider using wcstombs_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(162,21): warning C4244: 'initializing': conversion from 'double' to 'uint64_t', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(165,13): warning C4244: 'initializing': conversion from 'uint64_t' to 'int', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(166,26): warning C4244: 'initializing': conversion from 'double' to 'uint64_t', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(185,50): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+  rangeDummyDriver.cpp
+D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\rangeDummyDriver.cpp(163,21): warning C4244: 'initializing': conversion from 'double' to 'uint64_t', possible loss of data
+D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\rangeDummyDriver.cpp(166,13): warning C4244: 'initializing': conversion from 'uint64_t' to 'int', possible loss of data
+D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\rangeDummyDriver.cpp(167,26): warning C4244: 'initializing': conversion from 'double' to 'uint64_t', possible loss of data
+D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\rangeDummyDriver.cpp(186,50): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
   Fast Text Detection OpenCL Pipeline.vcxproj -> D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\x64\Debug\Fast Text Detection OpenCL Pipeline.exe
   avgBlocks.cl
-          1 file(s) copied.
+  rangeDummy.cl
+          2 file(s) copied.

@@ -27,15 +27,24 @@
     <ClCompile Include="pipelineTemplate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="rangeDummyDriver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="yuvFileOpenUtil_impl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="simpleYUV_impl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimpleYUV.h">
+    <ClInclude Include="simpleYUV.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="averageLumaExample.h">
+    <ClInclude Include="yuvStatExamples.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="yuvFileOpenUtil.h">
@@ -44,6 +53,9 @@
   </ItemGroup>
   <ItemGroup>
     <Intel_OpenCL_Build_Rules Include="avgBlocks.cl">
+      <Filter>OpenCL Files</Filter>
+    </Intel_OpenCL_Build_Rules>
+    <Intel_OpenCL_Build_Rules Include="rangeDummy.cl">
       <Filter>OpenCL Files</Filter>
     </Intel_OpenCL_Build_Rules>
   </ItemGroup>

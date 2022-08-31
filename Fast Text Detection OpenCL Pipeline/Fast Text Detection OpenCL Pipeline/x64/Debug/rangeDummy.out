@@ -1,0 +1,18 @@
+Ignoring -TARGETOS option - not supported for 64-bit version of this tool 
+
+Using build options:  -I "D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline"
+Platform name: Intel(R) OpenCL HD Graphics
+Device name: Intel(R) HD Graphics 630
+Device version: OpenCL 3.0 NEO 
+Device vendor: Intel(R) Corporation
+Device profile: FULL_PROFILE
+
+rangeThresh info:
+	Maximum work-group size: 256
+	Compiler work-group size: (0, 0, 0)
+	Local memory size: 0
+	Preferred multiple of work-group size: 32
+	Minimum amount of private memory: 0
+	Amount of spill memory used by the kernel: 0
+
+Build succeeded!

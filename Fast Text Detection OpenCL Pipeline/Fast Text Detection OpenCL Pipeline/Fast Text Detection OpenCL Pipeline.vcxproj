@@ -188,16 +188,20 @@
     <ClCompile Include="avgDriver.cpp" />
     <ClCompile Include="driver.cpp" />
     <ClCompile Include="pipelineTemplate.cpp" />
+    <ClCompile Include="rangeDummyDriver.cpp" />
+    <ClCompile Include="simpleYUV_impl.cpp" />
     <ClCompile Include="utils.cpp" />
+    <ClCompile Include="yuvFileOpenUtil_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="averageLumaExample.h" />
-    <ClInclude Include="SimpleYUV.h" />
+    <ClInclude Include="yuvStatExamples.h" />
+    <ClInclude Include="simpleYUV.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="yuvFileOpenUtil.h" />
   </ItemGroup>
   <ItemGroup>
     <Intel_OpenCL_Build_Rules Include="avgBlocks.cl" />
+    <Intel_OpenCL_Build_Rules Include="rangeDummy.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

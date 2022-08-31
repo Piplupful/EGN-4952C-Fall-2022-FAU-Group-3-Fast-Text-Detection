@@ -58,7 +58,7 @@ const COMDLG_FILTERSPEC c_rgSaveTypes[] =
 #define _FILE_OFFSET_BITS 64
 using namespace std;
 
-#include "SimpleYUV.h"
+#include "simpleYUV.h"
 
 //FUNCTION CONTROLS
 bool avgFrameNonPara = 1;	//TURN OFF OR ON AVERAGE FRAME NON PARALLEL (FOR COMPARISON)
@@ -331,7 +331,7 @@ int avgMain()	//MAKE INTO A PROPER FUNCTION LATER
 
 			if (err != CL_SUCCESS)
 			{
-				cout << "Error enqueuing back. " << err << endl;
+				cout << "Error enqueuing kernel. " << err << endl;
 				exit(2);
 			}
 
