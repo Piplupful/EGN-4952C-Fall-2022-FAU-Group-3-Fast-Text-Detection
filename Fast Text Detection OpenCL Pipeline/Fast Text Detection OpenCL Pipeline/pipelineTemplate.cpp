@@ -6,6 +6,8 @@
 //TO CHECK VALUES IN VOOYA: OPEN UP YUV IN VOOYA, CHECK Y VALUES WITH MAGNIFIER (SCROLL WHEEL UP TO ACTIVATE)
 //MAGNIFIER CONTROLS PER PIXEL:		W - UP		S - DOWN		Q - LEFT		E - RIGHT
 
+//THIS IS MEANT TO BE A TEMPLATE FOR TESTING TEXT DETECTION METHODS. FOR A GOOD EXAMPLE WITH A DUMMY FUNCTION, CHECK rangeDummyDriver.cpp.
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -244,10 +246,36 @@ int templateMain()
 	//	Example:	clReleaseMemObject(clAvgBuffer);
 
 	fclose(fp);
-	
+
 	auto finalTime = high_resolution_clock::now();
 	duration<double, std::milli> finalRuntime = startTime - finalTime;
 	cout << "\nFinal Total Runtime = " << finalRuntime.count() << "\n";
+
+	//RUNTIME CSV FILE PRINT OUT TEMPLATE
+	//This is an example for automatic runtime statistic printouts into a .csv file. Useful for analysis.
+	FILE* runtimeStat;
+	string csvFileName(fileName);
+	csvFileName = csvFileName.substr(0, csvFileName.find_last_of('.'));
+	string csvFilePath = "../RUNTIMETEMPLATE/" + csvFileName + ".csv";
+
+	string csvOut = "\n" + to_string(frames) + "," + to_string(finalRuntime.count());	//ADD MORE COLUMN VALUES IF NECESSARY
+
+	fopen_s(&runtimeStat, csvFilePath.c_str(), "a");	//Mode "a" just adds onto existing file. No overwriting completely.
+
+	if (runtimeStat != NULL)
+	{
+		_fseeki64(runtimeStat, 0, SEEK_END);
+		int csvSize = ftell(runtimeStat);
+		if (csvSize == 0)
+		{
+			string colName = "Frames,Total";	//ADD MORE COLUMN NAMES IF NECESSARY
+			cout << colName.size();
+			fwrite(colName.c_str(), 1, colName.size(), runtimeStat);
+		}
+
+		fwrite(csvOut.c_str(), 1, csvOut.size(), runtimeStat);
+		fclose(runtimeStat);
+	}
 
 	return 0;
 }

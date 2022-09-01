@@ -200,7 +200,7 @@ int rangeMain()
 	auto kernelEndTime = high_resolution_clock::now();
 	duration<double, std::milli> finalKernelRuntime = chrono::milliseconds::zero();
 
-	int thresh = 70;	//Between 1 and 255
+	int thresh = 150;	//Between 1 and 255
 
 	bool* threshOut;
 	threshOut = new bool[numBlocks];
@@ -261,6 +261,7 @@ int rangeMain()
 		clEnqueueReadBuffer(ocl.queue, clThreshBuffer, CL_TRUE, 0, numBlocks, threshOut, 0, NULL, &ocl.event);
 		clFinish(ocl.queue);
 
+		//Binary Map Output, as .txt for now
 		FILE* outputFile;
 		string outputFilePath = "../OUTPUT/" + to_string(f) + ".txt";
 
@@ -289,11 +290,36 @@ int rangeMain()
 	duration<double, std::milli> finalRuntime = endTime - startTime;			//Total Runtime, from start of OpenCL section, after opening file and pre-openCL setup.
 	duration<double, std::milli> finalOpRuntime = opEndTime - opStartTime;		//Runtime of loop, of operation, including memory transfers.
 
+	FILE* runtimeStat;
+	string csvFileName(fileName);
+	csvFileName = csvFileName.substr(0, csvFileName.find_last_of('.'));
+	string csvFilePath = "../RUNTIME/" + csvFileName + ".csv";
+
+	string csvOut = "\n" + to_string(frames) + "," + to_string(finalKernelRuntime.count())
+		+ "," + to_string(finalKernelRuntime.count() / frames) + "," + to_string(finalOpRuntime.count()) + "," + to_string(finalRuntime.count());
+
+	fopen_s(&runtimeStat, csvFilePath.c_str(), "a");	//Mode "a" just adds onto existing file. No overwriting completely.
+
+	if (runtimeStat != NULL)
+	{
+		_fseeki64(runtimeStat, 0, SEEK_END);
+		int csvSize = ftell(runtimeStat);
+		if (csvSize == 0)
+		{
+			string colName = "Frames,Kernel Runtime,Avg per Frame,Operation,Total";
+			fwrite(colName.c_str(), 1, colName.size(), runtimeStat);
+		}
+
+		fwrite(csvOut.c_str(), 1, csvOut.size(), runtimeStat);
+		fclose(runtimeStat);
+	}
+
 	cout << "Total number of frames\t\t=\t" << frames << "\n";
 	cout << "Final Kernel Runtime\t\t=\t" << finalKernelRuntime.count() << "\n";
 	cout << "Average runtime per frame\t=\t" << finalKernelRuntime.count() / frames << "\n";
 	cout << "Final Operation Runtime\t\t=\t" << finalOpRuntime.count() << "\n";
 	cout << "Final Total Runtime\t\t=\t" << finalRuntime.count() << "\n";
 
+	cout << "\n";
 	return 0;
 }
