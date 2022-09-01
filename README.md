@@ -17,5 +17,5 @@ and manipulation of YUV video using OpenCL for Data Parallelization. To learn ho
 which writes a new YUV file, where each 8x8 block of pixel's Y value is now equal to the average of the original, creating a pseudo
 compressed image. This code will serve as the basis of our OpenCL based pipeline, to test out text detection solutions.
 
--September 1, 2022: First major merge into main. Improved input, created OpenCL based pipeline and template, enhanced QoL for testing and runtime
+- September 1, 2022: First major merge into main. Improved input, created OpenCL based pipeline and template, enhanced QoL for testing and runtime
 analysis down the road.
