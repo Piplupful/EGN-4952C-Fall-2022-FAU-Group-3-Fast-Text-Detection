@@ -187,13 +187,16 @@
   <ItemGroup>
     <ClCompile Include="avgDriver.cpp" />
     <ClCompile Include="driver.cpp" />
+    <ClCompile Include="ocl.cpp" />
     <ClCompile Include="pipelineTemplate.cpp" />
     <ClCompile Include="rangeDummyDriver.cpp" />
+    <ClCompile Include="rangeDummyDriver2D.cpp" />
     <ClCompile Include="simpleYUV_impl.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="yuvFileOpenUtil_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ocl.h" />
     <ClInclude Include="yuvStatExamples.h" />
     <ClInclude Include="simpleYUV.h" />
     <ClInclude Include="utils.h" />

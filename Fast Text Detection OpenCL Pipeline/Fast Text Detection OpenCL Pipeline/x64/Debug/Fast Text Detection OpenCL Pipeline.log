@@ -92,20 +92,18 @@
   	Minimum amount of private memory: 0
   	Amount of spill memory used by the kernel: 0
   
+  rangeThresh2D info:
+  	Maximum work-group size: 256
+  	Compiler work-group size: (0, 0, 0)
+  	Local memory size: 0
+  	Preferred multiple of work-group size: 32
+  	Minimum amount of private memory: 0
+  	Amount of spill memory used by the kernel: 0
+  
   Build succeeded!
   
 cl : command line warning D9035: option 'Gm' has been deprecated and will be removed in a future release
-  rangeDummyDriver.cpp
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\rangeDummyDriver.cpp(163,21): warning C4244: 'initializing': conversion from 'double' to 'uint64_t', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\rangeDummyDriver.cpp(166,13): warning C4244: 'initializing': conversion from 'uint64_t' to 'int', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\rangeDummyDriver.cpp(167,26): warning C4244: 'initializing': conversion from 'double' to 'uint64_t', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\rangeDummyDriver.cpp(186,50): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-  pipelineTemplate.cpp
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(164,21): warning C4244: 'initializing': conversion from 'double' to 'uint64_t', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(167,13): warning C4244: 'initializing': conversion from 'uint64_t' to 'int', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(168,26): warning C4244: 'initializing': conversion from 'double' to 'uint64_t', possible loss of data
-D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\pipelineTemplate.cpp(187,50): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-  Generating Code...
+  driver.cpp
   Fast Text Detection OpenCL Pipeline.vcxproj -> D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\x64\Debug\Fast Text Detection OpenCL Pipeline.exe
   avgBlocks.cl
   rangeDummy.cl

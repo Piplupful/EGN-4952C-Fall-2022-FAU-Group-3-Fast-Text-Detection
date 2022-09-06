@@ -45,104 +45,15 @@ using std::chrono::high_resolution_clock;
 using std::chrono::duration;
 using std::chrono::milliseconds;
 
-// File Explorer Functionality
-#include "yuvFileOpenUtil.h"
+#include "ocl.h"
 
 using namespace std;
 
-class OpenCL
+int rangeMain(FILE* inputFile, uint64_t width, uint64_t height, char fileName[2000], char filePath[2000], int thresh, bool print)
 {
-public:
-	OpenCL(string clFile)
-	{
-		int err;
-		char* source = NULL;	//Used by util.cpp, from Intel OpenCL SDK. Stores .cl files for use in program and kernel creation.
-		size_t src_size = 0;
-
-		//Platform/Device Creation
-		err = clGetPlatformIDs(1, &platform, NULL);
-		if (err != CL_SUCCESS) {
-			cerr << "Error: Cant get platform id.\n";
-			exit(err);
-		}
-
-		err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);	//CL_DEVICE_TYPE_GPU, picks first GPU device. CL_DEVICE_TYPE_CPU, picks processor.
-		if (err != CL_SUCCESS)
-		{
-			cerr << "Error: Failed to create a device group.\n";
-			exit(err);
-		}
-
-		//Context/Command Queue Creation
-		context = clCreateContext(0, 1, &device, NULL, NULL, &err);
-		if (err != CL_SUCCESS)
-		{
-			cerr << "Error: Failed to create context.\n";
-			exit(err);
-		}
-
-		queue = clCreateCommandQueue(context, device, 0, &err);
-		if (err != CL_SUCCESS)
-		{
-			cerr << "Error: Failed to create command queue.\n";
-			exit(err);
-		}
-
-		//Read source file, create/build program with source flle
-		err = ReadSourceFromFile(clFile.c_str(), &source, &src_size); //Read .cl file
-		if (err != CL_SUCCESS)
-		{
-			cerr << "Error: Failed to read Source File.\n";
-			exit(err);
-		}
-
-		program = clCreateProgramWithSource(context, 1, (const char**)&source, &src_size, &err);
-		if (err != CL_SUCCESS)
-		{
-			cerr << "Error: Failed to create program from source file.\n";
-			exit(err);
-		}
-
-		err = clBuildProgram(program, 1, &device, "", NULL, NULL);
-		if (err != CL_SUCCESS)
-		{
-			cerr << "Error: Failed to build program.\n";
-			exit(err);
-		}
-
-		event = NULL;
-		kernel = NULL;
-	}
-	~OpenCL()
-	{
-		clReleaseEvent(event);
-		clReleaseKernel(kernel);
-		clReleaseCommandQueue(queue);
-		clReleaseContext(context);
-		clReleaseProgram(program);
-	}
-
-	cl_platform_id platform;
-	cl_device_id device;
-	cl_context context;
-	cl_command_queue queue;
-	cl_program program;
-	cl_kernel kernel;
-	cl_event event;
-};
-
-int rangeMain()
-{
-	FILE* fp = NULL;
-	uint64_t width = 0;
-	uint64_t height = 0;
-	char fileName[2000];
-	char filePath[2000];
+	FILE* fp = inputFile;
 
 	uint64_t blockSize = 16; //blockSize x blockSize
-
-	//File Explorer Functionality, Easier YUV File Selection, Width/Height found by filename (YUV Standard)
-	openYUVFile(fp, &width, &height, fileName, filePath);
 
 	//Open File through fopen_s, filepath found through File Explorer.
 	if (filePath != NULL)
@@ -179,11 +90,11 @@ int rangeMain()
 	cout << "=================================================================" << endl;
 
 	//Y,U,V	(For Full Frame info, use frameSize. For only Y (Luma), use lumaSize)
-	unsigned char* fullFrameBuffer;
-	fullFrameBuffer = new unsigned char[frameSize];
+	unsigned char* frameBuffer;
+	frameBuffer = new unsigned char[lumaSize];
 
-	_fseeki64(fp, frameSize * frameNum, SEEK_SET);
-	int r = fread(fullFrameBuffer, 1, frameSize, fp);
+	_fseeki64(fp, lumaSize * frameNum, SEEK_SET);
+	int r = fread(frameBuffer, 1, lumaSize, fp);
 
 	if (r < lumaSize)
 	{
@@ -199,8 +110,6 @@ int rangeMain()
 	auto kernelStartTime = high_resolution_clock::now();	//Runtime of Kernel (Enqueue, and queue finish)
 	auto kernelEndTime = high_resolution_clock::now();
 	duration<double, std::milli> finalKernelRuntime = chrono::milliseconds::zero();
-
-	int thresh = 150;	//Between 1 and 255
 
 	bool* threshOut;
 	threshOut = new bool[numBlocks];
@@ -219,7 +128,7 @@ int rangeMain()
 	}
 
 	//Memory Buffers
-	cl_mem clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, frameSize, fullFrameBuffer, &err);	//CL_MEM_READ_WRITE, if writing back frame data.
+	cl_mem clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, lumaSize, frameBuffer, &err);	//CL_MEM_READ_WRITE, if writing back frame data.
 		//Include more cl_mem buffers before if necessary
 		//	Example: cl_mem clAvgBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks * 8, averages, &err);
 	cl_mem clThreshBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, threshOut, &err);
@@ -236,7 +145,9 @@ int rangeMain()
 	size_t global[] = { numBlocks };	//For 1 Dimensionality, global[] = { Total Number of Blocks }.
 										//For 2 Dimensionaltiy, globalWork[] = { width / blockSize, height / blockSize};, make sure to change 3rd parameter in clEnqueueNDRangeKernel() to 2.
 
-	size_t local[] = { NULL };			//Local Size can be finicky, if left out, OpenCL will choose an appropriate value on it's own, but this may decrease performance.
+	size_t local[] = { 4 };			//Local Size can be finicky, if left out, OpenCL will choose an appropriate value on it's own, but this may decrease performance.
+
+
 		//CL_DEVICE_MAX_WORK_GROUP_SIZE can be used to return maximum local work group size that your device may handle, but depending on the input, this may cause errors.
 
 	auto opStartTime = high_resolution_clock::now();		//Runtime of entire operation (kernel runtime + memory transfers, etc)
@@ -245,14 +156,24 @@ int rangeMain()
 	{
 		fill_n(threshOut, numBlocks, 0);
 
-		_fseeki64(fp, frameSize* f, SEEK_SET);			//Seek current frame raw data
-		fread(fullFrameBuffer, 1, frameSize, fp);	//read all Values
+		_fseeki64(fp, lumaSize * f, SEEK_SET);			//Seek current frame raw data
+		fread(frameBuffer, 1, lumaSize , fp);	//read all Values
 
-		clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, frameSize, fullFrameBuffer, &err);	//Update buffer
+		clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, lumaSize, frameBuffer, &err);	//Update buffers
 		clSetKernelArg(ocl.kernel, 0, sizeof(cl_mem), &clFrameBuffer);	//Send current frame to GPU
+		clThreshBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, threshOut, &err);	//Reset cl Buffer, otherwise output bleeds together
+		clSetKernelArg(ocl.kernel, 1, sizeof(cl_mem), &clThreshBuffer);
 
 		kernelStartTime = high_resolution_clock::now();
-		clEnqueueNDRangeKernel(ocl.queue, ocl.kernel, 1, NULL, global, NULL, 0, NULL, &ocl.event);
+		err = clEnqueueNDRangeKernel(ocl.queue, ocl.kernel, 1, NULL, global, local, 0, NULL, &ocl.event);
+
+		if (err != CL_SUCCESS)
+		{
+			cerr << "Error: Failed to enqueue kernel.\n";
+			fclose(fp);
+			exit(err);
+		}
+
 		clFinish(ocl.queue);
 		kernelEndTime = high_resolution_clock::now();
 
@@ -293,6 +214,7 @@ int rangeMain()
 	FILE* runtimeStat;
 	string csvFileName(fileName);
 	csvFileName = csvFileName.substr(0, csvFileName.find_last_of('.'));
+	csvFileName += "_1D";	//1D Work Group Size Signifier
 	string csvFilePath = "../RUNTIME/" + csvFileName + ".csv";
 
 	string csvOut = "\n" + to_string(frames) + "," + to_string(finalKernelRuntime.count())
@@ -314,12 +236,16 @@ int rangeMain()
 		fclose(runtimeStat);
 	}
 
-	cout << "Total number of frames\t\t=\t" << frames << "\n";
-	cout << "Final Kernel Runtime\t\t=\t" << finalKernelRuntime.count() << "\n";
-	cout << "Average runtime per frame\t=\t" << finalKernelRuntime.count() / frames << "\n";
-	cout << "Final Operation Runtime\t\t=\t" << finalOpRuntime.count() << "\n";
-	cout << "Final Total Runtime\t\t=\t" << finalRuntime.count() << "\n";
+	if (print)
+	{
+		cout << "Total number of frames\t\t=\t" << frames << "\n";
+		cout << "Final Kernel Runtime\t\t=\t" << finalKernelRuntime.count() << "\n";
+		cout << "Average runtime per frame\t=\t" << finalKernelRuntime.count() / frames << "\n";
+		cout << "Final Operation Runtime\t\t=\t" << finalOpRuntime.count() << "\n";
+		cout << "Final Total Runtime\t\t=\t" << finalRuntime.count() << "\n";
 
-	cout << "\n";
+		cout << "\n";
+	}
+
 	return 0;
 }
