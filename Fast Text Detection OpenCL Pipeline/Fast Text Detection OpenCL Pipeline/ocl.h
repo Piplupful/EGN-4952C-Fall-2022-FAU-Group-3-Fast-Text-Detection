@@ -10,6 +10,7 @@ class OpenCL
 public:
 	OpenCL(string clFile);
 	~OpenCL();
+	void deviceInfoPrint();
 
 	cl_platform_id platform;
 	cl_device_id device;

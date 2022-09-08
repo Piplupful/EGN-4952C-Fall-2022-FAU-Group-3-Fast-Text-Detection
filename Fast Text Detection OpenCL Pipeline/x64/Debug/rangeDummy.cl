@@ -58,3 +58,33 @@ __kernel void rangeThresh2D(__global unsigned char* frame,__global bool* threshA
 		threshArr[blockNum] = true;
 	}
 }
+
+__kernel void rangeThresh2DVect(__global unsigned char* frame,__global bool* threshArr, const int width, const int thresh)	//16x16 ONLY
+{
+	uint x = get_global_id(0) * 16;
+	uint y = get_global_id(1) * 16;
+	uint blockNum = (x / 16) + ((int)(y / 16) * (width / 16));	//Optimize with just get global id?
+
+	int min = 256;	//Maximum 255 Value for Luma.
+	int max = -1;
+
+	uint offset = y * width + x;
+
+	for (uint j = 0; j < 16; j++)			//over every x value
+	{
+		for (uint i = 0; i < 16; i++)		//over every y value
+		{
+			if(frame[offset + (i * width + j)] < min)
+				min = frame[offset + (i * width + j)];
+			if(frame[offset + (i * width + j)] > max)
+				max = frame[offset + (i * width + j)];
+		}
+	}
+
+	uint range = max - min;
+
+	if(range >= thresh)
+	{
+		threshArr[blockNum] = true;
+	}
+}

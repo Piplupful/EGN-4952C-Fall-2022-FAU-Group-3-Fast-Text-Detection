@@ -100,6 +100,14 @@
   	Minimum amount of private memory: 0
   	Amount of spill memory used by the kernel: 0
   
+  rangeThresh2DVect info:
+  	Maximum work-group size: 256
+  	Compiler work-group size: (0, 0, 0)
+  	Local memory size: 0
+  	Preferred multiple of work-group size: 32
+  	Minimum amount of private memory: 0
+  	Amount of spill memory used by the kernel: 0
+  
   Build succeeded!
   
 cl : command line warning D9035: option 'Gm' has been deprecated and will be removed in a future release

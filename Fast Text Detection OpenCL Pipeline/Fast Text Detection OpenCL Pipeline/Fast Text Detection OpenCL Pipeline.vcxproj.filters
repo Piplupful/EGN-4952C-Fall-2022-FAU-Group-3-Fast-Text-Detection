@@ -42,6 +42,9 @@
     <ClCompile Include="rangeDummyDriver2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="rangeDummyDriver2DVectorize.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils.h">

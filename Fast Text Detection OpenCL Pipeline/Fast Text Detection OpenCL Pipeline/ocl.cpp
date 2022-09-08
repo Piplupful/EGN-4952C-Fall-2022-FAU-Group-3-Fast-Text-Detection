@@ -1,5 +1,9 @@
 #pragma once
 #include "ocl.h"
+#include "CL/cl.h"
+#include <iostream>
+
+using namespace std;
 
 OpenCL::OpenCL(string clFile)
 {
@@ -69,4 +73,43 @@ OpenCL::~OpenCL()
 	clReleaseCommandQueue(queue);
 	clReleaseProgram(program);
 	clReleaseContext(context);
+}
+
+void OpenCL::deviceInfoPrint()
+{
+	char name[1000];
+	char vendor[1000];
+	char deviceVer[1000];
+	char driverVer[1000];
+	cl_platform_id platID;
+
+	int prefChar;
+	int prefShort;
+	int prefInt;
+	int prefLong;
+	int prefFloat;
+	int prefDouble;
+
+	clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(name), name, NULL);
+	clGetDeviceInfo(device, CL_DEVICE_PLATFORM, sizeof(platID), &platID, NULL);
+	clGetDeviceInfo(device, CL_DEVICE_VENDOR, sizeof(vendor), vendor, NULL);
+	clGetDeviceInfo(device, CL_DEVICE_VERSION, sizeof(deviceVer), deviceVer, NULL);
+	clGetDeviceInfo(device, CL_DRIVER_VERSION, sizeof(driverVer), driverVer, NULL);
+
+	clGetDeviceInfo(device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR, sizeof(cl_uint), &prefChar, NULL);
+	clGetDeviceInfo(device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT, sizeof(cl_uint), &prefShort, NULL);
+	clGetDeviceInfo(device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT, sizeof(cl_uint), &prefInt, NULL);
+	clGetDeviceInfo(device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG, sizeof(cl_uint), &prefLong, NULL);
+	clGetDeviceInfo(device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT, sizeof(cl_uint), &prefFloat, NULL);
+	clGetDeviceInfo(device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE, sizeof(cl_uint), &prefDouble, NULL);
+
+	cout << name << " ; " << vendor << " Device Version: " << deviceVer << ", Driver Version: " << driverVer << endl;
+	cout << "Platform ID: " << platID << endl;
+	cout << "PREFERRED VECTOR WIDTHS\n==================" << endl;
+	cout << "Char = " << prefChar << endl;
+	cout << "Short = " << prefShort << endl;
+	cout << "Int = " << prefInt << endl;
+	cout << "Long = " << prefLong << endl;
+	cout << "Float = " << prefFloat << endl;
+	cout << "Double = " << prefDouble << endl;
 }

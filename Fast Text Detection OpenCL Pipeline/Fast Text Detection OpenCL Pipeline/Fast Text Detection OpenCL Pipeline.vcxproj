@@ -191,6 +191,7 @@
     <ClCompile Include="pipelineTemplate.cpp" />
     <ClCompile Include="rangeDummyDriver.cpp" />
     <ClCompile Include="rangeDummyDriver2D.cpp" />
+    <ClCompile Include="rangeDummyDriver2DVectorize.cpp" />
     <ClCompile Include="simpleYUV_impl.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="yuvFileOpenUtil_impl.cpp" />
