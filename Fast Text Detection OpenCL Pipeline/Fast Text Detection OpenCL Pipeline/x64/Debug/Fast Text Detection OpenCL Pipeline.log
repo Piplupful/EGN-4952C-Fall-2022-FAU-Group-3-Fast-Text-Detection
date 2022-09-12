@@ -100,13 +100,37 @@
   	Minimum amount of private memory: 0
   	Amount of spill memory used by the kernel: 0
   
-  rangeThresh2DVect info:
+  rangeThresh2DVectV1 info:
   	Maximum work-group size: 256
   	Compiler work-group size: (0, 0, 0)
   	Local memory size: 0
   	Preferred multiple of work-group size: 32
   	Minimum amount of private memory: 0
   	Amount of spill memory used by the kernel: 0
+  
+  rangeThresh2DVectV2 info:
+  	Maximum work-group size: 256
+  	Compiler work-group size: (0, 0, 0)
+  	Local memory size: 0
+  	Preferred multiple of work-group size: 32
+  	Minimum amount of private memory: 0
+  	Amount of spill memory used by the kernel: 32768
+  
+  rangeThresh2DVectV3 info:
+  	Maximum work-group size: 256
+  	Compiler work-group size: (0, 0, 0)
+  	Local memory size: 0
+  	Preferred multiple of work-group size: 32
+  	Minimum amount of private memory: 0
+  	Amount of spill memory used by the kernel: 0
+  
+  rangeThresh2DVectV4 info:
+  	Maximum work-group size: 256
+  	Compiler work-group size: (0, 0, 0)
+  	Local memory size: 0
+  	Preferred multiple of work-group size: 8
+  	Minimum amount of private memory: 0
+  	Amount of spill memory used by the kernel: 8192
   
   Build succeeded!
   
