@@ -214,7 +214,7 @@ int rangeMain(FILE* inputFile, uint64_t width, uint64_t height, char fileName[20
 	FILE* runtimeStat;
 	string csvFileName(fileName);
 	csvFileName = csvFileName.substr(0, csvFileName.find_last_of('.'));
-	csvFileName += "_1D";	//1D Work Group Size Signifier
+	csvFileName += "_Range_1D";	//1D Work Group Size Signifier
 	string csvFilePath = "../RUNTIME/" + csvFileName + ".csv";
 
 	string csvOut = "\n" + to_string(frames) + "," + to_string(finalKernelRuntime.count())

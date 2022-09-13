@@ -1,16 +1,11 @@
-//OLD CODE FROM ENGINEERING DESIGN 1, SUMMER 2022 FAU SEMESTER
+//Block Number = (x / block size) + ((y / blockSize) * (width / blockSize));
+//From block number to X and Y
+//X = Block Number * BlockSize % Width
+//Y = (Integer Truncate)((Block Number / (Width / BlockSize)) * blockSize)
 
-//TODO:
-//	-look into how Local Work Group Size affects performance. Might be easier done on future dummy function.
-//	-Dummy OpenCL Functions: Based off getting Range of each macroblock (Max - Min Luma Value, and writing 1 or 0 to a binary map
-//		(for the sake of simplicity, write to a text file), 1 being the Range is above some threshold.)
-//			Text File will be numbered per frame.
-//			Idea: create array of Total Number of Block 0's, overwrite 1 in respective position if block number's range is above some threshold.
-//				At end, write to text file. Reset array at start for new frame.
+//TO CHECK VALUES IN VOOYA: OPEN UP YUV IN VOOYA, CHECK Y VALUES WITH MAGNIFIER (SCROLL WHEEL UP TO ACTIVATE)
+//MAGNIFIER CONTROLS PER PIXEL:		W - UP		S - DOWN		Q - LEFT		E - RIGHT
 
-//USE THIS AS REFERENCE FOR FUTURE DEVELOPMENT
-//HOW TO SETUP OPENCL ENVIROMENT
-//HOW TO WORK WITH YUV 4:2:0
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,10 +13,13 @@
 #include <cmath>
 #include <iostream>
 #include <sstream>
-#include <vector>
 #include <string>
 #include <tchar.h>
 #include <memory.h>
+#include <algorithm>
+
+// For higher input capacity. Default of 32 only allows up to 4GB file size.
+#define _FILE_OFFSET_BITS 64
 
 // Macros for OpenCL versions
 #define OPENCL_VERSION_1_2  1.2f
@@ -36,346 +34,203 @@
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #define __CL_ENABLE_EXCEPTIONS
 
+// Include OpenCL library, and Intel SDK Utility Functions
 #include "CL\cl.h"
 #include "utils.h"
 
-//for perf. counters
+// For Performance Counters, Runtime Analysis
 #include <Windows.h>
-#include <chrono>;
+#include <chrono>
 using std::chrono::high_resolution_clock;
 using std::chrono::duration;
 using std::chrono::milliseconds;
 
-//for File Browser Functionality
-#include <ShObjIdl.h>
-#include <regex>
+#include "ocl.h"
 
-const COMDLG_FILTERSPEC c_rgSaveTypes[] =
-{
-	{L"YUV 4:2:0 (*.yuv)",       L"*.yuv"},
-};
-
-#define _FILE_OFFSET_BITS 64
 using namespace std;
 
-#include "simpleYUV.h"
-
-//FUNCTION CONTROLS
-bool avgFrameNonPara = 1;	//TURN OFF OR ON AVERAGE FRAME NON PARALLEL (FOR COMPARISON)
-
-bool paraWriteAvg = 1;
-bool nonParaWriteAvg = 1;	//TURN OFF OR ON AVERAGE PER BLOCK PER FRAME WRITE TO NEW YUV (FOR COMPARISON)
-
-int avgMain()	//MAKE INTO A PROPER FUNCTION LATER
+int avgMain(FILE* inputFile, uint64_t width, uint64_t height, char fileName[2000], char filePath[2000], bool print)
 {
-	FILE* fp;
+	FILE* fp = inputFile;
 
-	//File Explorer Functionality, Easier YUV File Selection, Width/Height found by filename (YUV Standard)
-	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
-		COINIT_DISABLE_OLE1DDE);
-	PWSTR pszFilePath;
-	PWSTR pszName;
-	if (SUCCEEDED(hr))
-	{
-		IFileOpenDialog* pFileOpen;
-
-		// Create the FileOpenDialog object.
-		hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-			IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
-
-		if (SUCCEEDED(hr))
-		{
-			// Show the Open dialog box.
-			pFileOpen->SetFileTypes(ARRAYSIZE(c_rgSaveTypes), c_rgSaveTypes);
-			hr = pFileOpen->Show(NULL);
-
-			// Get the file name from the dialog box.
-			if (SUCCEEDED(hr))
-			{
-				IShellItem* pItem;
-				hr = pFileOpen->GetResult(&pItem);
-				if (SUCCEEDED(hr))
-				{
-					hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
-					pItem->GetDisplayName(SIGDN_NORMALDISPLAY, &pszName);
-					// Display the file name to the user.
-					if (SUCCEEDED(hr))
-					{
-						CoTaskMemFree(pszFilePath);
-					}
-					pItem->Release();
-				}
-			}
-			pFileOpen->Release();
-		}
-		CoUninitialize();
-	}
-	
-	//Pull Width x Height from YUV file name.	File name format: Name_With_No_Numbers_WidthxHeight_etc.yuv
-	char filePath[1000];
-	wcstombs(filePath, pszFilePath, 1000);	//file path for fopen_s
-	char fileName[1000];
-	wcstombs(fileName, pszName, 1000);		//file name to pull Width and Height
-
-	string s = fileName;
-	
-	std::string widthS = std::regex_replace(
-		s,
-		std::regex("[^0-9]*([0-9]+).*"),
-		std::string("$1")
-	);
-
-	s = s.substr(s.find_first_of("0123456789") + 1);	//Remove everything before Width
-	s = s.substr(s.find_first_of("x") + 1);				//Remove Width and x
-
-	std::string heightS = std::regex_replace(
-		s,
-		std::regex("[^0-9]*([0-9]+).*"),
-		std::string("$1")
-	);
+	uint64_t blockSize = 16; //blockSize x blockSize
 
 	//Open File through fopen_s, filepath found through File Explorer.
-	fopen_s(&fp, filePath, "rb");
+	if (filePath != NULL)
+		fopen_s(&fp, filePath, "rb");
 
 	if (fp == NULL)
 	{
-		printf("Error, Returned NULL fp.\n");
+		cout << "Error, Returned NULL fp.\n";
 		return 2;
 	}
 
+	//YUV File Parameter Setup
 	_fseeki64(fp, 0, SEEK_END);
-	uint64_t size = _ftelli64(fp);
+	uint64_t size = _ftelli64(fp);	//Returns Byte Size of YUV input
 
-	//Width x Height from File Name
-	uint64_t width = stoi(widthS);
-	uint64_t height = stoi(heightS);
+	int frameNum = 0;
 
 	uint64_t frameSize = (width * height * 1.5);
-	uint64_t sizeOfY = width * height; //Size of Y layer, without U and V (YUV 4:2:0)
+	uint64_t lumaSize = width * height; //Size of Y layer, without U and V (YUV 4:2:0)
 
 	int frames = size / frameSize;
 	uint64_t calculatedSize = (width * height * 1.5) * frames;	//For Error Checking
 
-	int frameNum = 0; //KEEP TRACK OF FRAME NUMBER
-
 	if (size != calculatedSize)
 	{
-		fprintf(stderr, "Wrong size of yuv image : %d bytes, expected %d bytes\n", size, calculatedSize);
+		cerr << "Wrong size of yuv read : " << (int)size << " bytes, expected " << (int)calculatedSize << " bytes\n";
 		fclose(fp);
-		return 2;
+		exit(2);
 	}
+
+	const uint64_t numBlocks = lumaSize / (blockSize * blockSize);
 
 	cout << fileName << " " << width << "x" << height << ", Frames = " << frames << endl;
 	cout << "=================================================================" << endl;
 
-	//Y,U,V	(For Full Frame info, use frameSize. For only Y (Luma), use sizeOfY)
-	unsigned char* fullFrameBuffer;
-	fullFrameBuffer = new unsigned char[frameSize];
+	//Y,U,V	(For Full Frame info, use frameSize. For only Y (Luma), use lumaSize)
+	unsigned char* frameBuffer;
+	frameBuffer = new unsigned char[frameSize];	//FOR AVERAGE WRITE, DO FULL FRAME TO KEEP U AND V
 
 	_fseeki64(fp, frameSize * frameNum, SEEK_SET);
-	int r = fread(fullFrameBuffer, 1, frameSize, fp);
+	int r = fread(frameBuffer, 1, frameSize, fp);
 
-	if (r < sizeOfY)
+	if (r < frameSize)
 	{
+		cerr << "Read wrong frame size, error in reading YUV properly.";
 		fclose(fp);
-		return 2;
-
+		exit(2);
 	}
-	
-	//Create Block Buffer
-	uint64_t blockSize = 16; //blockSize x blockSize
-	int numBlocks = sizeOfY / (blockSize * blockSize);
-	int x = 0, y = 0;
-
-	setFullFrame(fp, fullFrameBuffer, width, height, &frameNum, frames, 0);
 
 	//OPENCL START
-	//Var
-	int err;                            // error code returned from api calls
+	int err;	// error code returned from api calls
+	auto startTime = high_resolution_clock::now();
 
-	cl_platform_id platform;
-	cl_device_id device;
-	cl_context context;
-	cl_command_queue queue;
-	cl_program program;
-	cl_kernel kernel;
+	auto kernelStartTime = high_resolution_clock::now();	//Runtime of Kernel (Enqueue, and queue finish)
+	auto kernelEndTime = high_resolution_clock::now();
+	duration<double, std::milli> finalKernelRuntime = chrono::milliseconds::zero();
 
-	char* source = NULL;
-	size_t src_size = 0;
+	OpenCL ocl("avgBlocks.cl");
 
-	cl_event event;
+	//INSERT VALID FUNCTION FROM VALID OPENCL FILE, STRING IN 2ND PARAMETER = FUNCTION NAME
+	ocl.kernel = clCreateKernel(ocl.program, "avgFrameWrite16_2D", &err);
 
-	double* averages;
-	averages = new double[numBlocks];
-
-	//Platform/Device
-	err = clGetPlatformIDs(1, &platform, NULL);
-	if (err != CL_SUCCESS) {
-		cout << "Error: Cant get platform id!";
-		return 1;
-	}
-
-	err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
 	if (err != CL_SUCCESS)
 	{
-		cout << "Error: Failed to create a device group!";
-		return 1;
+		cerr << "Error: Failed to create kernel.\n";
+		fclose(fp);
+		exit(err);
 	}
 
-	//Context/Command Queue
-	context = clCreateContext(0, 1, &device, NULL, NULL, NULL);
-	queue = clCreateCommandQueue(context, device, 0, NULL);
-
-	//Read Source -> Program/Kernel
-	err = ReadSourceFromFile("avgBlocks.cl", &source, &src_size); //Read .cl file
-	
-	if (!err)
-	{
-		program = clCreateProgramWithSource(context, 1, (const char**)&source, &src_size, &err);
-		err = clBuildProgram(program, 1, &device, "", NULL, NULL);
-		kernel = clCreateKernel(program, "avgFrame16", &err);
-	}
-	
 	//Memory Buffers
-	cl_mem clFrameBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, frameSize, fullFrameBuffer, &err);
-	cl_mem clAvgBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks * 8, averages, &err);
-	
+	cl_mem clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, frameSize, frameBuffer, &err);	//CL_MEM_READ_WRITE, if writing back frame data.
+		//Include more cl_mem buffers before if necessary
+		//	Example: cl_mem clAvgBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks * 8, averages, &err);
+
 	//Kernel Arguements
-	err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &clFrameBuffer);
-	err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &clAvgBuffer);
-	err = clSetKernelArg(kernel, 2, sizeof(int), &width);
-	err = clSetKernelArg(kernel, 3, sizeof(int), &blockSize);
+	err = clSetKernelArg(ocl.kernel, 0, sizeof(cl_mem), &clFrameBuffer);
+	//Include more Kernel Arguements if necessary. Must include all memory buffers created previously. Single variables (Such as Width), can be directly accessed
+	//	Example: err = clSetKernelArg(kernel, 2, sizeof(int), &width);
+	err = clSetKernelArg(ocl.kernel, 1, sizeof(int), &width);
 
 	//Enqueue and wait
-	size_t global[] = { numBlocks };
-	size_t local[] = { 16 };		//Local Size can be finicky, if left out, OpenCL will choose an appropriate value on it's own, but this may decrease performance.
+	size_t global[] = { round((double)width / blockSize), round((double)height / blockSize) };	//For 1 Dimensionality, global[] = { Total Number of Blocks }.
+										//For 2 Dimensionaltiy, globalWork[] = { width / blockSize, height / blockSize};, make sure to change 3rd parameter in clEnqueueNDRangeKernel() to 2.
 
-	auto t1 = high_resolution_clock::now();	//TIMER AROUND OPERATION ONLY
-	err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, global, NULL, 0, NULL, &event);
-	clFinish(queue);
-	auto t2 = high_resolution_clock::now();
+	size_t local[] = { 4, 4 };			//Local Size can be finicky, if left out, OpenCL will choose an appropriate value on it's own, but this may decrease performance.
 
-	//Read
-	err = clEnqueueReadBuffer(queue, clAvgBuffer, CL_TRUE, 0, numBlocks * 8, averages, 0, NULL, &event);
-	//numBlocks * 8, as before, only 1/8th of the averages were being written to the averages array. This fixed the error, but I am unsure why it works.
 
-	//print
-	for (int i = numBlocks - 10; i < numBlocks; i++)
+		//CL_DEVICE_MAX_WORK_GROUP_SIZE can be used to return maximum local work group size that your device may handle, but depending on the input, this may cause errors.
+
+	FILE* avgOutput;
+	string avgOutputFilePath = "../AVG OUTPUT/";
+	avgOutputFilePath += fileName;
+	avgOutputFilePath = avgOutputFilePath.substr(0, avgOutputFilePath.find_last_of('.'));
+	avgOutputFilePath += "_avgOutput.yuv";
+	fopen_s(&avgOutput, avgOutputFilePath.c_str(), "wb");
+
+	auto opStartTime = high_resolution_clock::now();		//Runtime of entire operation (kernel runtime + memory transfers, etc)
+
+	for (int f = 0; f < frames; f++)
 	{
-		//cout << "Average for Block "<< i << " = " << averages[i] << "\n";
-	}
-	duration<double, std::milli> ms_double = t2 - t1;
-	cout << "\nOPENCL RUNTIME (AVERAGES)\t\t= " << ms_double.count() << " ms\n\n";
+		_fseeki64(fp, frameSize * f, SEEK_SET);			//Seek current frame raw data
+		fread(frameBuffer, 1, frameSize, fp);	//read all Values
 
-	//NONPARALLEL FOR COMPARISON
-	if (avgFrameNonPara)
-	{
-		vector<double> frameAverages(numBlocks, 0);
+		clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, frameSize, frameBuffer, &err);	//Update buffers
+		clSetKernelArg(ocl.kernel, 0, sizeof(cl_mem), &clFrameBuffer);	//Send current frame to GPU
 
-		t1 = high_resolution_clock::now();	//TIMER AROUND OPERATION ONLY
-		frameAverages = averageBlocksFrame(fullFrameBuffer, width, height, blockSize);
-		t2 = high_resolution_clock::now();
+		kernelStartTime = high_resolution_clock::now();
+		err = clEnqueueNDRangeKernel(ocl.queue, ocl.kernel, 2, NULL, global, NULL, 0, NULL, &ocl.event);
 
-		for (int i = numBlocks - 10; i < numBlocks; i++)
+		if (err != CL_SUCCESS)
 		{
-			//cout << "Average for Block " << i << " = " << frameAverages[i] << "\n";
-		}
-		duration<double, std::milli> ms_double = t2 - t1;
-		cout << "NON PARALLEL RUNTIME (AVERAGES)\t\t= " << ms_double.count() << " ms\n\n";
-	}
-
-	//OPENCL WRITE TO NEW YUV WITH AVG BLOCKS
-	if (paraWriteAvg)
-	{
-		//Context and Program previously created
-		//Kernel
-		kernel = clCreateKernel(program, "avgFrameWrite16", &err);
-
-		//Memory Buffers
-		cl_mem clFullFrameBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, frameSize, fullFrameBuffer, &err);
-
-		//Kernel Arguments
-		err = clSetKernelArg(kernel, 1, sizeof(int), &width);
-		err = clSetKernelArg(kernel, 2, sizeof(int), &blockSize);
-
-		//Global/Local
-		size_t globalWork[] = { numBlocks };
-		size_t localWork[] = { 4 };
-
-		//Loop
-		FILE* avgOutputPara;
-		fopen_s(&avgOutputPara, "../avgOutputPara.yuv", "wb");	//Make Name Dynamic Later
-
-		if (avgOutputPara == NULL)
-		{
-			printf("Error, Returned NULL fp.\n");
-			exit(2);
+			cerr << "Error: Failed to enqueue kernel.\n";
+			fclose(fp);
+			exit(err);
 		}
 
-		ms_double = chrono::milliseconds::zero();
-		
-		for (uint64_t f = 0; f < frames; f++)
-		{
-			_fseeki64(fp, frameSize * f, SEEK_SET);			//Seek current frame raw data
-			fread(fullFrameBuffer, 1, frameSize, fp);	//read all Values
+		clFinish(ocl.queue);
+		kernelEndTime = high_resolution_clock::now();
 
-			clFullFrameBuffer = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, frameSize, fullFrameBuffer, &err);	//Update buffer
-			clSetKernelArg(kernel, 0, sizeof(cl_mem), &clFullFrameBuffer);	//Send current frame to GPU
+		finalKernelRuntime += (kernelEndTime - kernelStartTime);			//Runtime of only kernel function activity.
 
-			t1 = high_resolution_clock::now();
-			err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, globalWork, NULL, 0, NULL, &event);
-			clFinish(queue); //Wait to finish
-			t2 = high_resolution_clock::now();
+		clEnqueueReadBuffer(ocl.queue, clFrameBuffer, CL_TRUE, 0, frameSize, frameBuffer, 0, NULL, &ocl.event);
+		clFinish(ocl.queue);
 
-			ms_double += (t2 - t1);	//Time calcuated only for actual Operation, no memory transfers nor write times. Similarly done with the Non-para function for comparison.
-
-			if (err != CL_SUCCESS)
-			{
-				cout << "Error enqueuing kernel. " << err << endl;
-				exit(2);
-			}
-
-			err = clEnqueueReadBuffer(queue, clFullFrameBuffer, CL_TRUE, 0, frameSize, fullFrameBuffer, 0, NULL, &event); //Read back to main memory
-
-			if (err != CL_SUCCESS)
-			{
-				cout << "Error reading back.";
-				exit(3);
-			}
-
-			fwrite(fullFrameBuffer, 1, frameSize, avgOutputPara);
-			clReleaseMemObject(clFullFrameBuffer);
-		}
-		
-		fclose(avgOutputPara);
-		
-		cout << "OPENCL RUNTIME (WRITE)\t\t\t= " << ms_double.count() << " ms\n\n";
+		fwrite(frameBuffer, 1, frameSize, avgOutput);
+		clReleaseMemObject(clFrameBuffer);
 	}
 
-	//NONPARALLEL WRITE TO NEW YUV WITH AVG BLOCKS
-	if (nonParaWriteAvg)
-	{
-		ms_double = writeAvgBlockYUV(fp, width, height, frames, blockSize);
-		cout << "NON PARALLEL RUNTIME (WRITE)\t\t= " << ms_double.count() << " ms\n\n";
-	}
+	auto opEndTime = high_resolution_clock::now();
 
-	clReleaseEvent(event);
-	clReleaseKernel(kernel);
-	clReleaseCommandQueue(queue);
-	clReleaseContext(context);
-	clReleaseProgram(program);
 	clReleaseMemObject(clFrameBuffer);
-	clReleaseMemObject(clAvgBuffer);
 
 	fclose(fp);
 
+	if (avgOutput != NULL)
+		fclose(avgOutput);
+
+	//Runtime Print outs
+	auto endTime = high_resolution_clock::now();
+	duration<double, std::milli> finalRuntime = endTime - startTime;			//Total Runtime, from start of OpenCL section, after opening file and pre-openCL setup.
+	duration<double, std::milli> finalOpRuntime = opEndTime - opStartTime;		//Runtime of loop, of operation, including memory transfers.
+
+	FILE* runtimeStat;
+	string csvFileName(fileName);
+	csvFileName = csvFileName.substr(0, csvFileName.find_last_of('.'));
+	csvFileName += "_AVG_WRITE_2D_OPT";	//1D Work Group Size Signifier
+	string csvFilePath = "../RUNTIME/" + csvFileName + ".csv";
+
+	string csvOut = "\n" + to_string(frames) + "," + to_string(finalKernelRuntime.count())
+		+ "," + to_string(finalKernelRuntime.count() / frames) + "," + to_string(finalOpRuntime.count()) + "," + to_string(finalRuntime.count());
+
+	fopen_s(&runtimeStat, csvFilePath.c_str(), "a");	//Mode "a" just adds onto existing file. No overwriting completely.
+
+	if (runtimeStat != NULL)
+	{
+		_fseeki64(runtimeStat, 0, SEEK_END);
+		int csvSize = ftell(runtimeStat);
+		if (csvSize == 0)
+		{
+			string colName = "Frames,Kernel Runtime,Avg per Frame,Operation,Total";
+			fwrite(colName.c_str(), 1, colName.size(), runtimeStat);
+		}
+
+		fwrite(csvOut.c_str(), 1, csvOut.size(), runtimeStat);
+		fclose(runtimeStat);
+	}
+
+	if (print)
+	{
+		cout << "Total number of frames\t\t=\t" << frames << "\n";
+		cout << "Final Kernel Runtime\t\t=\t" << finalKernelRuntime.count() << "\n";
+		cout << "Average runtime per frame\t=\t" << finalKernelRuntime.count() / frames << "\n";
+		cout << "Final Operation Runtime\t\t=\t" << finalOpRuntime.count() << "\n";
+		cout << "Final Total Runtime\t\t=\t" << finalRuntime.count() << "\n";
+
+		cout << "\n";
+	}
+
 	return 0;
 }
-
-//Block Number = (x / block size) + ((y / blockSize) * (width / blockSize));
-//From block number
-//X = Block Number * BlockSize % Width
-//Y = (Integer Truncate)((Block Number / (Width / BlockSize)) * blockSize)
-
-//TO CHECK VALUES IN VOOYA: OPEN UP YUV IN VOOYA, CHECK Y VALUES WITH MAGNIFIER (SCROLL WHEEL UP TO ACTIVATE)
-//MAGNIFIER CONTROLS PER PIXEL:		W - UP		S - DOWN		Q - LEFT		E - RIGHT

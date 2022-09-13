@@ -18,7 +18,7 @@
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="avgDriver.cpp">
+    <ClCompile Include="avgDriver_OLD.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="driver.cpp">
@@ -43,6 +43,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="rangeDummyDriver2DVectorize.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="avgDriverOpt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="avgDriver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

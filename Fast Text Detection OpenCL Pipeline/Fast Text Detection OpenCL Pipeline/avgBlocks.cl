@@ -1,3 +1,107 @@
+__kernel void avgFrameWrite16_2D(__global unsigned char* frame, const int width) //16x16 ONLY
+{
+	int x = get_global_id(0) * 16;
+	int y = get_global_id(1) * 16;
+
+	int sum = 0;
+
+	int offset = y * width + x;
+
+	for (int i = 0; i < 16; i++)			//over every x value
+	{
+		sum += frame[offset + (i * width + 0)];
+		sum += frame[offset + (i * width + 1)];
+		sum += frame[offset + (i * width + 2)];
+		sum += frame[offset + (i * width + 3)];
+		sum += frame[offset + (i * width + 4)];
+		sum += frame[offset + (i * width + 5)];
+		sum += frame[offset + (i * width + 6)];
+		sum += frame[offset + (i * width + 7)];
+		sum += frame[offset + (i * width + 8)];
+		sum += frame[offset + (i * width + 9)];
+		sum += frame[offset + (i * width + 10)];
+		sum += frame[offset + (i * width + 11)];
+		sum += frame[offset + (i * width + 12)];
+		sum += frame[offset + (i * width + 13)];
+		sum += frame[offset + (i * width + 14)];
+		sum += frame[offset + (i * width + 15)];
+	}
+
+	int avg = sum / 256;
+
+	for (int i = 0; i < 16; i++)			//over every x value
+	{
+		frame[offset + (i * width + 0)] = avg;
+		frame[offset + (i * width + 1)] = avg;
+		frame[offset + (i * width + 2)] = avg;
+		frame[offset + (i * width + 3)] = avg;
+		frame[offset + (i * width + 4)] = avg;
+		frame[offset + (i * width + 5)] = avg;
+		frame[offset + (i * width + 6)] = avg;
+		frame[offset + (i * width + 7)] = avg;
+		frame[offset + (i * width + 8)] = avg;
+		frame[offset + (i * width + 9)] = avg;
+		frame[offset + (i * width + 10)] = avg;
+		frame[offset + (i * width + 11)] = avg;
+		frame[offset + (i * width + 12)] = avg;
+		frame[offset + (i * width + 13)] = avg;
+		frame[offset + (i * width + 14)] = avg;
+		frame[offset + (i * width + 15)] = avg;
+	}
+}
+
+__kernel void avgFrameWrite16_2D_Opt(__global unsigned char* frame, const int width) //16x16 ONLY
+{
+	int x = get_global_id(0) * 16;
+	int y = get_global_id(1) * 16;
+	int offset = y * width + x;
+
+	uint avg = 0;
+	/* commented out so errors dont interfere in the mean time
+	ushort16 sum16 = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+	uchar16 pixels = frame + offset;
+
+	//sum of pixel columns
+
+	for (int i = 0; i < 16; i++)
+		sum16 += convert_ushort16(pixels + i * width);
+
+	//Reduction step
+	ushort8 sum8 = sum16.s01234567 + sum16.s89abcdef;
+
+	ushort4 sum4 = sum8.s0123 + sum8.s4567;
+
+	ushort2 sum2 = sum4.xy + sum4.zw;
+
+	//Final accumulation
+	avg += sum2.x + sum2.y;
+	*/
+	//Averaging
+	avg /= 256;
+
+	for (int i = 0; i < 16; i++)			//over every x value
+	{
+		frame[offset + (i * width + 0)] = avg;
+		frame[offset + (i * width + 1)] = avg;
+		frame[offset + (i * width + 2)] = avg;
+		frame[offset + (i * width + 3)] = avg;
+		frame[offset + (i * width + 4)] = avg;
+		frame[offset + (i * width + 5)] = avg;
+		frame[offset + (i * width + 6)] = avg;
+		frame[offset + (i * width + 7)] = avg;
+		frame[offset + (i * width + 8)] = avg;
+		frame[offset + (i * width + 9)] = avg;
+		frame[offset + (i * width + 10)] = avg;
+		frame[offset + (i * width + 11)] = avg;
+		frame[offset + (i * width + 12)] = avg;
+		frame[offset + (i * width + 13)] = avg;
+		frame[offset + (i * width + 14)] = avg;
+		frame[offset + (i * width + 15)] = avg;
+	}
+}
+
+//BELOW IS ENGINEERING DESIGN 1 CODE
 __kernel void avgFrame16(__global unsigned char* frame,__global double* avgArray, const int width)	//16x16 ONLY
 {
     int b = get_global_id(0);

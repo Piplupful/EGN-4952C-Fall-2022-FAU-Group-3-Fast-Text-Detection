@@ -186,6 +186,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="avgDriver.cpp" />
+    <ClCompile Include="avgDriver_OLD.cpp" />
+    <ClCompile Include="avgDriverOpt.cpp" />
     <ClCompile Include="driver.cpp" />
     <ClCompile Include="ocl.cpp" />
     <ClCompile Include="pipelineTemplate.cpp" />

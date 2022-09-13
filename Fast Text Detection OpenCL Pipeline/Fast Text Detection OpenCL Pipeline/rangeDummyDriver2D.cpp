@@ -213,7 +213,7 @@ int rangeMain2D(FILE* inputFile, uint64_t width, uint64_t height, char fileName[
 	FILE* runtimeStat;
 	string csvFileName(fileName);
 	csvFileName = csvFileName.substr(0, csvFileName.find_last_of('.'));
-	csvFileName += "_2D";	//2D Work Group Size Signifier
+	csvFileName += "_Range_2D";	//2D Work Group Size Signifier
 	string csvFilePath = "../RUNTIME/" + csvFileName + ".csv";
 
 	string csvOut = "\n" + to_string(frames) + "," + to_string(finalKernelRuntime.count())

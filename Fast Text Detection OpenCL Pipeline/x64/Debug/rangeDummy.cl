@@ -59,7 +59,11 @@ __kernel void rangeThresh2D(__global unsigned char* frame,__global bool* threshA
 	}
 }
 
+//EXPERIMENTAL OPTIMIZATION ATTEMPTS BELOW, TOP TWO KERNEL FUNCTIONS WORK JUST FINE AND SEE GOOD PERFORMANCE
+//Conclusions included as comments underneath functions
+
 //USE BUILT IN MIN MAX FROM OPENCL
+//Best of experiments as of September 12 2022.
 __kernel void rangeThresh2DVectV1(__global unsigned char* frame,__global bool* threshArr, const int width, const int thresh)	//16x16 ONLY
 {
 	int x = get_global_id(0) * 16;
@@ -87,6 +91,8 @@ __kernel void rangeThresh2DVectV1(__global unsigned char* frame,__global bool* t
 		threshArr[blockNum] = true;
 	}
 }
+//I believed that using the built in min max functions within OpenCL that there would be a minor performance boost. However in my analysis, it was about 1% worse, which
+//seems negligible. So, I assume this version and the original 2D work more or less the same runtime wise.
 
 //USE BUILT IN MIN MAX FROM OPENCL, AND PRECACHE BEFORE MIN MAX
 __kernel void rangeThresh2DVectV2(__global unsigned char* frame,__global bool* threshArr, const int width, const int thresh)	//16x16 ONLY
@@ -123,6 +129,9 @@ __kernel void rangeThresh2DVectV2(__global unsigned char* frame,__global bool* t
 		threshArr[blockNum] = true;
 	}
 }
+//Attempt to cache before analysis. Putting these values in the GPU core's memory might improve runtime performance. While this may still be in the case
+//I believe doing 2 operations, caching and then min max, adds too much overhead to be worth doing. This might be because of how we are handling the frame
+//buffer, being 1 uchar* array.
 
 //USE BUILT IN MIN MAX FROM OPENCL, USE VECTOR DATATYPES FOR INTS
 //NOT GOOD, DOESNT UTILIZE X,Y,Z,W IN INT4.
@@ -153,6 +162,8 @@ __kernel void rangeThresh2DVectV3(__global unsigned char * frame,__global bool* 
 		threshArr[blockNum] = true;
 	}
 }
+//Rough attempt to incorporate vector data types. This was helpful for me to figure out how to use the components (each datatype4 has 4 components: x,y,z,w)
+//Performance was massively worse just at a glance, so I skipped the runtime analysis.
 
 //USE BUILT IN MIN MAX FROM OPENCL, USE VECTOR DATATYPES FOR INTS, PRE CACHE INTO INT16 ARRAY
 __kernel void rangeThresh2DVectV4(__global unsigned char * frame,__global bool* threshArr, const int width, const int thresh)	//16x16 ONLY
@@ -229,6 +240,10 @@ __kernel void rangeThresh2DVectV4(__global unsigned char * frame,__global bool* 
 		threshArr[blockNum] = true;
 	}
 }
+//Specifically for the Intel HD 630, INT Vector Width is preferred to be 4. Performance decrease cause be because of this.
+//As well, caching like this may be more hassle than it's worth in the current implementation.
+// https://man.opencl.org/integerFunctions.html
+// "The vector versions of the integer functions operate component-wise."
 
 /*
 	for (int j = 0; j < 16; j++)			//over every x value
