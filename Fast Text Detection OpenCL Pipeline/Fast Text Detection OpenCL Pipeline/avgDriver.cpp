@@ -184,10 +184,6 @@ int avgMain(FILE* inputFile, uint64_t width, uint64_t height, char fileName[2000
 
 	auto opEndTime = high_resolution_clock::now();
 
-	clReleaseMemObject(clFrameBuffer);
-
-	fclose(fp);
-
 	if (avgOutput != NULL)
 		fclose(avgOutput);
 
@@ -199,7 +195,7 @@ int avgMain(FILE* inputFile, uint64_t width, uint64_t height, char fileName[2000
 	FILE* runtimeStat;
 	string csvFileName(fileName);
 	csvFileName = csvFileName.substr(0, csvFileName.find_last_of('.'));
-	csvFileName += "_AVG_WRITE_2D_OPT";	//1D Work Group Size Signifier
+	csvFileName += "_AVG_WRITE_2D";	//1D Work Group Size Signifier
 	string csvFilePath = "../RUNTIME/" + csvFileName + ".csv";
 
 	string csvOut = "\n" + to_string(frames) + "," + to_string(finalKernelRuntime.count())

@@ -1,4 +1,3 @@
-// TODO: Add OpenCL kernel code here.
 __kernel void rangeThresh(__global unsigned char* frame,__global bool* threshArr, const int width, const int thresh)	//16x16 ONLY
 {
 	int i = get_global_id(0);
@@ -244,6 +243,65 @@ __kernel void rangeThresh2DVectV4(__global unsigned char * frame,__global bool* 
 //As well, caching like this may be more hassle than it's worth in the current implementation.
 // https://man.opencl.org/integerFunctions.html
 // "The vector versions of the integer functions operate component-wise."
+
+
+//USE BUILT IN MIN MAX FROM OPENCL, USE VECTOR DATATYPES FOR INTS, PRE CACHE INTO INT4 64 SIZED ARRAY
+__kernel void rangeThresh2DVectV5(__global unsigned char * frame,__global bool* threshArr, const int width, const int thresh)	//16x16 ONLY
+{
+	int x = get_global_id(0) * 16;
+	int y = get_global_id(1) * 16;
+	int blockNum = (x / 16) + ((int)(y / 16) * (width / 16));	//Optimize with just get global id?
+
+	int minY = 256;	//Maximum 255 Value for Luma.
+	int maxY = -1;
+
+	int offset = y * width + x;
+
+	int4 blockArr[64];
+
+	for (int j = 0; j < 16; j++)			//over every x value
+	{
+		int i = j * 4;
+		blockArr[i].x = (frame + offset)[0 * width + j];
+		blockArr[i].y = (frame + offset)[1 * width + j];
+		blockArr[i].z = (frame + offset)[2 * width + j];
+		blockArr[i].w = (frame + offset)[3 * width + j];
+		blockArr[i + 1].x = (frame + offset)[4 * width + j];
+		blockArr[i + 1].y = (frame + offset)[5 * width + j];
+		blockArr[i + 1].z = (frame + offset)[6 * width + j];
+		blockArr[i + 1].w = (frame + offset)[7 * width + j];
+		blockArr[i + 2].x = (frame + offset)[8 * width + j];
+		blockArr[i + 2].y = (frame + offset)[9 * width + j];
+		blockArr[i + 2].z = (frame + offset)[10 * width + j];
+		blockArr[i + 2].w = (frame + offset)[11 * width + j];
+		blockArr[i + 3].x = (frame + offset)[12 * width + j];
+		blockArr[i + 3].y = (frame + offset)[13 * width + j];
+		blockArr[i + 3].z = (frame + offset)[14 * width + j];
+		blockArr[i + 3].w = (frame + offset)[15 * width + j];
+	}
+
+	for(int i = 0; i < 64; i++)
+	{
+		minY = min(minY, blockArr[i].x);
+		maxY = max(maxY, blockArr[i].x);
+		minY = min(minY, blockArr[i].y);
+		maxY = max(maxY, blockArr[i].y);
+		minY = min(minY, blockArr[i].z);
+		maxY = max(maxY, blockArr[i].z);
+		minY = min(minY, blockArr[i].w);
+		maxY = max(maxY, blockArr[i].w);
+	}
+
+	int range = maxY - minY;
+
+	if(range >= thresh)
+	{
+		threshArr[blockNum] = true;
+	}
+}
+//20% slower than standard 2D Range Function at the top of this file.
+//I believe this caching experiment is a failure. Either my Integrated Graphics don't have good
+//or big enough memory for this to be worth it, or having the extra operation is just not worth it.
 
 /*
 	for (int j = 0; j < 16; j++)			//over every x value

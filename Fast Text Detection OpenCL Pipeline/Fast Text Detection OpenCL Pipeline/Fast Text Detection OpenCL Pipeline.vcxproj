@@ -189,6 +189,7 @@
     <ClCompile Include="avgDriver_OLD.cpp" />
     <ClCompile Include="avgDriverOpt.cpp" />
     <ClCompile Include="driver.cpp" />
+    <ClCompile Include="frameExtract.cpp" />
     <ClCompile Include="ocl.cpp" />
     <ClCompile Include="pipelineTemplate.cpp" />
     <ClCompile Include="rangeDummyDriver.cpp" />

@@ -184,10 +184,6 @@ int avgMainOpt(FILE* inputFile, uint64_t width, uint64_t height, char fileName[2
 
 	auto opEndTime = high_resolution_clock::now();
 
-	clReleaseMemObject(clFrameBuffer);
-
-	fclose(fp);
-
 	if (avgOutput != NULL)
 		fclose(avgOutput);
 

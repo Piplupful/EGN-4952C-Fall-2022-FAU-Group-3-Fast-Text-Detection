@@ -6,6 +6,9 @@ Device name: Intel(R) HD Graphics 630
 Device version: OpenCL 3.0 NEO 
 Device vendor: Intel(R) Corporation
 Device profile: FULL_PROFILE
+D:\Fall 2022 ED2\EGN-4952C-Fall-2022-FAU-Group-3-Fast-Text-Detection\Fast Text Detection OpenCL Pipeline\Fast Text Detection OpenCL Pipeline\avgBlocks.cl(63,12) :warning CL : incompatible integer to pointer conversion initializing 'uchar16 *' with an expression of type '__global unsigned char'
+        uchar16 * pixels = *(frame + offset);
+                  ^        ~~~~~~~~~~~~~~~~~
 
 avgFrameWrite16_2D info:
 	Maximum work-group size: 256

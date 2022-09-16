@@ -119,7 +119,7 @@ int rangeMain2DVect(FILE* inputFile, uint64_t width, uint64_t height, char fileN
 	ocl.deviceInfoPrint();
 
 	//INSERT VALID FUNCTION FROM VALID OPENCL FILE, STRING IN 2ND PARAMETER = FUNCTION NAME
-	ocl.kernel = clCreateKernel(ocl.program, "rangeThresh2DVect", &err);
+	ocl.kernel = clCreateKernel(ocl.program, "rangeThresh2DVectV5", &err);
 
 	if (err != CL_SUCCESS)
 	{
@@ -203,8 +203,6 @@ int rangeMain2DVect(FILE* inputFile, uint64_t width, uint64_t height, char fileN
 
 	clReleaseMemObject(clFrameBuffer);
 	clReleaseMemObject(clThreshBuffer);
-
-	fclose(fp);
 
 	//Runtime Print outs
 	auto endTime = high_resolution_clock::now();

@@ -57,15 +57,15 @@ __kernel void avgFrameWrite16_2D_Opt(__global unsigned char* frame, const int wi
 	int offset = y * width + x;
 
 	uint avg = 0;
-	/*
+	
 	ushort16 sum16 = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-	uchar16 pixels = frame + offset;
+	uchar16 * pixels = *(frame + offset);
 
 	//sum of pixel columns
 
 	for (int i = 0; i < 16; i++)
-		sum16 += convert_ushort16(pixels + i * width);
+		sum16 += convert_ushort16(*(pixels + i * width));
 
 	//Reduction step
 	ushort8 sum8 = sum16.s01234567 + sum16.s89abcdef;
@@ -76,7 +76,7 @@ __kernel void avgFrameWrite16_2D_Opt(__global unsigned char* frame, const int wi
 
 	//Final accumulation
 	avg += sum2.x + sum2.y;
-	*/
+	
 	//Averaging
 	avg /= 256;
 

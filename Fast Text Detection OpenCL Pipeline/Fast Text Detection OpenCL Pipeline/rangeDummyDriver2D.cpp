@@ -203,8 +203,6 @@ int rangeMain2D(FILE* inputFile, uint64_t width, uint64_t height, char fileName[
 	clReleaseMemObject(clFrameBuffer);
 	clReleaseMemObject(clThreshBuffer);
 
-	fclose(fp);
-
 	//Runtime Print outs
 	auto endTime = high_resolution_clock::now();
 	duration<double, std::milli> finalRuntime = endTime - startTime;			//Total Runtime, from start of OpenCL section, after opening file and pre-openCL setup.
