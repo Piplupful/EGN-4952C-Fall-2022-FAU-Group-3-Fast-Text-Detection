@@ -4,3 +4,5 @@
 *.csv
 *.xlsx
 *.zip
+*\Fast Text Detection OpenCL Pipeline\.vs
+*\Fast Text Detection OpenCL Pipeline\x64
