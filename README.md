@@ -19,3 +19,5 @@ compressed image. This code will serve as the basis of our OpenCL based pipeline
 
 - September 1, 2022: First major merge into main. Improved input, created OpenCL based pipeline and template, enhanced QoL for testing and runtime
 analysis down the road.
+
+- September 17, 2022: Merged Optimization experimentation into main, new utility functions, improved OpenCL code, etc. Removed Visual Studio folders.
