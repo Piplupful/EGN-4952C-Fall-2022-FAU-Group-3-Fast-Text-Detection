@@ -420,3 +420,8 @@ FodyWeavers.xsd
 *.log
 *.tlog
 *.ilk
+Fast Text Detection OpenCL Pipeline/Fast Text Detection OpenCL Pipeline/x64/Debug/Fast Text Detection OpenCL Pipeline.log
+Fast Text Detection OpenCL Pipeline/Fast Text Detection OpenCL Pipeline/x64/Debug/Fast Text Detection OpenCL Pipeline.write.1.tlog
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
