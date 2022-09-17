@@ -200,6 +200,7 @@
     <ClCompile Include="yuvFileOpenUtil_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ocl.h" />
     <ClInclude Include="yuvStatExamples.h" />
     <ClInclude Include="simpleYUV.h" />
     <ClInclude Include="utils.h" />

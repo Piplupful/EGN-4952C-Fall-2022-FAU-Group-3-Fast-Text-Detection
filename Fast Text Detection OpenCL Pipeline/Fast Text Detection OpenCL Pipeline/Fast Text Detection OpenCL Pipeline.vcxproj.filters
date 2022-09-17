@@ -68,6 +68,9 @@
     <ClInclude Include="yuvFileOpenUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ocl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Intel_OpenCL_Build_Rules Include="avgBlocks.cl">
