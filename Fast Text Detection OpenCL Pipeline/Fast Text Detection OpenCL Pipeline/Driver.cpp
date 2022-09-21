@@ -19,7 +19,8 @@ int main()
 	
 	//Going over 20+ runs creates memory leak issues. Apparently this is a known issue for the latest release of OpenCL in certain applications.
 	//Will investigate before implementing into live server.
-	for (int i = 0; i < 20; i++)
+
+	for (int i = 0; i < 5; i++)
 		avgMain(fp, width, height, fileName, filePath, 1);
 
 	if (fp != NULL)

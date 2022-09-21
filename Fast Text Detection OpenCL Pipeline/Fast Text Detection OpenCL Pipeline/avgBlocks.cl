@@ -27,26 +27,29 @@ __kernel void avgFrameWrite16_2D(__global unsigned char* frame, const int width)
 		sum += frame[offset + (i * width + 15)];
 	}
 
-	int avg = sum / 256;
+	if(y != 1072)
+		sum /= 256;
+	else
+		sum /= 128;	//1080p case, 1080/16 = 67.5
 
 	for (int i = 0; i < 16; i++)			//over every x value
 	{
-		frame[offset + (i * width + 0)] = avg;
-		frame[offset + (i * width + 1)] = avg;
-		frame[offset + (i * width + 2)] = avg;
-		frame[offset + (i * width + 3)] = avg;
-		frame[offset + (i * width + 4)] = avg;
-		frame[offset + (i * width + 5)] = avg;
-		frame[offset + (i * width + 6)] = avg;
-		frame[offset + (i * width + 7)] = avg;
-		frame[offset + (i * width + 8)] = avg;
-		frame[offset + (i * width + 9)] = avg;
-		frame[offset + (i * width + 10)] = avg;
-		frame[offset + (i * width + 11)] = avg;
-		frame[offset + (i * width + 12)] = avg;
-		frame[offset + (i * width + 13)] = avg;
-		frame[offset + (i * width + 14)] = avg;
-		frame[offset + (i * width + 15)] = avg;
+		frame[offset + (i * width + 0)] = sum;
+		frame[offset + (i * width + 1)] = sum;
+		frame[offset + (i * width + 2)] = sum;
+		frame[offset + (i * width + 3)] = sum;
+		frame[offset + (i * width + 4)] = sum;
+		frame[offset + (i * width + 5)] = sum;
+		frame[offset + (i * width + 6)] = sum;
+		frame[offset + (i * width + 7)] = sum;
+		frame[offset + (i * width + 8)] = sum;
+		frame[offset + (i * width + 9)] = sum;
+		frame[offset + (i * width + 10)] = sum;
+		frame[offset + (i * width + 11)] = sum;
+		frame[offset + (i * width + 12)] = sum;
+		frame[offset + (i * width + 13)] = sum;
+		frame[offset + (i * width + 14)] = sum;
+		frame[offset + (i * width + 15)] = sum;
 	}
 }
 

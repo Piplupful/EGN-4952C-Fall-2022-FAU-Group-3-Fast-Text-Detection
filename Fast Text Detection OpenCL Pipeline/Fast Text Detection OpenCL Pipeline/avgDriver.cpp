@@ -124,7 +124,7 @@ int avgMain(FILE* inputFile, uint64_t width, uint64_t height, char fileName[2000
 	}
 
 	//Memory Buffers
-	cl_mem clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, frameSize, frameBuffer, &err);	//CL_MEM_READ_WRITE, if writing back frame data.
+	cl_mem clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, lumaSize, frameBuffer, &err);	//CL_MEM_READ_WRITE, if writing back frame data.
 		//Include more cl_mem buffers before if necessary
 		//	Example: cl_mem clAvgBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks * 8, averages, &err);
 
@@ -157,7 +157,7 @@ int avgMain(FILE* inputFile, uint64_t width, uint64_t height, char fileName[2000
 		_fseeki64(fp, frameSize * f, SEEK_SET);			//Seek current frame raw data
 		fread(frameBuffer, 1, frameSize, fp);	//read all Values
 
-		clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, frameSize, frameBuffer, &err);	//Update buffers
+		clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, lumaSize, frameBuffer, &err);	//Update buffers
 		clSetKernelArg(ocl.kernel, 0, sizeof(cl_mem), &clFrameBuffer);	//Send current frame to GPU
 
 		kernelStartTime = high_resolution_clock::now();
@@ -175,7 +175,7 @@ int avgMain(FILE* inputFile, uint64_t width, uint64_t height, char fileName[2000
 
 		finalKernelRuntime += (kernelEndTime - kernelStartTime);			//Runtime of only kernel function activity.
 
-		clEnqueueReadBuffer(ocl.queue, clFrameBuffer, CL_TRUE, 0, frameSize, frameBuffer, 0, NULL, &ocl.event);
+		clEnqueueReadBuffer(ocl.queue, clFrameBuffer, CL_TRUE, 0, lumaSize, frameBuffer, 0, NULL, &ocl.event);
 		clFinish(ocl.queue);
 
 		fwrite(frameBuffer, 1, frameSize, avgOutput);
