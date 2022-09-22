@@ -58,6 +58,78 @@ __kernel void rangeThresh2D(__global unsigned char* frame,__global bool* threshA
 	}
 }
 
+__kernel void rangeThresh2DWrite(__global unsigned char* frame,__global bool* threshArr, const int width, const int thresh)	//16x16 ONLY
+{
+	int x = get_global_id(0) * 16;
+	int y = get_global_id(1) * 16;
+	int blockNum = (x / 16) + ((int)(y / 16) * (width / 16));	//Optimize with just get global id?
+
+	int min = 256;	//Maximum 255 Value for Luma.
+	int max = -1;
+
+	int offset = y * width + x;
+
+	for (int j = 0; j < 16; j++)			//over every x value
+	{
+		for (int i = 0; i < 16; i++)		//over every y value
+		{
+			if(frame[offset + (i * width + j)] < min)
+				min = frame[offset + (i * width + j)];
+			if(frame[offset + (i * width + j)] > max)
+				max = frame[offset + (i * width + j)];
+		}
+	}
+
+	int range = max - min;
+
+	if(range >= thresh)
+	{
+		threshArr[blockNum] = true;
+
+		for (int i = 0; i < 16; i++)			//over every x value
+		{
+			frame[offset + (i * width + 0)] = 255;
+			frame[offset + (i * width + 1)] = 255;
+			frame[offset + (i * width + 2)] = 255;
+			frame[offset + (i * width + 3)] = 255;
+			frame[offset + (i * width + 4)] = 255;
+			frame[offset + (i * width + 5)] = 255;
+			frame[offset + (i * width + 6)] = 255;
+			frame[offset + (i * width + 7)] = 255;
+			frame[offset + (i * width + 8)] = 255;
+			frame[offset + (i * width + 9)] = 255;
+			frame[offset + (i * width + 10)] = 255;
+			frame[offset + (i * width + 11)] = 255;
+			frame[offset + (i * width + 12)] = 255;
+			frame[offset + (i * width + 13)] = 255;
+			frame[offset + (i * width + 14)] = 255;
+			frame[offset + (i * width + 15)] = 255;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < 16; i++)			//over every x value
+		{
+			frame[offset + (i * width + 0)] = 1;
+			frame[offset + (i * width + 1)] = 1;
+			frame[offset + (i * width + 2)] = 1;
+			frame[offset + (i * width + 3)] = 1;
+			frame[offset + (i * width + 4)] = 1;
+			frame[offset + (i * width + 5)] = 1;
+			frame[offset + (i * width + 6)] = 1;
+			frame[offset + (i * width + 7)] = 1;
+			frame[offset + (i * width + 8)] = 1;
+			frame[offset + (i * width + 9)] = 1;
+			frame[offset + (i * width + 10)] = 1;
+			frame[offset + (i * width + 11)] = 1;
+			frame[offset + (i * width + 12)] = 1;
+			frame[offset + (i * width + 13)] = 1;
+			frame[offset + (i * width + 14)] = 1;
+			frame[offset + (i * width + 15)] = 1;
+		}
+	}
+}
+
 //EXPERIMENTAL OPTIMIZATION ATTEMPTS BELOW, TOP TWO KERNEL FUNCTIONS WORK JUST FINE AND SEE GOOD PERFORMANCE
 //Conclusions included as comments underneath functions
 
