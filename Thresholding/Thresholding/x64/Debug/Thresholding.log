@@ -1,2 +1,4 @@
 ﻿  Main.cpp
+C:\Personal Projects\Thresholding\Thresholding\Main.cpp(202,19): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+C:\Personal Projects\Thresholding\Thresholding\Main.cpp(211,45): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
   Thresholding.vcxproj -> C:\Personal Projects\Thresholding\x64\Debug\Thresholding.exe

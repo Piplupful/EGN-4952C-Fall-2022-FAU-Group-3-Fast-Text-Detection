@@ -9,11 +9,40 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp> 
+#include <opencv2/imgproc/imgproc.hpp>
 
 #define LOG(x) std::cout<<x<<std::endl;
 
 using namespace std;
 using namespace cv;
+
+//get 8x8 block based on X and Y coordinates starting with the very first block
+void getBlock(unsigned char* frameData, unsigned char* blockData, int blockSize, int x, int y, int width)
+{
+    int offset = y * width + x;		//Second offset, goes from initial offset (Y0) to (x,y) based on block size, essentailly converts linear into 2d
+
+    for (int j = 0; j < blockSize; j++)			//over every x value
+    {
+        for (int i = 0; i < blockSize; i++)		//over every y value
+        {
+            blockData[i * blockSize + j] = (frameData + offset)[i * width + j];	//save into corresponding block position
+        }
+    }
+}
+
+//print Y values of the 8x8 block
+void printBlock(unsigned char* blockData, int blockSize)
+{
+    for (int i = 0; i < blockSize; i++)						//over every y value
+    {
+        for (int j = 0; j < blockSize; j++)					//over every x value
+        {
+            printf("%4d", blockData[i * blockSize + j]);
+        }
+        printf("\n");
+    }
+    cout << "---------------------------------------------" << "\n";//For visibility purposes
+}
 
 int main()
 {
@@ -147,13 +176,13 @@ int main()
     
     FILE* f; //open file stream
 
-    errno_t error = fopen_s(&f, "STARCRAFT_1920x1080p60_0.yuv", "rb"); //Load in a file, rb stands for "read only" in no-text files.
+    errno_t error = fopen_s(&f, "C:/Personal Projects/Thresholding/STARCRAFT_1920x1080p60_0.yuv", "rb"); //Load in a file, rb stands for "read only" in no-text files.
 
 
     //Manually set the parameters for each yuv file, they are specified in a name
-    int width = 704;
-    int height = 576;
-    int frames = 300;
+    int width = 1920;
+    int height = 1080;
+    int frames = 1;
 
 
     //Check if the files has been read into a stream correctly
@@ -174,17 +203,47 @@ int main()
 
     int frameNum = 0; //Frame number to keep count of the frames
 
-
     //Create a buffer for a frame
     unsigned char* frameBuf;
-    frameBuf = new unsigned char[sizeY]; //Buffer specifically for a size of a Y component
+    frameBuf = new unsigned char[frameSize]; //Buffer specifically for a size of a Y component
 
     fseek(f, frameSize * frameNum, SEEK_SET); //Set the position of a stream to a specified offset
-    int r = fread(frameBuf, 1, sizeY, f); //Read a buffered input from a file
+    int r = fread(frameBuf, 1, frameSize, f); //Read a buffered input from a file
 
-    cv::Mat img = cv::Mat(height, width, CV_8UC2, frameBuf);
+    //Set a variable for a size of the block
+    int blockSize = 1000;
+    int x = 0, y = 0;
+    unsigned char* blockData;
+    blockData = new unsigned char[blockSize * blockSize]; //get data from a block
+
+
+    //First test of printing the very first block and getting it's avg
+    getBlock(frameBuf, blockData, blockSize, x, y, width); //get a block from a buffer at specified coordinates
+    //printBlock(blockData, blockSize); //print the Y values of a block
+    
+    cv::Mat img = cv::Mat (height + height/2, width, CV_8UC1, frameBuf, Mat::AUTO_STEP);
+    //cv::Mat img = cv::Mat(blockSize, blockSize, CV_8UC1, blockData, Mat::AUTO_STEP);
+
+    Mat BGR (cv::Size(width, height), CV_8UC1);
+    Mat greyImg;
+    Mat thrImg;
+
+    cv::cvtColor(img, BGR, cv::COLOR_YUV2BGR_I420);
+    cv::cvtColor(BGR, greyImg, cv::COLOR_BGR2GRAY);
+
     cv::namedWindow("Input - yuv", 0);
     cv::imshow("Input - yuv", img);
 
-return 0;
+    cv::namedWindow("Output", 0);
+    imshow("Output", BGR);
+
+    threshold(greyImg, thrImg, 127, 255, THRESH_BINARY);
+    namedWindow("127-255 Binary Threshold", WINDOW_NORMAL);
+    resizeWindow("127-255 Binary Threshold", 1280, 720);
+    imshow("127-255 Binary Threshold", thrImg);
+
+    cv::waitKey(0);
+    cv::destroyAllWindows();
+
+    return 0;
 }
