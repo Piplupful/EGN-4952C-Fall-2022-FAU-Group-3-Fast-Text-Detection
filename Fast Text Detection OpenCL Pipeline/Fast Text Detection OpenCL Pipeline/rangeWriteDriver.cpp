@@ -49,7 +49,7 @@ using std::chrono::milliseconds;
 
 using namespace std;
 
-int rangeMain2DWrite(FILE* inputFile, uint64_t width, uint64_t height, char fileName[2000], char filePath[2000], int thresh, bool print)
+int rangeMain2DWrite(FILE* inputFile, uint64_t width, uint64_t height, char fileName[2000], char filePath[2000], int thresh, bool print, bool chromaOut)
 {
 	FILE* fp = inputFile;
 
@@ -118,7 +118,10 @@ int rangeMain2DWrite(FILE* inputFile, uint64_t width, uint64_t height, char file
 	OpenCL ocl("rangeDummy.cl");
 
 	//INSERT VALID FUNCTION FROM VALID OPENCL FILE, STRING IN 2ND PARAMETER = FUNCTION NAME
-	ocl.kernel = clCreateKernel(ocl.program, "rangeThresh2DWrite", &err);
+	if(chromaOut)
+		ocl.kernel = clCreateKernel(ocl.program, "rangeThresh2D", &err);
+	else
+		ocl.kernel = clCreateKernel(ocl.program, "rangeThresh2DWrite", &err);
 
 	if (err != CL_SUCCESS)
 	{
@@ -186,7 +189,8 @@ int rangeMain2DWrite(FILE* inputFile, uint64_t width, uint64_t height, char file
 		finalKernelRuntime += (kernelEndTime - kernelStartTime);			//Runtime of only kernel function activity.
 
 		clEnqueueReadBuffer(ocl.queue, clThreshBuffer, CL_TRUE, 0, numBlocks, threshOut, 0, NULL, &ocl.event);
-		clEnqueueReadBuffer(ocl.queue, clFrameBuffer, CL_TRUE, 0, lumaSize, frameBuffer, 0, NULL, &ocl.event);
+		if(chromaOut == 0)
+			clEnqueueReadBuffer(ocl.queue, clFrameBuffer, CL_TRUE, 0, lumaSize, frameBuffer, 0, NULL, &ocl.event);
 		clFinish(ocl.queue);
 
 		//Binary Map Output, as .txt for now
@@ -203,6 +207,48 @@ int rangeMain2DWrite(FILE* inputFile, uint64_t width, uint64_t height, char file
 			}
 
 			fclose(outputFile);
+		}
+
+		if (chromaOut == 1)
+		{
+			//Chroma Manip
+			for (int b = 0; b < numBlocks; b++)
+			{
+				if (threshOut[b] == 0)
+				{
+					int x = b * 16 % width;
+					int y = (int)((b / (width / 16)) * 16);
+
+					if (y != 1072)
+					{
+						for (int j = 0; j < 16; j++)
+						{
+							for (int i = 0; i < 16; i++)
+							{
+								int m = x + i;
+								int n = y + j;
+
+								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize] = 128;
+								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize + (lumaSize / 4)] = 128;
+							}
+						}
+					}
+					else
+					{
+						for (int j = 0; j < 8; j++)
+						{
+							for (int i = 0; i < 16; i++)
+							{
+								int m = x + i;
+								int n = y + j;
+
+								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize] = 128;
+								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize + (lumaSize / 4)] = 128;
+							}
+						}
+					}
+				}
+			}
 		}
 
 		//YUV Output
