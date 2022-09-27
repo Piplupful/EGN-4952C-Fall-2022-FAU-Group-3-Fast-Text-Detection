@@ -212,7 +212,7 @@ int rangeMain2DWrite(FILE* inputFile, uint64_t width, uint64_t height, char file
 		if (chromaOut == 1)
 		{
 			//Chroma Manip
-			for (int b = 0; b < (lumaSize / (64 * 64)); b++)
+			for (int b = 0; b < (lumaSize / (64 * 64) + 4); b++)
 			{
 				int x = b * 64 % width;
 				int stepY = (int)(b / (width / 64));
@@ -224,11 +224,22 @@ int rangeMain2DWrite(FILE* inputFile, uint64_t width, uint64_t height, char file
 
 				for (int i = 0; i < 4; i++)
 				{
-					if ((threshOut[blockNum + i * 120] == 1) || (threshOut[blockNum + i * 120 + 1] == 1)
-						|| (threshOut[blockNum + i * 120 + 2] == 1) || (threshOut[blockNum + i * 120 + 3] == 1))
+					if (y != 1024)
 					{
-						trueFlag = 1;
-						break;
+						if ((threshOut[blockNum + i * 120] == 1) || (threshOut[blockNum + i * 120 + 1] == 1)
+							|| (threshOut[blockNum + i * 120 + 2] == 1) || (threshOut[blockNum + i * 120 + 3] == 1))
+						{
+							trueFlag = 1;
+							break;
+						}
+					}
+					else
+					{
+						if ((threshOut[blockNum + i * 120] == 1) || (threshOut[blockNum + i * 120 + 1] == 1))
+						{
+							trueFlag = 1;
+							break;
+						}
 					}
 				}
 
