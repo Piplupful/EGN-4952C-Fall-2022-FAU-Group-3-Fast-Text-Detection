@@ -212,18 +212,64 @@ int rangeMain2DWrite(FILE* inputFile, uint64_t width, uint64_t height, char file
 		if (chromaOut == 1)
 		{
 			//Chroma Manip
-			for (int b = 0; b < numBlocks; b++)
+			for (int b = 0; b < (lumaSize / (64 * 64)); b++)
 			{
-				if (threshOut[b] == 0)
-				{
-					int x = b * 16 % width;
-					int y = (int)((b / (width / 16)) * 16);
+				int x = b * 64 % width;
+				int stepY = (int)(b / (width / 64));
+				int y = stepY * 64;	// For better integer truncation (large numbers)
 
-					if (y != 1072)
+				int blockNum = (x / 16) + ((y / 16) * (width / 16));
+
+				bool trueFlag = 0;
+
+				for (int i = 0; i < 4; i++)
+				{
+					if ((threshOut[blockNum + i * 120] == 1) || (threshOut[blockNum + i * 120 + 1] == 1)
+						|| (threshOut[blockNum + i * 120 + 2] == 1) || (threshOut[blockNum + i * 120 + 3] == 1))
 					{
-						for (int j = 0; j < 16; j++)
+						trueFlag = 1;
+						break;
+					}
+				}
+
+				if (trueFlag)
+				{
+					if (y != 1024)
+					{
+						for (int j = 0; j < 64; j++)
 						{
-							for (int i = 0; i < 16; i++)
+							for (int i = 0; i < 64; i++)
+							{
+								int m = x + i;
+								int n = y + j;
+
+								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize] = 53;
+								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize + (lumaSize / 4)] = 34;
+							}
+						}
+					}
+					else
+					{
+						for (int j = 0; j < 56; j++)
+						{
+							for (int i = 0; i < 64; i++)
+							{
+								int m = x + i;
+								int n = y + j;
+
+								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize] = 53;
+								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize + (lumaSize / 4)] = 34;
+							}
+						}
+					}
+				}
+				else
+				{
+					if (y != 1024)
+					{
+						for (int j = 0; j < 64; j++)
+						{
+							for (int i = 0; i < 64; i++)
 							{
 								int m = x + i;
 								int n = y + j;
@@ -235,9 +281,9 @@ int rangeMain2DWrite(FILE* inputFile, uint64_t width, uint64_t height, char file
 					}
 					else
 					{
-						for (int j = 0; j < 8; j++)
+						for (int j = 0; j < 56; j++)
 						{
-							for (int i = 0; i < 16; i++)
+							for (int i = 0; i < 64; i++)
 							{
 								int m = x + i;
 								int n = y + j;
