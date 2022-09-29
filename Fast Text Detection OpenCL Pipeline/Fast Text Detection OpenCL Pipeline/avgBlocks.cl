@@ -53,6 +53,7 @@ __kernel void avgFrameWrite16_2D(__global unsigned char* frame, const int width)
 	}
 }
 
+//TODO: REPORT TO SEBASTIAN ISSUE WITH ORIGINAL CODE, SETUP 16X16 (USHORT16[16])
 __kernel void avgFrameWrite16_2D_Opt(__global unsigned char* frame, const int width) //16x16 ONLY
 {
 	int x = get_global_id(0) * 16;
@@ -81,7 +82,79 @@ __kernel void avgFrameWrite16_2D_Opt(__global unsigned char* frame, const int wi
 	avg += sum2.x + sum2.y;
 	
 	//Averaging
-	avg /= 256;
+	avg = avg / 256;
+	//avg = x % 256; 
+	//Flip Queue issue caused by assinging average into frame
+	for (int i = 0; i < 16; i++)			//over every x value
+	{
+		frame[offset + (i * width + 0)] = avg;
+		frame[offset + (i * width + 1)] = avg;
+		frame[offset + (i * width + 2)] = avg;
+		frame[offset + (i * width + 3)] = avg;
+		frame[offset + (i * width + 4)] = avg;
+		frame[offset + (i * width + 5)] = avg;
+		frame[offset + (i * width + 6)] = avg;
+		frame[offset + (i * width + 7)] = avg;
+		frame[offset + (i * width + 8)] = avg;
+		frame[offset + (i * width + 9)] = avg;
+		frame[offset + (i * width + 10)] = avg;
+		frame[offset + (i * width + 11)] = avg;
+		frame[offset + (i * width + 12)] = avg;
+		frame[offset + (i * width + 13)] = avg;
+		frame[offset + (i * width + 14)] = avg;
+		frame[offset + (i * width + 15)] = avg;
+	}
+}
+
+//Make vector 16 an array of size 16 (16 x 16 = 256)
+__kernel void avgFrameWrite16_2D_Opt_v2(__global unsigned char* frame, const int width) //16x16 ONLY
+{
+	int x = get_global_id(0) * 16;
+	int y = get_global_id(1) * 16;
+	int offset = y * width + x;
+
+	uint avg = 0;
+	
+	ushort16 sum16[16];
+
+	for (int i = 0; i < 16; i++)			//over every x value
+	{										//Assign all components for all 16 sum16's
+		sum16[i].s0 = frame[offset + (i * width + 0)];
+		sum16[i].s1 += frame[offset + (i * width + 1)];
+		sum16[i].s2 += frame[offset + (i * width + 2)];
+		sum16[i].s3 += frame[offset + (i * width + 3)];
+		sum16[i].s4 += frame[offset + (i * width + 4)];
+		sum16[i].s5 += frame[offset + (i * width + 5)];
+		sum16[i].s6 += frame[offset + (i * width + 6)];
+		sum16[i].s7 += frame[offset + (i * width + 7)];
+		sum16[i].s8 += frame[offset + (i * width + 8)];
+		sum16[i].s9 += frame[offset + (i * width + 9)];
+		sum16[i].sa += frame[offset + (i * width + 10)];
+		sum16[i].sb += frame[offset + (i * width + 11)];
+		sum16[i].sc += frame[offset + (i * width + 12)];
+		sum16[i].sd += frame[offset + (i * width + 13)];
+		sum16[i].se += frame[offset + (i * width + 14)];
+		sum16[i].sf += frame[offset + (i * width + 15)];
+	}
+
+	//Reduction step
+	ushort8 sum8[16];
+	ushort4 sum4[16];
+	ushort2 sum2[16];
+
+	for(int i = 0; i < 16; i++)
+	{
+		sum8[i] = sum16[i].s01234567 + sum16[i].s89abcdef;
+
+		sum4[i] = sum8[i].s0123 + sum8[i].s4567;
+
+		sum2[i] = sum4[i].xy + sum4[i].zw;
+
+		avg += sum2[i].x + sum2[i].y;	//Final accumulation
+	}
+	
+	//Averaging
+	avg = avg / 256;
 
 	for (int i = 0; i < 16; i++)			//over every x value
 	{

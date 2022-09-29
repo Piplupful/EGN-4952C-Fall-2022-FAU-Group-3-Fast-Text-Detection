@@ -21,7 +21,7 @@ int main()
 	//Will investigate before implementing into live server.
 
 	for (int i = 0; i < 1; i++)
-		rangeMain2DWrite(fp, width, height, fileName, filePath, 150, 1, 1);
+		avgMain(fp, width, height, fileName, filePath, 1);
 
 	if (fp != NULL)
 		fclose(fp);

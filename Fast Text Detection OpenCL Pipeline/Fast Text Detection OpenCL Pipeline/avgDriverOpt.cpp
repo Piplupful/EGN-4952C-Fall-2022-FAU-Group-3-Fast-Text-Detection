@@ -114,7 +114,7 @@ int avgMainOpt(FILE* inputFile, uint64_t width, uint64_t height, char fileName[2
 	OpenCL ocl("avgBlocks.cl");
 
 	//INSERT VALID FUNCTION FROM VALID OPENCL FILE, STRING IN 2ND PARAMETER = FUNCTION NAME
-	ocl.kernel = clCreateKernel(ocl.program, "avgFrameWrite16_2D_Opt", &err);
+	ocl.kernel = clCreateKernel(ocl.program, "avgFrameWrite16_2D_Opt_v2", &err);
 
 	if (err != CL_SUCCESS)
 	{
