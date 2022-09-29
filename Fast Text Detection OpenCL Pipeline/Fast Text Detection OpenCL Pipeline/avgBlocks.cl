@@ -116,6 +116,9 @@ __kernel void avgFrameWrite16_2D_Opt_v2(__global unsigned char* frame, const int
 	uint avg = 0;
 	
 	ushort16 sum16[16];
+	ushort8 sum8[16];
+	ushort4 sum4[16];
+	ushort2 sum2[16];
 
 	for (int i = 0; i < 16; i++)			//over every x value
 	{										//Assign all components for all 16 sum16's
@@ -135,15 +138,8 @@ __kernel void avgFrameWrite16_2D_Opt_v2(__global unsigned char* frame, const int
 		sum16[i].sd = frame[offset + (i * width + 13)];
 		sum16[i].se = frame[offset + (i * width + 14)];
 		sum16[i].sf = frame[offset + (i * width + 15)];
-	}
 
-	//Reduction step
-	ushort8 sum8[16];
-	ushort4 sum4[16];
-	ushort2 sum2[16];
-
-	for(int i = 0; i < 16; i++)
-	{
+		//Reduction step
 		sum8[i] = sum16[i].s01234567 + sum16[i].s89abcdef;
 
 		sum4[i] = sum8[i].s0123 + sum8[i].s4567;
@@ -152,7 +148,7 @@ __kernel void avgFrameWrite16_2D_Opt_v2(__global unsigned char* frame, const int
 
 		avg += sum2[i].x + sum2[i].y;	//Final accumulation
 	}
-	
+
 	//Averaging
 	avg = avg / 256;
 
