@@ -120,21 +120,21 @@ __kernel void avgFrameWrite16_2D_Opt_v2(__global unsigned char* frame, const int
 	for (int i = 0; i < 16; i++)			//over every x value
 	{										//Assign all components for all 16 sum16's
 		sum16[i].s0 = frame[offset + (i * width + 0)];
-		sum16[i].s1 += frame[offset + (i * width + 1)];
-		sum16[i].s2 += frame[offset + (i * width + 2)];
-		sum16[i].s3 += frame[offset + (i * width + 3)];
-		sum16[i].s4 += frame[offset + (i * width + 4)];
-		sum16[i].s5 += frame[offset + (i * width + 5)];
-		sum16[i].s6 += frame[offset + (i * width + 6)];
-		sum16[i].s7 += frame[offset + (i * width + 7)];
-		sum16[i].s8 += frame[offset + (i * width + 8)];
-		sum16[i].s9 += frame[offset + (i * width + 9)];
-		sum16[i].sa += frame[offset + (i * width + 10)];
-		sum16[i].sb += frame[offset + (i * width + 11)];
-		sum16[i].sc += frame[offset + (i * width + 12)];
-		sum16[i].sd += frame[offset + (i * width + 13)];
-		sum16[i].se += frame[offset + (i * width + 14)];
-		sum16[i].sf += frame[offset + (i * width + 15)];
+		sum16[i].s1 = frame[offset + (i * width + 1)];
+		sum16[i].s2 = frame[offset + (i * width + 2)];
+		sum16[i].s3 = frame[offset + (i * width + 3)];
+		sum16[i].s4 = frame[offset + (i * width + 4)];
+		sum16[i].s5 = frame[offset + (i * width + 5)];
+		sum16[i].s6 = frame[offset + (i * width + 6)];
+		sum16[i].s7 = frame[offset + (i * width + 7)];
+		sum16[i].s8 = frame[offset + (i * width + 8)];
+		sum16[i].s9 = frame[offset + (i * width + 9)];
+		sum16[i].sa = frame[offset + (i * width + 10)];
+		sum16[i].sb = frame[offset + (i * width + 11)];
+		sum16[i].sc = frame[offset + (i * width + 12)];
+		sum16[i].sd = frame[offset + (i * width + 13)];
+		sum16[i].se = frame[offset + (i * width + 14)];
+		sum16[i].sf = frame[offset + (i * width + 15)];
 	}
 
 	//Reduction step
