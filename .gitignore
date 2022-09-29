@@ -1,7 +1,6 @@
 
 *.yuv
 *.txt
-*.csv
 *.xlsx
 *.zip
 .vs/
