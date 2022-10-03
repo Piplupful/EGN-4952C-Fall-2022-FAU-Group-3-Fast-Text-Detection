@@ -4,27 +4,26 @@
 
 // File Explorer Functionality
 #include "yuvFileOpenUtil.h"
+#include "ocv.h"
 using namespace std;
 
 int main()
 {
-	FILE* fp = NULL;
 	uint64_t width = 0;
 	uint64_t height = 0;
 	char fileName[2000];
 	char filePath[2000];
 
 	//File Explorer Functionality, Easier YUV File Selection, Width/Height found by filename (YUV Standard)
-	openYUVFile(fp, &width, &height, fileName, filePath);
+	openYUVFile(&width, &height, fileName, filePath);
 	
 	//Going over 20+ runs creates memory leak issues. Apparently this is a known issue for the latest release of OpenCL in certain applications.
 	//Will investigate before implementing into live server.
 
-	for (int i = 0; i < 20; i++)
-		avgMainOpt(fp, width, height, fileName, filePath, 1);
+	for (int i = 0; i < 1; i++)
+		openCV_DTC_Driver(width, height, fileName, filePath);
 
-	if (fp != NULL)
-		fclose(fp);
+	//openCVTrainDTC(1);
 
 	std::string holdOutput;
 	std::cout << "Press enter to end.";

@@ -165,7 +165,7 @@
       <Device>1</Device>
     </Intel_OpenCL_Build_Rules>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(INTELOCLSDKROOT)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(INTELOCLSDKROOT)include;D:\OpenCV\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__x86_64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
@@ -176,8 +176,8 @@
       <PrecompiledHeader />
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(INTELOCLSDKROOT)lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELOCLSDKROOT)lib\x64;D:\OpenCV\opencv\build\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>OpenCL.lib;opencv_world460d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
@@ -186,22 +186,23 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="avgDriver.cpp" />
-    <ClCompile Include="avgDriverOpt.cpp" />
-    <ClCompile Include="avgDriver_OLD.cpp" />
+    <ClCompile Include="csvFileOpenUtil_Impl.cpp" />
     <ClCompile Include="driver.cpp" />
     <ClCompile Include="frameExtract.cpp" />
     <ClCompile Include="ocl.cpp" />
+    <ClCompile Include="ocvDTC_Driver.cpp" />
+    <ClCompile Include="openCVTrain.cpp" />
     <ClCompile Include="pipelineTemplate.cpp" />
     <ClCompile Include="rangeDummyDriver.cpp" />
-    <ClCompile Include="rangeDummyDriver2D.cpp" />
-    <ClCompile Include="rangeDummyDriver2DVectorize.cpp" />
     <ClCompile Include="rangeWriteDriver.cpp" />
     <ClCompile Include="simpleYUV_impl.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="yuvFileOpenUtil_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="csvFileOpenUtil.h" />
     <ClInclude Include="ocl.h" />
+    <ClInclude Include="ocv.h" />
     <ClInclude Include="yuvStatExamples.h" />
     <ClInclude Include="simpleYUV.h" />
     <ClInclude Include="utils.h" />
@@ -209,6 +210,7 @@
   </ItemGroup>
   <ItemGroup>
     <Intel_OpenCL_Build_Rules Include="avgBlocks.cl" />
+    <Intel_OpenCL_Build_Rules Include="dtc.cl" />
     <Intel_OpenCL_Build_Rules Include="rangeDummy.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

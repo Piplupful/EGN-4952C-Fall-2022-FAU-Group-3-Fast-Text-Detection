@@ -49,9 +49,9 @@ using std::chrono::milliseconds;
 
 using namespace std;
 
-int rangeMain2DWrite(FILE* inputFile, uint64_t width, uint64_t height, char fileName[2000], char filePath[2000], int thresh, bool print, bool chromaOut)
+int rangeMain2DWrite(uint64_t width, uint64_t height, char fileName[2000], char filePath[2000], int thresh, bool print, bool chromaOut)
 {
-	FILE* fp = inputFile;
+	FILE* fp;
 
 	uint64_t blockSize = 16; //blockSize x blockSize
 
@@ -222,20 +222,24 @@ int rangeMain2DWrite(FILE* inputFile, uint64_t width, uint64_t height, char file
 
 				bool trueFlag = 0;
 
-				for (int i = 0; i < 4; i++)
+				if (y != 1024)
 				{
-					if (y != 1024)
+					for (int i = 0; i < 4; i++)
 					{
 						if ((threshOut[blockNum + i * 120] == 1) || (threshOut[blockNum + i * 120 + 1] == 1)
-							|| (threshOut[blockNum + i * 120 + 2] == 1) || (threshOut[blockNum + i * 120 + 3] == 1))
+							|| (threshOut[blockNum + i * 120 + 2] == 1) || (threshOut[blockNum + i * 120 + 3] == 1))	//Check 4 consequitive 16x16 blocks
 						{
 							trueFlag = 1;
 							break;
 						}
 					}
-					else
+				}
+				else
+				{
+					for (int i = 0; i < 3; i++)
 					{
-						if ((threshOut[blockNum + i * 120] == 1) || (threshOut[blockNum + i * 120 + 1] == 1))
+						if ((threshOut[blockNum + i * 120] == 1) || (threshOut[blockNum + i * 120 + 1] == 1)
+							|| (threshOut[blockNum + i * 120 + 2] == 1) || (threshOut[blockNum + i * 120 + 3] == 1))
 						{
 							trueFlag = 1;
 							break;

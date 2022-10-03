@@ -64,7 +64,7 @@ int templateMain()
 	uint64_t blockSize = 16; //blockSize x blockSize
 
 	//File Explorer Functionality, Easier YUV File Selection, Width/Height found by filename (YUV Standard)
-	openYUVFile(fp, &width, &height, fileName, filePath);
+	openYUVFile(&width, &height, fileName, filePath);
 
 	//Open File through fopen_s, filepath found through File Explorer.
 	if(filePath != NULL)

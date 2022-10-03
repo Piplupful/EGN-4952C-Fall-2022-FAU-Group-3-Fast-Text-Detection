@@ -30,9 +30,9 @@ using std::chrono::milliseconds;
 
 using namespace std;
 
-int frameExtract(FILE* inputFile, uint64_t width, uint64_t height, char fileName[2000], char filePath[2000])
+int frameExtract(uint64_t width, uint64_t height, char fileName[2000], char filePath[2000])
 {
-	FILE* fp = inputFile;
+	FILE* fp;
 
 	uint64_t blockSize = 16; //blockSize x blockSize
 

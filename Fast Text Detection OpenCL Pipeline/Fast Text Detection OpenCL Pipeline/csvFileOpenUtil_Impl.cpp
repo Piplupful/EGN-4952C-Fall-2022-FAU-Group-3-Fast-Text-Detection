@@ -1,19 +1,13 @@
 #include <Windows.h>
 #include <ShObjIdl.h>
-#include <regex>
 #include <iostream>
 
-using namespace std;
-
-int openYUVFile(uint64_t* width, uint64_t* height, char* fileName, char* filePath)
+int openCSVFile(char* fileName, char* filePath)
 {
 	const COMDLG_FILTERSPEC c_rgSaveTypes[] =
 	{
-		{L"YUV 4:2:0 (*.yuv)",       L"*.yuv"},
+		{L"csv (*.csv)",       L"*.csv"},
 	};
-
-	string widthS;
-	string heightS;
 
 	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
 		COINIT_DISABLE_OLE1DDE);
@@ -55,36 +49,9 @@ int openYUVFile(uint64_t* width, uint64_t* height, char* fileName, char* filePat
 		CoUninitialize();
 	}
 
-	if (hr != 0)
-	{
-		cerr << "Error opening File.\n";
-		return 2;
-	}
-
-	//Pull Width x Height from YUV file name.	File name format: Name_With_No_Numbers_WidthxHeight_etc.yuv
 	wcstombs(filePath, pszFilePath, 1000);	//file path for fopen_s
 
 	wcstombs(fileName, pszName, 1000);		//file name to pull Width and Height
-
-	string s = fileName;
-
-	widthS = regex_replace(
-		s,
-		std::regex("[^0-9]*([0-9]+).*"),
-		std::string("$1")
-	);
-
-	s = s.substr(s.find_first_of("0123456789") + 1);	//Remove everything before Width
-	s = s.substr(s.find_first_of("x") + 1);				//Remove Width and x
-
-	heightS = regex_replace(
-		s,
-		std::regex("[^0-9]*([0-9]+).*"),
-		std::string("$1")
-	);
-
-	*width = stoi(widthS);
-	*height = stoi(heightS);
 
 	return 0;
 }
