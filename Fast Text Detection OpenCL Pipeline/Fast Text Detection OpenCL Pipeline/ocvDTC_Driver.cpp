@@ -53,7 +53,7 @@ using std::chrono::milliseconds;
 
 using namespace std;
 
-int openCV_DTC_Driver(uint64_t width, uint64_t height, char fileName[2000], char filePath[2000])
+int openCV_DTC_Driver_Proto(uint64_t width, uint64_t height, char fileName[2000], char filePath[2000])
 {
 	FILE* fp;
 
@@ -114,6 +114,19 @@ int openCV_DTC_Driver(uint64_t width, uint64_t height, char fileName[2000], char
 	else
 		cout << "LOAD SUCCESS" << endl;
 
+	/*
+	double test[] = { 1552,432,0,127.527,129,194,65};
+	cv::Mat samp(1, 7, CV_32FC1, test);
+
+	cv::Mat response;
+	dtree->predict(samp, response);
+
+	int testr = response.at<float>(0,0);
+	cout << testr << " " << response << endl;
+
+	return 0;
+	*/
+
 	//OPENCL START
 	int err;	// error code returned from api calls
 	auto startTime = high_resolution_clock::now();
@@ -122,14 +135,36 @@ int openCV_DTC_Driver(uint64_t width, uint64_t height, char fileName[2000], char
 	auto kernelEndTime = high_resolution_clock::now();
 	duration<double, std::milli> finalKernelRuntime = chrono::milliseconds::zero();
 
-	bool* binMap;
-	binMap = new bool[numBlocks];
+	auto dtclStartTime = high_resolution_clock::now();	//Runtime of DTC (In this implementation, a serial, linear loop)
+	auto dtclEndTime = high_resolution_clock::now();
+	duration<double, std::milli> DTCRuntime = chrono::milliseconds::zero();
+
+	bool* binMap = new bool[numBlocks];
 	fill_n(binMap, numBlocks, 0);
+
+	//NOT FINAL
+	double* xOut = new double[numBlocks];
+	fill_n(xOut, numBlocks, 0);
+
+	double* yOut = new double[numBlocks];
+	fill_n(yOut, numBlocks, 0);
+
+	double* avgOut = new double[numBlocks];
+	fill_n(avgOut, numBlocks, 0);
+
+	double* rngOut = new double[numBlocks];
+	fill_n(rngOut, numBlocks, 0);
+
+	double* maxOut = new double[numBlocks];
+	fill_n(maxOut, numBlocks, 0);
+
+	double* minOut = new double[numBlocks];
+	fill_n(minOut, numBlocks, 0);
 
 	OpenCL ocl("dtc.cl");
 
 	//INSERT VALID FUNCTION FROM VALID OPENCL FILE, STRING IN 2ND PARAMETER = FUNCTION NAME
-	ocl.kernel = clCreateKernel(ocl.program, "dtcTextDetect", &err);
+	ocl.kernel = clCreateKernel(ocl.program, "dtcStatCollection", &err);
 
 	if (err != CL_SUCCESS)
 	{
@@ -142,15 +177,27 @@ int openCV_DTC_Driver(uint64_t width, uint64_t height, char fileName[2000], char
 	cl_mem clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, lumaSize, frameBuffer, &err);	//CL_MEM_READ_WRITE, if writing back frame data.
 		//Include more cl_mem buffers before if necessary
 		//	Example: cl_mem clAvgBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks * 8, averages, &err);
-	cl_mem clbinMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, binMap, &err);
+	//cl_mem clbinMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, binMap, &err);
+	cl_mem clxMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, xOut, &err);
+	cl_mem clyMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, yOut, &err);
+	cl_mem clAvgMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, avgOut, &err);
+	cl_mem clRngMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, rngOut, &err);
+	cl_mem clMaxMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, maxOut, &err);
+	cl_mem clMinMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, minOut, &err);
 
 	//Kernel Arguements
 	err = clSetKernelArg(ocl.kernel, 0, sizeof(cl_mem), &clFrameBuffer);
 	//Include more Kernel Arguements if necessary. Must include all memory buffers created previously. Single variables (Such as Width), can be directly accessed
 	//	Example: err = clSetKernelArg(kernel, 2, sizeof(int), &width);
-	err = clSetKernelArg(ocl.kernel, 1, sizeof(cl_mem), &clbinMap);
+	//err = clSetKernelArg(ocl.kernel, 1, sizeof(cl_mem), &clbinMap);
 
-	err = clSetKernelArg(ocl.kernel, 2, sizeof(int), &width);
+	err = clSetKernelArg(ocl.kernel, 1, sizeof(int), &width);
+	err = clSetKernelArg(ocl.kernel, 2, sizeof(cl_mem), &clxMap);
+	err = clSetKernelArg(ocl.kernel, 3, sizeof(cl_mem), &clyMap);
+	err = clSetKernelArg(ocl.kernel, 4, sizeof(cl_mem), &clAvgMap);
+	err = clSetKernelArg(ocl.kernel, 5, sizeof(cl_mem), &clRngMap);
+	err = clSetKernelArg(ocl.kernel, 6, sizeof(cl_mem), &clMaxMap);
+	err = clSetKernelArg(ocl.kernel, 7, sizeof(cl_mem), &clMinMap);
 
 	//Enqueue and wait
 	//Round in order to handle resolutions not easily divisible by blocksize.
@@ -178,8 +225,6 @@ int openCV_DTC_Driver(uint64_t width, uint64_t height, char fileName[2000], char
 
 		clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, lumaSize, frameBuffer, &err);	//Update buffers
 		clSetKernelArg(ocl.kernel, 0, sizeof(cl_mem), &clFrameBuffer);	//Send current frame to GPU
-		clbinMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, binMap, &err);	//Reset cl Buffer, otherwise output bleeds together
-		clSetKernelArg(ocl.kernel, 1, sizeof(cl_mem), &clbinMap);
 
 		kernelStartTime = high_resolution_clock::now();
 		err = clEnqueueNDRangeKernel(ocl.queue, ocl.kernel, 2, NULL, global, local, 0, NULL, &ocl.event);
@@ -196,9 +241,54 @@ int openCV_DTC_Driver(uint64_t width, uint64_t height, char fileName[2000], char
 
 		finalKernelRuntime += (kernelEndTime - kernelStartTime);			//Runtime of only kernel function activity.
 
-		clEnqueueReadBuffer(ocl.queue, clbinMap, CL_TRUE, 0, numBlocks, binMap, 0, NULL, &ocl.event);
-
+		clEnqueueReadBuffer(ocl.queue, clxMap, CL_TRUE, 0, numBlocks, xOut, 0, NULL, &ocl.event);
+		clEnqueueReadBuffer(ocl.queue, clyMap, CL_TRUE, 0, numBlocks, yOut, 0, NULL, &ocl.event);
+		clEnqueueReadBuffer(ocl.queue, clAvgMap, CL_TRUE, 0, numBlocks, avgOut, 0, NULL, &ocl.event);
+		clEnqueueReadBuffer(ocl.queue, clRngMap, CL_TRUE, 0, numBlocks, rngOut, 0, NULL, &ocl.event);
+		clEnqueueReadBuffer(ocl.queue, clMaxMap, CL_TRUE, 0, numBlocks, maxOut, 0, NULL, &ocl.event);
+		clEnqueueReadBuffer(ocl.queue, clMinMap, CL_TRUE, 0, numBlocks, minOut, 0, NULL, &ocl.event);
 		clFinish(ocl.queue);
+
+		dtclStartTime = high_resolution_clock::now();	//Runtime of DTC (In this implementation, a serial, linear loop)
+
+		for (int i = 0; i < numBlocks; i++)
+		{
+			double input[] = { 0,0,0,0,0,0,0 };
+
+			//double test[] = { 1552,432,0,127.527,129,194,65 };
+
+			input[0] = xOut[i];
+			input[1] = yOut[i];
+			input[2] = 0;
+			input[3] = avgOut[i];
+			input[4] = rngOut[i];
+			input[5] = maxOut[i];
+			input[6] = minOut[i];
+
+			 /*
+			if (i == 120)
+			{
+				for (int i = 0; i < 7; i++)
+					cout << input[i] << " ";
+
+				cout << endl;
+			}*/
+
+			cv::Mat sample(1, 7, CV_32FC1, input);
+
+			cv::Mat response;
+			dtree->predict(sample, response);
+
+			if(response.at<int>(0, 0) != 0)
+				binMap[i] = true;
+
+			if (binMap[i] == true)	//debug, remove later
+				cout << "!!!!!!" << endl;
+		}
+
+		dtclEndTime = high_resolution_clock::now();
+		
+		DTCRuntime += (dtclEndTime - dtclStartTime);
 
 		//Binary Map Output, as .txt for now
 		FILE* outputFile;
@@ -216,7 +306,7 @@ int openCV_DTC_Driver(uint64_t width, uint64_t height, char fileName[2000], char
 			fclose(outputFile);
 		}
 
-		//Chroma Manip
+		//Chroma Manip, Visual Output
 		for (int b = 0; b < (lumaSize / (64 * 64) + 4); b++)
 		{
 			int x = b * 64 % width;
@@ -341,7 +431,8 @@ int openCV_DTC_Driver(uint64_t width, uint64_t height, char fileName[2000], char
 	string csvFilePath = "../RUNTIME/" + csvFileName + ".csv";
 
 	string csvOut = "\n" + to_string(frames) + "," + to_string(finalKernelRuntime.count())
-		+ "," + to_string(finalKernelRuntime.count() / frames) + "," + to_string(finalOpRuntime.count()) + "," + to_string(finalRuntime.count());
+		+ "," + to_string(finalKernelRuntime.count() / frames) + "," + to_string(finalOpRuntime.count()) + "," + to_string(finalRuntime.count())
+		+ "," + to_string(DTCRuntime.count());
 
 	fopen_s(&runtimeStat, csvFilePath.c_str(), "a");	//Mode "a" just adds onto existing file. No overwriting completely.
 
@@ -351,7 +442,7 @@ int openCV_DTC_Driver(uint64_t width, uint64_t height, char fileName[2000], char
 		int csvSize = ftell(runtimeStat);
 		if (csvSize == 0)
 		{
-			string colName = "Frames,Kernel Runtime,Avg per Frame,Operation,Total";
+			string colName = "Frames,Kernel Runtime,Avg per Frame,Operation,Total,DTC";
 			fwrite(colName.c_str(), 1, colName.size(), runtimeStat);
 		}
 
@@ -364,6 +455,7 @@ int openCV_DTC_Driver(uint64_t width, uint64_t height, char fileName[2000], char
 	cout << "Average runtime per frame\t=\t" << finalKernelRuntime.count() / frames << "\n";
 	cout << "Final Operation Runtime\t\t=\t" << finalOpRuntime.count() << "\n";
 	cout << "Final Total Runtime\t\t=\t" << finalRuntime.count() << "\n";
+	cout << "DTC Total Runtime\t\t=\t" << DTCRuntime.count() << "\n";
 
 	cout << "\n";
 

@@ -37,8 +37,8 @@ int openCVTrainDTC(bool results)
 
     cv::Ptr<cv::ml::RTrees> dtree = cv::ml::RTrees::create();
 
-    dtree->setMaxDepth(8);
-    dtree->setMinSampleCount(10);
+    dtree->setMaxDepth(6);
+    dtree->setMinSampleCount(1000);
     dtree->setRegressionAccuracy(0.01f);
     dtree->setUseSurrogates(false);
     dtree->setMaxCategories(15);

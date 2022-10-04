@@ -21,7 +21,7 @@ int main()
 	//Will investigate before implementing into live server.
 
 	for (int i = 0; i < 1; i++)
-		openCV_DTC_Driver(width, height, fileName, filePath);
+		openCV_DTC_Driver_Proto(width, height, fileName, filePath);
 
 	//openCVTrainDTC(1);
 
