@@ -1,0 +1,100 @@
+|--- RANGE_MACRO_VALUE <= 209.50
+|   |--- MIN_MACRO_VALUE <= 36.50
+|   |   |--- RANGE_MACRO_VALUE <= 42.50
+|   |   |   |--- AVG_MACRO_VALUE <= 16.00
+|   |   |   |   |--- class: 0
+|   |   |   |--- AVG_MACRO_VALUE >  16.00
+|   |   |   |   |--- RANGE_MACRO_VALUE <= 31.50
+|   |   |   |   |   |--- AVG_MACRO_VALUE <= 17.38
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |   |   |--- AVG_MACRO_VALUE >  17.38
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |   |--- RANGE_MACRO_VALUE >  31.50
+|   |   |   |   |   |--- AVG_MACRO_VALUE <= 32.79
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |   |   |--- AVG_MACRO_VALUE >  32.79
+|   |   |   |   |   |   |--- class: 0
+|   |   |--- RANGE_MACRO_VALUE >  42.50
+|   |   |   |--- MIN_MACRO_VALUE <= 22.50
+|   |   |   |   |--- RANGE_MACRO_VALUE <= 96.50
+|   |   |   |   |   |--- MAX_MACRO_VALUE <= 100.50
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |   |   |--- MAX_MACRO_VALUE >  100.50
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |   |--- RANGE_MACRO_VALUE >  96.50
+|   |   |   |   |   |--- MAX_MACRO_VALUE <= 124.50
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |   |   |--- MAX_MACRO_VALUE >  124.50
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |--- MIN_MACRO_VALUE >  22.50
+|   |   |   |   |--- MIN_MACRO_VALUE <= 35.50
+|   |   |   |   |   |--- AVG_MACRO_VALUE <= 29.37
+|   |   |   |   |   |   |--- class: 1
+|   |   |   |   |   |--- AVG_MACRO_VALUE >  29.37
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |   |--- MIN_MACRO_VALUE >  35.50
+|   |   |   |   |   |--- AVG_MACRO_VALUE <= 104.05
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |   |   |--- AVG_MACRO_VALUE >  104.05
+|   |   |   |   |   |   |--- class: 0
+|   |--- MIN_MACRO_VALUE >  36.50
+|   |   |--- RANGE_MACRO_VALUE <= 201.00
+|   |   |   |--- MAX_MACRO_VALUE <= 21.50
+|   |   |   |   |--- AVGQUADRANT_MACRO_VALUE <= 0.50
+|   |   |   |   |   |--- MAX_MACRO_VALUE <= 17.00
+|   |   |   |   |   |   |--- class: 1
+|   |   |   |   |   |--- MAX_MACRO_VALUE >  17.00
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |   |--- AVGQUADRANT_MACRO_VALUE >  0.50
+|   |   |   |   |   |--- RANGE_MACRO_VALUE <= 40.50
+|   |   |   |   |   |   |--- class: 1
+|   |   |   |   |   |--- RANGE_MACRO_VALUE >  40.50
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |--- MAX_MACRO_VALUE >  21.50
+|   |   |   |   |--- MIN_MACRO_VALUE <= 234.50
+|   |   |   |   |   |--- RANGE_MACRO_VALUE <= 161.50
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |   |   |--- RANGE_MACRO_VALUE >  161.50
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |   |--- MIN_MACRO_VALUE >  234.50
+|   |   |   |   |   |--- class: 1
+|   |   |--- RANGE_MACRO_VALUE >  201.00
+|   |   |   |--- class: 1
+|--- RANGE_MACRO_VALUE >  209.50
+|   |--- MAX_MACRO_VALUE <= 125.50
+|   |   |--- MAX_MACRO_VALUE <= 16.50
+|   |   |   |--- class: 0
+|   |   |--- MAX_MACRO_VALUE >  16.50
+|   |   |   |--- AVG_MACRO_VALUE <= 151.30
+|   |   |   |   |--- class: 1
+|   |   |   |--- AVG_MACRO_VALUE >  151.30
+|   |   |   |   |--- AVG_MACRO_VALUE <= 153.82
+|   |   |   |   |   |--- class: 0
+|   |   |   |   |--- AVG_MACRO_VALUE >  153.82
+|   |   |   |   |   |--- class: 1
+|   |--- MAX_MACRO_VALUE >  125.50
+|   |   |--- AVG_MACRO_VALUE <= 148.24
+|   |   |   |--- AVG_MACRO_VALUE <= 131.83
+|   |   |   |   |--- MIN_MACRO_VALUE <= 15.50
+|   |   |   |   |   |--- class: 1
+|   |   |   |   |--- MIN_MACRO_VALUE >  15.50
+|   |   |   |   |   |--- RANGE_MACRO_VALUE <= 218.50
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |   |   |--- RANGE_MACRO_VALUE >  218.50
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |--- AVG_MACRO_VALUE >  131.83
+|   |   |   |   |--- RANGE_MACRO_VALUE <= 211.00
+|   |   |   |   |   |--- AVG_MACRO_VALUE <= 138.01
+|   |   |   |   |   |   |--- class: 0
+|   |   |   |   |   |--- AVG_MACRO_VALUE >  138.01
+|   |   |   |   |   |   |--- class: 1
+|   |   |   |   |--- RANGE_MACRO_VALUE >  211.00
+|   |   |   |   |   |--- class: 1
+|   |   |--- AVG_MACRO_VALUE >  148.24
+|   |   |   |--- RANGE_MACRO_VALUE <= 213.50
+|   |   |   |   |--- AVG_MACRO_VALUE <= 169.62
+|   |   |   |   |   |--- class: 1
+|   |   |   |   |--- AVG_MACRO_VALUE >  169.62
+|   |   |   |   |   |--- class: 0
+|   |   |   |--- RANGE_MACRO_VALUE >  213.50
+|   |   |   |   |--- class: 0
