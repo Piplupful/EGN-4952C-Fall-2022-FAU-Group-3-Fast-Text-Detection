@@ -16,14 +16,12 @@ int main()
 
 	//File Explorer Functionality, Easier YUV File Selection, Width/Height found by filename (YUV Standard)
 	openYUVFile(&width, &height, fileName, filePath);
-	
+
 	//Going over 20+ runs creates memory leak issues. Apparently this is a known issue for the latest release of OpenCL in certain applications.
 	//Will investigate before implementing into live server.
 
 	for (int i = 0; i < 1; i++)
-		openCV_DTC_Driver_Proto(width, height, fileName, filePath);
-
-	//openCVTrainDTC(1);
+		dtcDriver(width, height, fileName, filePath);
 
 	std::string holdOutput;
 	std::cout << "Press enter to end.";

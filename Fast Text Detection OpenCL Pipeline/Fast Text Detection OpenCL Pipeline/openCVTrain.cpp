@@ -37,14 +37,15 @@ int openCVTrainDTC(bool results)
 
     cv::Ptr<cv::ml::RTrees> dtree = cv::ml::RTrees::create();
 
-    dtree->setMaxDepth(6);
-    dtree->setMinSampleCount(1000);
-    dtree->setRegressionAccuracy(0.01f);
-    dtree->setUseSurrogates(false);
-    dtree->setMaxCategories(15);
+    //https://docs.opencv.org/4.x/d8/d89/classcv_1_1ml_1_1DTrees.html
+    dtree->setMaxDepth(15);
+    dtree->setMinSampleCount(50);
+    dtree->setRegressionAccuracy(0);
+    //dtree->setUseSurrogates(false);
+    dtree->setMaxCategories(2);
     dtree->setCVFolds(0); // nonzero causes core dump
-    dtree->setUse1SERule(true);
-    dtree->setTruncatePrunedTree(true);
+    dtree->setUse1SERule(false);
+    dtree->setTruncatePrunedTree(false);
     //Train model
     dtree->train(dataSet);
 
