@@ -190,7 +190,7 @@
     <ClCompile Include="driver.cpp" />
     <ClCompile Include="frameExtract.cpp" />
     <ClCompile Include="ocl.cpp" />
-    <ClCompile Include="ocvDTC_Driver.cpp" />
+    <ClCompile Include="DTC_Driver.cpp" />
     <ClCompile Include="openCVTrain.cpp" />
     <ClCompile Include="pipelineTemplate.cpp" />
     <ClCompile Include="rangeDummyDriver.cpp" />

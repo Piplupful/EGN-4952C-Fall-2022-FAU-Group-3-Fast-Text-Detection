@@ -51,7 +51,7 @@
     <ClCompile Include="csvFileOpenUtil_Impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ocvDTC_Driver.cpp">
+    <ClCompile Include="DTC_Driver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
