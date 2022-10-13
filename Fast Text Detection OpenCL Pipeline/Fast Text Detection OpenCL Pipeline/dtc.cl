@@ -12,19 +12,71 @@ __kernel void dtcTest(__global unsigned char* frame, const int width, __global b
 
 	int offset = Y * width + X;
 
-	for (int j = 0; j < 16; j++)			//over every x value
+    for (int i = 0; i < 16; i++)			//over every x value
 	{
-		for (int i = 0; i < 16; i++)		//over every y value
-		{
-			int val = frame[offset + (i * width + j)];
+		AVG_MACRO_VALUE += frame[offset + (i * width + 0)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 0)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 0)]);
 
-			AVG_MACRO_VALUE += val; //(frameBuf + offset)[i * width + j];	//save into corresponding block position
+		AVG_MACRO_VALUE += frame[offset + (i * width + 1)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 1)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 1)]);
 
-			if(MIN_MACRO_VALUE > val)
-				MIN_MACRO_VALUE = val;
-			if(MAX_MACRO_VALUE < val)
-				MAX_MACRO_VALUE = val;
-		}
+		AVG_MACRO_VALUE += frame[offset + (i * width + 2)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 2)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 2)]);
+
+		AVG_MACRO_VALUE += frame[offset + (i * width + 3)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 3)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 3)]);
+
+		AVG_MACRO_VALUE += frame[offset + (i * width + 4)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 4)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 4)]);
+
+		AVG_MACRO_VALUE += frame[offset + (i * width + 5)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 5)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 5)]);
+
+		AVG_MACRO_VALUE += frame[offset + (i * width + 6)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 6)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 6)]);
+
+		AVG_MACRO_VALUE += frame[offset + (i * width + 7)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 7)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 7)]);
+
+		AVG_MACRO_VALUE += frame[offset + (i * width + 8)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 8)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 8)]);
+
+		AVG_MACRO_VALUE += frame[offset + (i * width + 9)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 9)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 9)]);
+
+		AVG_MACRO_VALUE += frame[offset + (i * width + 10)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 10)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 10)]);
+
+		AVG_MACRO_VALUE += frame[offset + (i * width + 11)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 11)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 11)]);
+
+		AVG_MACRO_VALUE += frame[offset + (i * width + 12)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 12)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 12)]);
+
+		AVG_MACRO_VALUE += frame[offset + (i * width + 13)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 13)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 13)]);
+
+		AVG_MACRO_VALUE += frame[offset + (i * width + 14)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 14)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 14)]);
+
+		AVG_MACRO_VALUE += frame[offset + (i * width + 15)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 15)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 15)]);
 	}
 
 	if(Y != 1072)
