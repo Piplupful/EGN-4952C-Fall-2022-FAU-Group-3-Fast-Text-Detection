@@ -1,9 +1,27 @@
 // TODO: Add OpenCL kernel code here.
 
+double avgQuadrantBlock(int blocksize, unsigned int *blockData, int q_size, int x, int y)
+{
+    double sum = 0;
+    int xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+    int ylimit = y + q_size;
+    for (int i = x; i < xlimit; i++)
+    {
+        for (int j = y; j < ylimit; j++)
+        {
+            sum += blockData[i * blocksize + j];    // add each luma value to sum
+        }
+    }
+    return sum / (q_size * q_size);
+}
+
 __kernel void repTest2(__global unsigned char* frame, const int width, __global bool* binMap)	//16x16 ONLY
 {
     int X = get_global_id(0) * 16;
 	int Y = get_global_id(1) * 16;
+
+    unsigned int *blockData[256];
+    int j = 0;
 	
 	int AVG_MACRO_VALUE = 0;
 	int MAX_MACRO_VALUE = -1;
@@ -15,75 +33,149 @@ __kernel void repTest2(__global unsigned char* frame, const int width, __global 
 
     for (int i = 0; i < 16; i++)			//over every x value
 	{
-		AVG_MACRO_VALUE += frame[offset + (i * width + 0)];
-        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 0)]);
-        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 0)]);
+		AVG_MACRO_VALUE += frame[offset + (i * width)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width)]);
+        blockData[j] = frame[offset + (i * width)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 1)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 1)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 1)]);
+        blockData[j + 1] = frame[offset + (i * width + 1)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 2)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 2)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 2)]);
+        blockData[j + 2] = frame[offset + (i * width + 2)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 3)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 3)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 3)]);
+        blockData[j + 3] = frame[offset + (i * width + 3)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 4)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 4)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 4)]);
+        blockData[j + 4] = frame[offset + (i * width + 4)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 5)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 5)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 5)]);
+        blockData[j + 5] = frame[offset + (i * width + 5)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 6)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 6)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 6)]);
+        blockData[j + 6] = frame[offset + (i * width + 6)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 7)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 7)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 7)]);
+        blockData[j + 7] = frame[offset + (i * width + 7)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 8)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 8)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 8)]);
+        blockData[j + 8] = frame[offset + (i * width + 8)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 9)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 9)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 9)]);
+        blockData[j + 9] = frame[offset + (i * width + 9)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 10)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 10)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 10)]);
+        blockData[j + 10] = frame[offset + (i * width + 10)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 11)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 11)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 11)]);
+        blockData[j + 11] = frame[offset + (i * width + 11)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 12)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 12)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 12)]);
+        blockData[j + 12] = frame[offset + (i * width + 12)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 13)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 13)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 13)]);
+        blockData[j + 13] = frame[offset + (i * width + 13)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 14)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 14)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 14)]);
+        blockData[j + 14] = frame[offset + (i * width + 14)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 15)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 15)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 15)]);
+        blockData[j + 15] = frame[offset + (i * width + 15)];
+
+        j += 16;
 	}
 
 	if(Y != 1072)
-		AVG_MACRO_VALUE /= 256.0;
+    {
+        AVG_MACRO_VALUE /= 256.0;
+
+        int q1Avg, q2Avg, q3Avg, q4Avg, qcenter = 0;
+        int q_size = 4;
+
+        q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
+        q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
+        q3Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 0);  // quadrant 3 is left bottom corner so if a 8x8 macroblock then from (0-2, 5-7)
+        q4Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 16 - q_size); // quadrant 4 is the right bottom corner so if a 8x8 macroblock then from (5-7, 5-7)
+        qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+
+        if (abs_diff(q1Avg, q2Avg) < 30 && abs_diff(q1Avg, q3Avg) < 30 && abs_diff(q1Avg, q4Avg) && abs_diff(q2Avg, q3Avg) < 30 && abs_diff(q2Avg, q4Avg) < 30 && abs_diff(q3Avg, q4Avg) < 30)
+        {
+            int qAvg = (q1Avg + q2Avg + q3Avg + q4Avg) / 4;  // average of all quadrants except center
+
+            if (abs_diff(qAvg, qcenter) > 8)    // compare to center quadrant 
+            {
+                AVGQUADRANT_MACRO_VALUE = 1;
+            }
+            else
+            {
+                AVGQUADRANT_MACRO_VALUE = 0;
+            }
+        }
+        else
+        {
+            AVGQUADRANT_MACRO_VALUE = 0;
+        }
+    }
 	else
+    {
 		AVG_MACRO_VALUE /= 128.0;	//1080p case, 1080/16 = 67.5
+
+        int q1Avg, q2Avg, qcenter = 0;
+        int q_size = 4;
+
+        q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
+        q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
+        qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+
+        if (abs_diff(q1Avg, q2Avg) < 30)
+        {
+            int qAvg = (q1Avg + q2Avg) / 2;  // average of all quadrants except center
+
+            if (abs_diff(qAvg, qcenter) > 8)    // compare to center quadrant 
+            {
+                AVGQUADRANT_MACRO_VALUE = 1;
+            }
+            else
+            {
+                AVGQUADRANT_MACRO_VALUE = 0;
+            }
+        }
+        else
+        {
+            AVGQUADRANT_MACRO_VALUE = 0;
+        }
+    }
 
 	RANGE_MACRO_VALUE = MAX_MACRO_VALUE - MIN_MACRO_VALUE;
 
@@ -1804,6 +1896,9 @@ __kernel void repTest1(__global unsigned char* frame, const int width, __global 
 {
     int X = get_global_id(0) * 16;
 	int Y = get_global_id(1) * 16;
+
+    unsigned int *blockData[256];
+    int j = 0;
 	
 	int AVG_MACRO_VALUE = 0;
 	int MAX_MACRO_VALUE = -1;
@@ -1815,75 +1910,149 @@ __kernel void repTest1(__global unsigned char* frame, const int width, __global 
 
     for (int i = 0; i < 16; i++)			//over every x value
 	{
-		AVG_MACRO_VALUE += frame[offset + (i * width + 0)];
-        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 0)]);
-        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 0)]);
+		AVG_MACRO_VALUE += frame[offset + (i * width)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width)]);
+        blockData[j] = frame[offset + (i * width)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 1)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 1)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 1)]);
+        blockData[j + 1] = frame[offset + (i * width + 1)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 2)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 2)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 2)]);
+        blockData[j + 2] = frame[offset + (i * width + 2)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 3)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 3)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 3)]);
+        blockData[j + 3] = frame[offset + (i * width + 3)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 4)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 4)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 4)]);
+        blockData[j + 4] = frame[offset + (i * width + 4)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 5)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 5)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 5)]);
+        blockData[j + 5] = frame[offset + (i * width + 5)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 6)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 6)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 6)]);
+        blockData[j + 6] = frame[offset + (i * width + 6)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 7)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 7)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 7)]);
+        blockData[j + 7] = frame[offset + (i * width + 7)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 8)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 8)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 8)]);
+        blockData[j + 8] = frame[offset + (i * width + 8)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 9)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 9)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 9)]);
+        blockData[j + 9] = frame[offset + (i * width + 9)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 10)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 10)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 10)]);
+        blockData[j + 10] = frame[offset + (i * width + 10)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 11)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 11)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 11)]);
+        blockData[j + 11] = frame[offset + (i * width + 11)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 12)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 12)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 12)]);
+        blockData[j + 12] = frame[offset + (i * width + 12)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 13)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 13)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 13)]);
+        blockData[j + 13] = frame[offset + (i * width + 13)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 14)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 14)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 14)]);
+        blockData[j + 14] = frame[offset + (i * width + 14)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 15)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 15)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 15)]);
+        blockData[j + 15] = frame[offset + (i * width + 15)];
+
+        j += 16;
 	}
 
 	if(Y != 1072)
-		AVG_MACRO_VALUE /= 256.0;
+    {
+        AVG_MACRO_VALUE /= 256.0;
+
+        int q1Avg, q2Avg, q3Avg, q4Avg, qcenter = 0;
+        int q_size = 4;
+
+        q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
+        q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
+        q3Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 0);  // quadrant 3 is left bottom corner so if a 8x8 macroblock then from (0-2, 5-7)
+        q4Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 16 - q_size); // quadrant 4 is the right bottom corner so if a 8x8 macroblock then from (5-7, 5-7)
+        qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+
+        if (abs_diff(q1Avg, q2Avg) < 30 && abs_diff(q1Avg, q3Avg) < 30 && abs_diff(q1Avg, q4Avg) && abs_diff(q2Avg, q3Avg) < 30 && abs_diff(q2Avg, q4Avg) < 30 && abs_diff(q3Avg, q4Avg) < 30)
+        {
+            int qAvg = (q1Avg + q2Avg + q3Avg + q4Avg) / 4;  // average of all quadrants except center
+
+            if (abs_diff(qAvg, qcenter) > 8)    // compare to center quadrant 
+            {
+                AVGQUADRANT_MACRO_VALUE = 1;
+            }
+            else
+            {
+                AVGQUADRANT_MACRO_VALUE = 0;
+            }
+        }
+        else
+        {
+            AVGQUADRANT_MACRO_VALUE = 0;
+        }
+    }
 	else
+    {
 		AVG_MACRO_VALUE /= 128.0;	//1080p case, 1080/16 = 67.5
+
+        int q1Avg, q2Avg, qcenter = 0;
+        int q_size = 4;
+
+        q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
+        q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
+        qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+
+        if (abs_diff(q1Avg, q2Avg) < 30)
+        {
+            int qAvg = (q1Avg + q2Avg) / 2;  // average of all quadrants except center
+
+            if (abs_diff(qAvg, qcenter) > 8)    // compare to center quadrant 
+            {
+                AVGQUADRANT_MACRO_VALUE = 1;
+            }
+            else
+            {
+                AVGQUADRANT_MACRO_VALUE = 0;
+            }
+        }
+        else
+        {
+            AVGQUADRANT_MACRO_VALUE = 0;
+        }
+    }
 
 	RANGE_MACRO_VALUE = MAX_MACRO_VALUE - MIN_MACRO_VALUE;
 
@@ -2894,6 +3063,9 @@ __kernel void dtcTest(__global unsigned char* frame, const int width, __global b
 {
     int X = get_global_id(0) * 16;
 	int Y = get_global_id(1) * 16;
+
+    unsigned int *blockData[256];
+    int j = 0;
 	
 	int AVG_MACRO_VALUE = 0;
 	int MAX_MACRO_VALUE = -1;
@@ -2905,75 +3077,149 @@ __kernel void dtcTest(__global unsigned char* frame, const int width, __global b
 
     for (int i = 0; i < 16; i++)			//over every x value
 	{
-		AVG_MACRO_VALUE += frame[offset + (i * width + 0)];
-        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 0)]);
-        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 0)]);
+		AVG_MACRO_VALUE += frame[offset + (i * width)];
+        MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width)]);
+        MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width)]);
+        blockData[j] = frame[offset + (i * width)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 1)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 1)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 1)]);
+        blockData[j + 1] = frame[offset + (i * width + 1)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 2)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 2)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 2)]);
+        blockData[j + 2] = frame[offset + (i * width + 2)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 3)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 3)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 3)]);
+        blockData[j + 3] = frame[offset + (i * width + 3)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 4)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 4)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 4)]);
+        blockData[j + 4] = frame[offset + (i * width + 4)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 5)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 5)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 5)]);
+        blockData[j + 5] = frame[offset + (i * width + 5)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 6)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 6)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 6)]);
+        blockData[j + 6] = frame[offset + (i * width + 6)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 7)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 7)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 7)]);
+        blockData[j + 7] = frame[offset + (i * width + 7)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 8)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 8)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 8)]);
+        blockData[j + 8] = frame[offset + (i * width + 8)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 9)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 9)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 9)]);
+        blockData[j + 9] = frame[offset + (i * width + 9)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 10)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 10)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 10)]);
+        blockData[j + 10] = frame[offset + (i * width + 10)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 11)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 11)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 11)]);
+        blockData[j + 11] = frame[offset + (i * width + 11)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 12)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 12)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 12)]);
+        blockData[j + 12] = frame[offset + (i * width + 12)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 13)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 13)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 13)]);
+        blockData[j + 13] = frame[offset + (i * width + 13)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 14)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 14)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 14)]);
+        blockData[j + 14] = frame[offset + (i * width + 14)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 15)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 15)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 15)]);
+        blockData[j + 15] = frame[offset + (i * width + 15)];
+
+        j += 16;
 	}
 
 	if(Y != 1072)
-		AVG_MACRO_VALUE /= 256.0;
+    {
+        AVG_MACRO_VALUE /= 256.0;
+
+        int q1Avg, q2Avg, q3Avg, q4Avg, qcenter = 0;
+        int q_size = 4;
+
+        q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
+        q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
+        q3Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 0);  // quadrant 3 is left bottom corner so if a 8x8 macroblock then from (0-2, 5-7)
+        q4Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 16 - q_size); // quadrant 4 is the right bottom corner so if a 8x8 macroblock then from (5-7, 5-7)
+        qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+
+        if (abs_diff(q1Avg, q2Avg) < 30 && abs_diff(q1Avg, q3Avg) < 30 && abs_diff(q1Avg, q4Avg) && abs_diff(q2Avg, q3Avg) < 30 && abs_diff(q2Avg, q4Avg) < 30 && abs_diff(q3Avg, q4Avg) < 30)
+        {
+            int qAvg = (q1Avg + q2Avg + q3Avg + q4Avg) / 4;  // average of all quadrants except center
+
+            if (abs_diff(qAvg, qcenter) > 8)    // compare to center quadrant 
+            {
+                AVGQUADRANT_MACRO_VALUE = 1;
+            }
+            else
+            {
+                AVGQUADRANT_MACRO_VALUE = 0;
+            }
+        }
+        else
+        {
+            AVGQUADRANT_MACRO_VALUE = 0;
+        }
+    }
 	else
+    {
 		AVG_MACRO_VALUE /= 128.0;	//1080p case, 1080/16 = 67.5
+
+        int q1Avg, q2Avg, qcenter = 0;
+        int q_size = 4;
+
+        q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
+        q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
+        qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+
+        if (abs_diff(q1Avg, q2Avg) < 30)
+        {
+            int qAvg = (q1Avg + q2Avg) / 2;  // average of all quadrants except center
+
+            if (abs_diff(qAvg, qcenter) > 8)    // compare to center quadrant 
+            {
+                AVGQUADRANT_MACRO_VALUE = 1;
+            }
+            else
+            {
+                AVGQUADRANT_MACRO_VALUE = 0;
+            }
+        }
+        else
+        {
+            AVGQUADRANT_MACRO_VALUE = 0;
+        }
+    }
 
 	RANGE_MACRO_VALUE = MAX_MACRO_VALUE - MIN_MACRO_VALUE;
 

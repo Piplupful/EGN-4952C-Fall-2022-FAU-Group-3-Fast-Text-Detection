@@ -318,8 +318,6 @@ int dtcDriver(uint64_t width, uint64_t height, char fileName[2000], char filePat
 
 	auto opEndTime = high_resolution_clock::now();
 
-	clReleaseMemObject(clFrameBuffer);
-
 	if (dtcOutput != NULL)
 		fclose(dtcOutput);
 
@@ -358,6 +356,8 @@ int dtcDriver(uint64_t width, uint64_t height, char fileName[2000], char filePat
 	cout << "Average runtime per frame\t=\t" << finalKernelRuntime.count() / frames << "\n";
 	cout << "Final Operation Runtime\t\t=\t" << finalOpRuntime.count() << "\n";
 	cout << "Final Total Runtime\t\t=\t" << finalRuntime.count() << "\n";
+
+	ocl.deviceInfoPrint();
 
 	cout << "\n";
 

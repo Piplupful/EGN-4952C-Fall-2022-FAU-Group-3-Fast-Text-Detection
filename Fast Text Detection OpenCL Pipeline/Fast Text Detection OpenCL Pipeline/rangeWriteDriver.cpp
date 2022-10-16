@@ -319,7 +319,6 @@ int rangeMain2DWrite(uint64_t width, uint64_t height, char fileName[2000], char 
 
 	auto opEndTime = high_resolution_clock::now();
 
-	clReleaseMemObject(clFrameBuffer);
 	clReleaseMemObject(clThreshBuffer);
 
 	if (rngOutput != NULL)
