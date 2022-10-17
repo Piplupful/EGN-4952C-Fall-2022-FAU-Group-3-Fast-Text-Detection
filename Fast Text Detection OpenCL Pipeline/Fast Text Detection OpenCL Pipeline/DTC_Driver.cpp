@@ -122,7 +122,7 @@ int dtcDriver(uint64_t width, uint64_t height, char fileName[2000], char filePat
 	OpenCL ocl("dtc.cl");
 
 	//INSERT VALID FUNCTION FROM VALID OPENCL FILE, STRING IN 2ND PARAMETER = FUNCTION NAME
-	ocl.kernel = clCreateKernel(ocl.program, "repTest2", &err);
+	ocl.kernel = clCreateKernel(ocl.program, "randForestTest", &err);
 
 	if (err != CL_SUCCESS)
 	{
