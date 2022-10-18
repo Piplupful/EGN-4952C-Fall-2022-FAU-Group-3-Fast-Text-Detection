@@ -48,10 +48,9 @@ using std::chrono::milliseconds;
 
 // File Explorer Functionality
 #include "yuvFileOpenUtil.h"
+#include "ocl.h"
 
 using namespace std;
-
-#include "ocl.h"
 
 int templateMain()
 {

@@ -187,6 +187,7 @@
   <ItemGroup>
     <ClCompile Include="avgDriver.cpp" />
     <ClCompile Include="csvFileOpenUtil_Impl.cpp" />
+    <ClCompile Include="datasetCreate.cpp" />
     <ClCompile Include="driver.cpp" />
     <ClCompile Include="frameExtract.cpp" />
     <ClCompile Include="ocl.cpp" />

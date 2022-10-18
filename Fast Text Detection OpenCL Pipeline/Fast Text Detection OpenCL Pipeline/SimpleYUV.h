@@ -6,6 +6,12 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <ratio>
+#include <__msvc_chrono.hpp>
+
+using std::chrono::high_resolution_clock;
+using std::chrono::duration;
+using std::chrono::milliseconds;
 
 #define _FILE_OFFSET_BITS 64
 

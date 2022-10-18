@@ -1,3 +1,6 @@
+//ffmpeg -i input.y4m -pix_fmt yuv420p output.yuv
+//To convert .y4m from XIPH DERF into useable .yuv (4:2:0) video.
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
