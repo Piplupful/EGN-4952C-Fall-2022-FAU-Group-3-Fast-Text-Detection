@@ -1,15 +1,15 @@
 // TODO: Add OpenCL kernel code here.
 
-double avgQuadrantBlock(int blocksize, unsigned int *blockData, int q_size, int x, int y)
+int avgQuadrantBlock(int blocksize, unsigned char *blockData, int q_size, int x, int y)
 {
-    double sum = 0;
+    int sum = 0;
     int xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
     int ylimit = y + q_size;
     for (int i = x; i < xlimit; i++)
     {
         for (int j = y; j < ylimit; j++)
         {
-            sum += blockData[i * blocksize + j];    // add each luma value to sum
+            sum += (int)blockData[i * blocksize + j];    // add each luma value to sum
         }
     }
     return sum / (q_size * q_size);
@@ -23,14 +23,15 @@ __kernel void randForestTest(__global unsigned char* frame, const int width, __g
     int zeroCount = 0;
     int oneCount = 0;
 
-    unsigned int *blockData[256];
-    int j = 0;
+    unsigned char *blockData[256];
 	
 	int AVG_MACRO_VALUE = 0;
 	int MAX_MACRO_VALUE = -1;
 	int MIN_MACRO_VALUE = 256;
 	int RANGE_MACRO_VALUE = 0;
     int AVGQUADRANT_MACRO_VALUE = 0;
+    int AVG_ROW_DIF = 0;
+    int AVG_COL_DIF = 0;
 
 	int offset = Y * width + X;
 
@@ -39,89 +40,105 @@ __kernel void randForestTest(__global unsigned char* frame, const int width, __g
 		AVG_MACRO_VALUE += frame[offset + (i * width)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width)]);
-        blockData[j] = frame[offset + (i * width)];
+        blockData[i * 16] = frame[offset + (i * width)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 1)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 1)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 1)]);
-        blockData[j + 1] = frame[offset + (i * width + 1)];
+        blockData[i * 16 + 1] = frame[offset + (i * width + 1)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 2)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 2)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 2)]);
-        blockData[j + 2] = frame[offset + (i * width + 2)];
+        blockData[i * 16 + 2] = frame[offset + (i * width + 2)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 3)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 3)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 3)]);
-        blockData[j + 3] = frame[offset + (i * width + 3)];
+        blockData[i * 16 + 3] = frame[offset + (i * width + 3)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 4)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 4)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 4)]);
-        blockData[j + 4] = frame[offset + (i * width + 4)];
+        blockData[i * 16 + 4] = frame[offset + (i * width + 4)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 5)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 5)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 5)]);
-        blockData[j + 5] = frame[offset + (i * width + 5)];
+        blockData[i * 16 + 5] = frame[offset + (i * width + 5)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 6)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 6)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 6)]);
-        blockData[j + 6] = frame[offset + (i * width + 6)];
+        blockData[i * 16 + 6] = frame[offset + (i * width + 6)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 7)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 7)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 7)]);
-        blockData[j + 7] = frame[offset + (i * width + 7)];
+        blockData[i * 16 + 7] = frame[offset + (i * width + 7)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 8)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 8)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 8)]);
-        blockData[j + 8] = frame[offset + (i * width + 8)];
+        blockData[i * 16 + 8] = frame[offset + (i * width + 8)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 9)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 9)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 9)]);
-        blockData[j + 9] = frame[offset + (i * width + 9)];
+        blockData[i * 16 + 9] = frame[offset + (i * width + 9)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 10)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 10)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 10)]);
-        blockData[j + 10] = frame[offset + (i * width + 10)];
+        blockData[i * 16 + 10] = frame[offset + (i * width + 10)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 11)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 11)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 11)]);
-        blockData[j + 11] = frame[offset + (i * width + 11)];
+        blockData[i * 16 + 11] = frame[offset + (i * width + 11)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 12)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 12)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 12)]);
-        blockData[j + 12] = frame[offset + (i * width + 12)];
+        blockData[i * 16 + 12] = frame[offset + (i * width + 12)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 13)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 13)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 13)]);
-        blockData[j + 13] = frame[offset + (i * width + 13)];
+        blockData[i * 16 + 13] = frame[offset + (i * width + 13)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 14)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 14)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 14)]);
-        blockData[j + 14] = frame[offset + (i * width + 14)];
+        blockData[i * 16 + 14] = frame[offset + (i * width + 14)];
 
 		AVG_MACRO_VALUE += frame[offset + (i * width + 15)];
         MIN_MACRO_VALUE = min(MIN_MACRO_VALUE, (int)frame[offset + (i * width + 15)]);
         MAX_MACRO_VALUE = max(MAX_MACRO_VALUE, (int)frame[offset + (i * width + 15)]);
-        blockData[j + 15] = frame[offset + (i * width + 15)];
-
-        j += 16;
+        blockData[i * 16 + 15] = frame[offset + (i * width + 15)];
 	}
-
+   
 	if(Y != 1072)
     {
         AVG_MACRO_VALUE /= 256.0;
+
+        for(int i = 0; i < 15; i++)
+        {
+            for(int j = 0; j < 16; j++)
+            {
+                AVG_ROW_DIF += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
+            }
+        }
+        AVG_ROW_DIF = AVG_ROW_DIF / 240; //15 * 16
+
+        for(int i = 0; i < 16; i++)
+        {
+            for(int j = 0; j < 15; j++)
+            {
+                AVG_COL_DIF += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
+            }
+        }
+        AVG_COL_DIF = AVG_COL_DIF / 240; //16 * 15
 
         int q1Avg, q2Avg, q3Avg, q4Avg, qcenter = 0;
         int q_size = 4;
@@ -153,6 +170,24 @@ __kernel void randForestTest(__global unsigned char* frame, const int width, __g
 	else
     {
 		AVG_MACRO_VALUE /= 128.0;	//1080p case, 1080/16 = 67.5
+
+        for(int i = 0; i < 7; i++)
+        {
+            for(int j = 0; j < 16; j++)
+            {
+                AVG_ROW_DIF += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
+            }
+        }
+        AVG_ROW_DIF = AVG_ROW_DIF / 112; //16 * 7
+
+        for(int i = 0; i < 8; i++)
+        {
+            for(int j = 0; j < 15; j++)
+            {
+                AVG_COL_DIF += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
+            }
+        }
+        AVG_COL_DIF = AVG_COL_DIF / 120; //15 * 8
 
         int q1Avg, q2Avg, qcenter = 0;
         int q_size = 4;
@@ -1244,6 +1279,8 @@ __kernel void randForestTest(__global unsigned char* frame, const int width, __g
         binMap[i] = 1;
 }
 
+/*
+OLD MODELS MODELS AND KERNEL FUNCTIONS BELOW
 __kernel void repTest2(__global unsigned char* frame, const int width, __global bool* binMap)	//16x16 ONLY
 {
     int X = get_global_id(0) * 16;
@@ -4698,3 +4735,4 @@ __global double* avgOut, __global double* rngOut, __global double* maxOut, __glo
 	maxOut[i] = max;
 	minOut[i] = min;
 }
+*/
