@@ -1,7 +1,7 @@
 import re,sys,os,math
 from collections import defaultdict
 
-IntList = ['X','Y','AVGQUADRANT_MACRO_VALUE','AVG_MACRO_VALUE', 'RANGE_MACRO_VALUE', 'MAX_MACRO_VALUE', 'MIN_MACRO_VALUE']
+IntList = ['X','Y','AVGQUADRANT_MACRO_VALUE','AVG_MACRO_VALUE', 'RANGE_MACRO_VALUE', 'MAX_MACRO_VALUE', 'MIN_MACRO_VALUE', 'AVG_ROW', 'AVG_COL']
 
 if len(sys.argv)<2:
     sys.exit('Usage: %s weka-text-tree-source' % sys.argv[0])
