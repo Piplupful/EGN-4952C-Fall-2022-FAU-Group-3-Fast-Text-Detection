@@ -90,7 +90,7 @@ void stats(unsigned char* frameData, int blockSize, int width, int height, int f
 	myfile.open(name, std::ios::app);
 	if (myfile.is_open())
 	{
-		myfile << "X,Y,AVGQUADRANT_MACRO_VALUE,AVG_MACRO_VALUE,RANGE_MACRO_VALUE,MAX_MACRO_VALUE,MIN_MACRO_VALUE" << "\n";
+		myfile << "X,Y,AVGQUADRANT_MACRO_VALUE,AVG_MACRO_VALUE,AVG_ROW,AVG_COL,RANGE_MACRO_VALUE,MAX_MACRO_VALUE,MIN_MACRO_VALUE" << "\n";
 	}
 	else
 	{
@@ -109,8 +109,10 @@ void stats(unsigned char* frameData, int blockSize, int width, int height, int f
 				int maxY = maxYBlock(blockData, blockSize);
 				int range = rangeInBlock(blockData, blockSize);
 				int avgQ = basicCharOutput(blockSize, blockData, width, height);
+				int avgRow = avgRowDif(blockData, blockSize, blockSize);
+				int avgCol = avgColDif(blockData, blockSize, blockSize);
 				//printf("X = %d, Y = %d, AvgQ = %d Avg = %f, Range = %d, Max = %d, Min = %d\n", x, y, avgQ, curAvg, range, maxY, minY);
-				myfile << x << ", " << y << ", " << avgQ << ", " << curAvg << ", " << range << ", " << maxY << ", " << minY << "\n";
+				myfile << x << ", " << y << ", " << avgQ << ", " << curAvg << ", " << avgRow << ", " << avgCol << ", " << range << ", " << maxY << ", " << minY << "\n";
 			}
 		}
 	}

@@ -59,3 +59,7 @@ std::vector<double> averageBlocksFrame(unsigned char* frameBuffer, int width, in
 void getBlockFromNum(unsigned char* frameData, unsigned char* blockData, int blockSize, int blockNum, int width);
 
 duration<double, std::milli> writeAvgBlockYUV(FILE* fp, uint64_t width, uint64_t height, int totalFrames, uint64_t blockSize);
+
+int avgRowDif(unsigned char* blockData, int width, int height);
+
+int avgColDif(unsigned char* blockData, int width, int height);

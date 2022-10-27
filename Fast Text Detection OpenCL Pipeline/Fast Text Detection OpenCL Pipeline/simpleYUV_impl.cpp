@@ -404,3 +404,32 @@ duration<double, std::milli> writeAvgBlockYUV(FILE* fp, uint64_t width, uint64_t
 
 	return ms_double;
 }
+
+int avgRowDif(unsigned char* blockData, int width, int height)
+{
+	int difSum = 0;
+	for (int i = 0; i < height - 1; i++)
+	{
+		for (int j = 0; j < width; j++)
+		{
+			int val = blockData[i * width + j] - blockData[((i + 1) * width) + j];
+			difSum += abs(val);
+		}
+	}
+	return difSum / (width * (height - 1));
+}
+
+int avgColDif(unsigned char* blockData, int width, int height)
+{
+	int difSum = 0;
+
+	for (int i = 0; i < height; i++)
+	{
+		for (int j = 0; j < width - 1; j++)
+		{
+			int val = blockData[i * width + j] - blockData[i * width + (j + 1)];
+			difSum += abs(val);
+		}
+	}
+	return difSum / ((width - 1) * height);
+}
