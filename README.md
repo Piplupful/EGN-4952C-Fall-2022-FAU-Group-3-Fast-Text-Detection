@@ -21,3 +21,5 @@ compressed image. This code will serve as the basis of our OpenCL based pipeline
 analysis down the road.
 
 - September 17, 2022: Merged Optimization experimentation into main, new utility functions, improved OpenCL code, etc. Removed Visual Studio folders.
+
+- October 27, 2022: Actual Text Detection is now being developed. Using a script provided by our sponsor, we can convert WEKA text output into usable C++ code. This can me modified slightly to fit OpenCL kernel functionality. Latest version of dataset creation code added, including Python scripts for utilizing EasyOCR to set ground truth, and to combine the final CSV files. Implementations of ML Kernel Functions are in dtc.cl. New dataset being worked on by two of our members, one is using the old dataset to see if certain techniques can improve accuracy, we are experimenting with having Simple Thresholding be a pre-processing step in our text detection, and our Optimization goals have been met using an Intel IRIS 580, with our early ML implementation having a runtime of about 0.5ms per frame of YUV video.
