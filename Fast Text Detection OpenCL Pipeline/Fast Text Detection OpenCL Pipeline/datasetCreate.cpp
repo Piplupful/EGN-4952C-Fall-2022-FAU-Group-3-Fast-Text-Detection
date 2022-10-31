@@ -180,7 +180,7 @@ int datasetCreate(uint64_t width, uint64_t height, char fileName[2000], char fil
 		return 2;
 	}
 
-	int num[] = { 0, 124, 270, 410, 755, 920, 1026, 1283, 1429, 1785, 1987, 2350, 2800, 3000, 3345 }; //Change based on Frames
+	int num[] = { 0, 429, 527, 410, 1131, 1567, 1741, 1834, 2042, 2210, 2479, 2755, 2963, 3536, 3580 }; //Change based on Frames
 
 	for (int i = 0; i < 15; i++)
 	{

@@ -24,6 +24,7 @@ int main()
 		dtcDriver(width, height, fileName, filePath);
 
 	//datasetCreate(width, height, fileName, filePath);
+	//simpleThreshWrite(width, height, fileName, filePath, 0);
 
 	std::string holdOutput;
 	std::cout << "Press enter to end.";
