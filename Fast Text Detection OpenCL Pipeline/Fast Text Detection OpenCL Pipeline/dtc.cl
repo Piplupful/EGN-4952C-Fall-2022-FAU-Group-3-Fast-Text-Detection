@@ -1,5 +1,5 @@
 // TODO: Add OpenCL kernel code here.
-
+/*
 int avgQuadrantBlock(int blocksize, unsigned char *blockData, int q_size, int x, int y)
 {
     int sum = 0;
@@ -13,7 +13,7 @@ int avgQuadrantBlock(int blocksize, unsigned char *blockData, int q_size, int x,
         }
     }
     return sum / (q_size * q_size);
-}
+}*/
 
 __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __global bool* binMap)	//16x16 ONLY
 {
@@ -143,11 +143,91 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
         int q1Avg, q2Avg, q3Avg, q4Avg, qcenter = 0;
         int q_size = 4;
 
-        q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
-        q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
-        q3Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 0);  // quadrant 3 is left bottom corner so if a 8x8 macroblock then from (0-2, 5-7)
-        q4Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 16 - q_size); // quadrant 4 is the right bottom corner so if a 8x8 macroblock then from (5-7, 5-7)
-        qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+        //int avgQuadrantBlock(int blocksize, unsigned char *blockData, int q_size, int x, int y)
+        //q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
+        
+        int sum = 0;
+        int x = 0;
+        int y = 0;
+        int xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        int ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q1Avg = sum / (q_size * q_size);
+        
+        //q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
+        
+        sum = 0;
+        x = 0;
+        y = 16 - q_size;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q2Avg = sum / (q_size * q_size);
+        
+        //q3Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 0);  // quadrant 3 is left bottom corner so if a 8x8 macroblock then from (0-2, 5-7)
+        
+        sum = 0;
+        x = 16 - q_size;
+        y = 0;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q3Avg = sum / (q_size * q_size);
+        
+        //q4Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 16 - q_size); // quadrant 4 is the right bottom corner so if a 8x8 macroblock then from (5-7, 5-7)
+        
+        sum = 0;
+        x = 16 - q_size;
+        y = 16 - q_size;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q4Avg = sum / (q_size * q_size);
+        
+        //qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+        
+        sum = 0;
+        x = 16 / 2 - 1;
+        y = 16 / 2 - 1;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        qcenter = sum / (q_size * q_size);
 
         if (abs_diff(q1Avg, q2Avg) < 30 && abs_diff(q1Avg, q3Avg) < 30 && abs_diff(q1Avg, q4Avg) && abs_diff(q2Avg, q3Avg) < 30 && abs_diff(q2Avg, q4Avg) < 30 && abs_diff(q3Avg, q4Avg) < 30)
         {
@@ -192,9 +272,52 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
         int q1Avg, q2Avg, qcenter = 0;
         int q_size = 4;
 
-        q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
-        q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
-        qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+        //q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
+        int sum = 0;
+        int x = 0;
+        int y = 0;
+        int xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        int ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+        q1Avg = sum / (q_size * q_size);
+
+        //q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
+        sum = 0;
+        x = 0;
+        y = 16 - q_size;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q2Avg = sum / (q_size * q_size);
+
+        //qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+        sum = 0;
+        x = 16 / 2 - 1;
+        y = 16 / 2 - 1;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        qcenter = sum / (q_size * q_size);
 
         if (abs_diff(q1Avg, q2Avg) < 30)
         {
@@ -221,6 +344,7 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
 	int i = (X / 16) + ((int)(Y / 16) * (width / 16));	//numBlock
 
 	//DTC OR OTHER CONVERTED MODEL
+
     //TREE 1
     if (MIN_MACRO_VALUE < 33.5) {
             if (AVG_MACRO_VALUE < 17.43) {
@@ -577,10 +701,10 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                 else if (AVG_MACRO_VALUE >= 65.24) {
                                     if (MIN_MACRO_VALUE < 21.5) {
                                         if (MAX_MACRO_VALUE < 107.5) {
-                                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
+                                            if (AVGQUADRANT_MACRO_VALUE == 0) {
                                                 zeroCount++;
                                             }
-                                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
+                                            else if (AVGQUADRANT_MACRO_VALUE == 1) {
                                                 zeroCount++;
                                             }
                                         }
@@ -884,10 +1008,10 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                             zeroCount++;
                                         }
                                         else if (Y >= 512) {
-                                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
+                                            if (AVGQUADRANT_MACRO_VALUE == 0) {
                                                 oneCount++;
                                             }
-                                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
+                                            else if (AVGQUADRANT_MACRO_VALUE == 1) {
                                                 oneCount++;
                                             }
                                         }
@@ -1211,10 +1335,10 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                             }
                                         }
                                         else if (MAX_MACRO_VALUE >= 100.5) {
-                                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
+                                            if (AVGQUADRANT_MACRO_VALUE == 0) {
                                                 oneCount++;
                                             }
-                                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
+                                            else if (AVGQUADRANT_MACRO_VALUE == 1) {
                                                 zeroCount++;
                                             }
                                         }
@@ -1323,10 +1447,10 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                         }
                                     }
                                     else if (MIN_MACRO_VALUE >= 23.5) {
-                                        if (AVGQUADRANT_MACRO_VALUE < 0.5) {
+                                        if (AVGQUADRANT_MACRO_VALUE == 0) {
                                             zeroCount++;
                                         }
-                                        else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
+                                        else if (AVGQUADRANT_MACRO_VALUE == 1) {
                                             if (MIN_MACRO_VALUE < 32.5) {
                                                 zeroCount++;
                                             }
@@ -1419,227 +1543,596 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                     }
                 }
             }
-        }
-        else if (MIN_MACRO_VALUE >= 33.5) {
-            if (RANGE_MACRO_VALUE < 28.5) {
-                if (X < 1224) {
-                    if (Y < 440) {
-                        if (MIN_MACRO_VALUE < 82.5) {
-                            if (RANGE_MACRO_VALUE < 14.5) {
-                                if (RANGE_MACRO_VALUE < 9.5) {
-                                    if (MIN_MACRO_VALUE < 40.5) {
-                                        if (X < 920) {
-                                            if (MAX_MACRO_VALUE < 48.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 48.5) {
-                                                oneCount++;
-                                            }
+    }
+    else if (MIN_MACRO_VALUE >= 33.5) {
+        if (RANGE_MACRO_VALUE < 28.5) {
+            if (X < 1224) {
+                if (Y < 440) {
+                    if (MIN_MACRO_VALUE < 82.5) {
+                        if (RANGE_MACRO_VALUE < 14.5) {
+                            if (RANGE_MACRO_VALUE < 9.5) {
+                                if (MIN_MACRO_VALUE < 40.5) {
+                                    if (X < 920) {
+                                        if (MAX_MACRO_VALUE < 48.5) {
+                                            zeroCount++;
                                         }
-                                        else if (X >= 920) {
-                                            if (MAX_MACRO_VALUE < 46.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 46.5) {
-                                                oneCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 48.5) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (MIN_MACRO_VALUE >= 40.5) {
-                                        if (AVG_MACRO_VALUE < 81.49) {
-                                            if (AVG_MACRO_VALUE < 80.68) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 80.68) {
-                                                oneCount++;
-                                            }
+                                    else if (X >= 920) {
+                                        if (MAX_MACRO_VALUE < 46.5) {
+                                            oneCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 81.49) {
-                                            zeroCount++;
+                                        else if (MAX_MACRO_VALUE >= 46.5) {
+                                            oneCount++;
                                         }
                                     }
                                 }
-                                else if (RANGE_MACRO_VALUE >= 9.5) {
-                                    if (RANGE_MACRO_VALUE < 10.5) {
-                                        if (AVG_MACRO_VALUE < 81.91) {
-                                            if (MIN_MACRO_VALUE < 51.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 51.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 81.91) {
+                                else if (MIN_MACRO_VALUE >= 40.5) {
+                                    if (AVG_MACRO_VALUE < 81.49) {
+                                        if (AVG_MACRO_VALUE < 80.68) {
                                             zeroCount++;
                                         }
+                                        else if (AVG_MACRO_VALUE >= 80.68) {
+                                            oneCount++;
+                                        }
                                     }
-                                    else if (RANGE_MACRO_VALUE >= 10.5) {
-                                        if (AVG_MACRO_VALUE < 40.32) {
-                                            if (AVG_MACRO_VALUE < 39.64) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 39.64) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 40.32) {
-                                            if (Y < 72) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 72) {
-                                                zeroCount++;
-                                            }
-                                        }
+                                    else if (AVG_MACRO_VALUE >= 81.49) {
+                                        zeroCount++;
                                     }
                                 }
                             }
-                            else if (RANGE_MACRO_VALUE >= 14.5) {
-                                if (X < 600) {
-                                    if (MIN_MACRO_VALUE < 73.5) {
-                                        if (Y < 424) {
-                                            if (Y < 392) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 392) {
-                                                zeroCount++;
-                                            }
+                            else if (RANGE_MACRO_VALUE >= 9.5) {
+                                if (RANGE_MACRO_VALUE < 10.5) {
+                                    if (AVG_MACRO_VALUE < 81.91) {
+                                        if (MIN_MACRO_VALUE < 51.5) {
+                                            zeroCount++;
                                         }
-                                        else if (Y >= 424) {
+                                        else if (MIN_MACRO_VALUE >= 51.5) {
                                             zeroCount++;
                                         }
                                     }
-                                    else if (MIN_MACRO_VALUE >= 73.5) {
-                                        if (AVG_MACRO_VALUE < 87.35) {
-                                            if (Y < 296) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 296) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 87.35) {
-                                            if (MAX_MACRO_VALUE < 97.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 97.5) {
-                                                zeroCount++;
-                                            }
-                                        }
+                                    else if (AVG_MACRO_VALUE >= 81.91) {
+                                        zeroCount++;
                                     }
                                 }
-                                else if (X >= 600) {
-                                    if (X < 680) {
-                                        if (Y < 360) {
-                                            if (MIN_MACRO_VALUE < 47.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 47.5) {
-                                                oneCount++;
-                                            }
+                                else if (RANGE_MACRO_VALUE >= 10.5) {
+                                    if (AVG_MACRO_VALUE < 40.32) {
+                                        if (AVG_MACRO_VALUE < 39.64) {
+                                            zeroCount++;
                                         }
-                                        else if (Y >= 360) {
+                                        else if (AVG_MACRO_VALUE >= 39.64) {
                                             zeroCount++;
                                         }
                                     }
-                                    else if (X >= 680) {
-                                        if (AVG_MACRO_VALUE < 42.15) {
-                                            if (X < 776) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 776) {
-                                                zeroCount++;
-                                            }
+                                    else if (AVG_MACRO_VALUE >= 40.32) {
+                                        if (Y < 72) {
+                                            zeroCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 42.15) {
-                                            if (X < 728) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 728) {
-                                                zeroCount++;
-                                            }
+                                        else if (Y >= 72) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                             }
                         }
-                        else if (MIN_MACRO_VALUE >= 82.5) {
-                            if (AVG_MACRO_VALUE < 94.39) {
-                                if (Y < 152) {
-                                    if (Y < 136) {
+                        else if (RANGE_MACRO_VALUE >= 14.5) {
+                            if (X < 600) {
+                                if (MIN_MACRO_VALUE < 73.5) {
+                                    if (Y < 424) {
+                                        if (Y < 392) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 392) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 424) {
                                         zeroCount++;
                                     }
-                                    else if (Y >= 136) {
-                                        if (MIN_MACRO_VALUE < 83.5) {
-                                            if (AVG_MACRO_VALUE < 87.59) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 87.59) {
-                                                oneCount++;
-                                            }
+                                }
+                                else if (MIN_MACRO_VALUE >= 73.5) {
+                                    if (AVG_MACRO_VALUE < 87.35) {
+                                        if (Y < 296) {
+                                            oneCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 83.5) {
+                                        else if (Y >= 296) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 87.35) {
+                                        if (MAX_MACRO_VALUE < 97.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 97.5) {
                                             zeroCount++;
                                         }
                                     }
                                 }
-                                else if (Y >= 152) {
+                            }
+                            else if (X >= 600) {
+                                if (X < 680) {
+                                    if (Y < 360) {
+                                        if (MIN_MACRO_VALUE < 47.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 47.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (Y >= 360) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (X >= 680) {
+                                    if (AVG_MACRO_VALUE < 42.15) {
+                                        if (X < 776) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 776) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 42.15) {
+                                        if (X < 728) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 728) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (MIN_MACRO_VALUE >= 82.5) {
+                        if (AVG_MACRO_VALUE < 94.39) {
+                            if (Y < 152) {
+                                if (Y < 136) {
+                                    zeroCount++;
+                                }
+                                else if (Y >= 136) {
+                                    if (MIN_MACRO_VALUE < 83.5) {
+                                        if (AVG_MACRO_VALUE < 87.59) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 87.59) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 83.5) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                            else if (Y >= 152) {
+                                zeroCount++;
+                            }
+                        }
+                        else if (AVG_MACRO_VALUE >= 94.39) {
+                            if (X < 568) {
+                                if (MIN_MACRO_VALUE < 112.5) {
+                                    if (RANGE_MACRO_VALUE < 6.5) {
+                                        if (X < 456) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 456) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 6.5) {
+                                        if (AVG_MACRO_VALUE < 109.36) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 109.36) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 112.5) {
+                                    if (MAX_MACRO_VALUE < 155.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 155.5) {
+                                        if (X < 72) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 72) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (X >= 568) {
+                                if (AVG_MACRO_VALUE < 124.59) {
+                                    zeroCount++;
+                                }
+                                else if (AVG_MACRO_VALUE >= 124.59) {
+                                    if (X < 760) {
+                                        if (X < 616) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 616) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 760) {
+                                        if (RANGE_MACRO_VALUE < 10.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 10.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (Y >= 440) {
+                    if (AVG_MACRO_VALUE < 47.79) {
+                        if (X < 680) {
+                            if (MIN_MACRO_VALUE < 41.5) {
+                                if (X < 616) {
+                                    if (AVG_MACRO_VALUE < 43.29) {
+                                        if (Y < 600) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 600) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 43.29) {
+                                        if (AVG_MACRO_VALUE < 43.53) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 43.53) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 616) {
                                     zeroCount++;
                                 }
                             }
-                            else if (AVG_MACRO_VALUE >= 94.39) {
-                                if (X < 568) {
-                                    if (MIN_MACRO_VALUE < 112.5) {
-                                        if (RANGE_MACRO_VALUE < 6.5) {
-                                            if (X < 456) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 456) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 6.5) {
-                                            if (AVG_MACRO_VALUE < 109.36) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 109.36) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 112.5) {
-                                        if (MAX_MACRO_VALUE < 155.5) {
+                            else if (MIN_MACRO_VALUE >= 41.5) {
+                                if (X < 408) {
+                                    if (Y < 984) {
+                                        if (RANGE_MACRO_VALUE < 8.5) {
                                             zeroCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 155.5) {
-                                            if (X < 72) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 72) {
-                                                zeroCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 8.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 984) {
+                                        if (AVG_MACRO_VALUE < 46.2) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 46.2) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
-                                else if (X >= 568) {
-                                    if (AVG_MACRO_VALUE < 124.59) {
+                                else if (X >= 408) {
+                                    if (Y < 664) {
+                                        if (RANGE_MACRO_VALUE < 10.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 10.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 664) {
+                                        if (AVG_MACRO_VALUE < 46.46) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 46.46) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (X >= 680) {
+                            if (X < 1144) {
+                                if (AVG_MACRO_VALUE < 41.72) {
+                                    if (X < 824) {
                                         zeroCount++;
                                     }
-                                    else if (AVG_MACRO_VALUE >= 124.59) {
-                                        if (X < 760) {
-                                            if (X < 616) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 616) {
-                                                zeroCount++;
-                                            }
+                                    else if (X >= 824) {
+                                        if (AVG_MACRO_VALUE < 41.12) {
+                                            zeroCount++;
                                         }
-                                        else if (X >= 760) {
-                                            if (RANGE_MACRO_VALUE < 10.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 10.5) {
-                                                oneCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 41.12) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 41.72) {
+                                    if (AVG_MACRO_VALUE < 44.35) {
+                                        if (RANGE_MACRO_VALUE < 9.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 9.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 44.35) {
+                                        if (AVG_MACRO_VALUE < 44.47) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 44.47) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (X >= 1144) {
+                                if (RANGE_MACRO_VALUE < 13.5) {
+                                    if (RANGE_MACRO_VALUE < 8.5) {
+                                        if (X < 1192) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1192) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 8.5) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 13.5) {
+                                    if (RANGE_MACRO_VALUE < 17.5) {
+                                        if (X < 1176) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1176) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 17.5) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (AVG_MACRO_VALUE >= 47.79) {
+                        if (MIN_MACRO_VALUE < 110.5) {
+                            if (Y < 776) {
+                                if (X < 376) {
+                                    if (RANGE_MACRO_VALUE < 18.5) {
+                                        if (MAX_MACRO_VALUE < 111.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 111.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 18.5) {
+                                        if (RANGE_MACRO_VALUE < 20.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 20.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 376) {
+                                    if (RANGE_MACRO_VALUE < 2.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 2.5) {
+                                        if (AVG_MACRO_VALUE < 95.86) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 95.86) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (Y >= 776) {
+                                if (MIN_MACRO_VALUE < 96.5) {
+                                    if (Y < 904) {
+                                        if (MAX_MACRO_VALUE < 117.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 117.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (Y >= 904) {
+                                        if (RANGE_MACRO_VALUE < 3.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 3.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 96.5) {
+                                    if (Y < 936) {
+                                        if (RANGE_MACRO_VALUE < 12.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 12.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 936) {
+                                        if (MAX_MACRO_VALUE < 126.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 126.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (MIN_MACRO_VALUE >= 110.5) {
+                            if (AVG_MACRO_VALUE < 149.09) {
+                                if (Y < 856) {
+                                    if (Y < 840) {
+                                        if (AVG_MACRO_VALUE < 139.69) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 139.69) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (Y >= 840) {
+                                        if (X < 808) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 808) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (Y >= 856) {
+                                    if (MAX_MACRO_VALUE < 124.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 124.5) {
+                                        if (X < 168) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 168) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (AVG_MACRO_VALUE >= 149.09) {
+                                if (Y < 920) {
+                                    zeroCount++;
+                                }
+                                else if (Y >= 920) {
+                                    if (Y < 936) {
+                                        if (AVG_MACRO_VALUE < 161.07) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 161.07) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (Y >= 936) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else if (X >= 1224) {
+                if (MIN_MACRO_VALUE < 168.5) {
+                    if (Y < 440) {
+                        if (RANGE_MACRO_VALUE < 5.5) {
+                            if (Y < 296) {
+                                if (AVG_MACRO_VALUE < 164.75) {
+                                    if (MIN_MACRO_VALUE < 154.5) {
+                                        if (Y < 24) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 24) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 154.5) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 164.75) {
+                                    if (Y < 136) {
+                                        if (X < 1384) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1384) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (Y >= 136) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                            else if (Y >= 296) {
+                                zeroCount++;
+                            }
+                        }
+                        else if (RANGE_MACRO_VALUE >= 5.5) {
+                            if (MAX_MACRO_VALUE < 87.5) {
+                                if (MAX_MACRO_VALUE < 83.5) {
+                                    if (AVG_MACRO_VALUE < 40.56) {
+                                        if (X < 1784) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1784) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 40.56) {
+                                        if (Y < 392) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 392) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 83.5) {
+                                    if (X < 1880) {
+                                        zeroCount++;
+                                    }
+                                    else if (X >= 1880) {
+                                        if (AVG_MACRO_VALUE < 76.58) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 76.58) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (MAX_MACRO_VALUE >= 87.5) {
+                                if (MAX_MACRO_VALUE < 106.5) {
+                                    if (Y < 200) {
+                                        if (AVG_MACRO_VALUE < 72.99) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 72.99) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 200) {
+                                        if (MIN_MACRO_VALUE < 69.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 69.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 106.5) {
+                                    if (Y < 360) {
+                                        if (RANGE_MACRO_VALUE < 6.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 6.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 360) {
+                                        if (MIN_MACRO_VALUE < 92.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 92.5) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
@@ -1647,1110 +2140,740 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                         }
                     }
                     else if (Y >= 440) {
-                        if (AVG_MACRO_VALUE < 47.79) {
-                            if (X < 680) {
-                                if (MIN_MACRO_VALUE < 41.5) {
-                                    if (X < 616) {
-                                        if (AVG_MACRO_VALUE < 43.29) {
-                                            if (Y < 600) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 600) {
-                                                zeroCount++;
-                                            }
+                        if (MIN_MACRO_VALUE < 133.5) {
+                            if (AVG_MACRO_VALUE < 134.39) {
+                                if (Y < 664) {
+                                    if (Y < 568) {
+                                        if (MAX_MACRO_VALUE < 41) {
+                                            oneCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 43.29) {
-                                            if (AVG_MACRO_VALUE < 43.53) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 43.53) {
-                                                zeroCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 41) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (X >= 616) {
+                                    else if (Y >= 568) {
                                         zeroCount++;
                                     }
                                 }
-                                else if (MIN_MACRO_VALUE >= 41.5) {
-                                    if (X < 408) {
-                                        if (Y < 984) {
-                                            if (RANGE_MACRO_VALUE < 8.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 8.5) {
-                                                zeroCount++;
-                                            }
+                                else if (Y >= 664) {
+                                    if (MIN_MACRO_VALUE < 38.5) {
+                                        if (AVG_MACRO_VALUE < 47.95) {
+                                            oneCount++;
                                         }
-                                        else if (Y >= 984) {
-                                            if (AVG_MACRO_VALUE < 46.2) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 46.2) {
-                                                zeroCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 47.95) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (X >= 408) {
-                                        if (Y < 664) {
-                                            if (RANGE_MACRO_VALUE < 10.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 10.5) {
-                                                zeroCount++;
-                                            }
+                                    else if (MIN_MACRO_VALUE >= 38.5) {
+                                        if (AVG_MACRO_VALUE < 46.89) {
+                                            zeroCount++;
                                         }
-                                        else if (Y >= 664) {
-                                            if (AVG_MACRO_VALUE < 46.46) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 46.46) {
-                                                oneCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 46.89) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                             }
-                            else if (X >= 680) {
-                                if (X < 1144) {
-                                    if (AVG_MACRO_VALUE < 41.72) {
-                                        if (X < 824) {
+                            else if (AVG_MACRO_VALUE >= 134.39) {
+                                zeroCount++;
+                            }
+                        }
+                        else if (MIN_MACRO_VALUE >= 133.5) {
+                            if (X < 1256) {
+                                if (Y < 1000) {
+                                    if (Y < 984) {
+                                        zeroCount++;
+                                    }
+                                    else if (Y >= 984) {
+                                        if (X < 1240) {
                                             zeroCount++;
                                         }
-                                        else if (X >= 824) {
-                                            if (AVG_MACRO_VALUE < 41.12) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 41.12) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 41.72) {
-                                        if (AVG_MACRO_VALUE < 44.35) {
-                                            if (RANGE_MACRO_VALUE < 9.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 9.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 44.35) {
-                                            if (AVG_MACRO_VALUE < 44.47) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 44.47) {
-                                                zeroCount++;
-                                            }
+                                        else if (X >= 1240) {
+                                            oneCount++;
                                         }
                                     }
                                 }
-                                else if (X >= 1144) {
-                                    if (RANGE_MACRO_VALUE < 13.5) {
-                                        if (RANGE_MACRO_VALUE < 8.5) {
-                                            if (X < 1192) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1192) {
-                                                zeroCount++;
-                                            }
+                                else if (Y >= 1000) {
+                                    if (Y < 1016) {
+                                        if (MAX_MACRO_VALUE < 145.5) {
+                                            oneCount++;
                                         }
-                                        else if (RANGE_MACRO_VALUE >= 8.5) {
+                                        else if (MAX_MACRO_VALUE >= 145.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (Y >= 1016) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                            else if (X >= 1256) {
+                                if (X < 1304) {
+                                    if (AVG_MACRO_VALUE < 153.78) {
+                                        if (MAX_MACRO_VALUE < 139.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 139.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 153.78) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (X >= 1304) {
+                                    if (X < 1480) {
+                                        zeroCount++;
+                                    }
+                                    else if (X >= 1480) {
+                                        if (Y < 472) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 472) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (MIN_MACRO_VALUE >= 168.5) {
+                    zeroCount++;
+                }
+            }
+        }
+        else if (RANGE_MACRO_VALUE >= 28.5) {
+            if (RANGE_MACRO_VALUE < 116.5) {
+                if (AVG_MACRO_VALUE < 54.06) {
+                    if (MAX_MACRO_VALUE < 113.5) {
+                        if (MAX_MACRO_VALUE < 111.5) {
+                            if (RANGE_MACRO_VALUE < 33.5) {
+                                if (AVG_MACRO_VALUE < 42.21) {
+                                    if (Y < 928) {
+                                        if (MAX_MACRO_VALUE < 27) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 27) {
                                             zeroCount++;
                                         }
                                     }
-                                    else if (RANGE_MACRO_VALUE >= 13.5) {
-                                        if (RANGE_MACRO_VALUE < 17.5) {
-                                            if (X < 1176) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1176) {
-                                                oneCount++;
-                                            }
+                                    else if (Y >= 928) {
+                                        oneCount++;
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 42.21) {
+                                    if (X < 872) {
+                                        if (AVG_MACRO_VALUE < 44.74) {
+                                            oneCount++;
                                         }
-                                        else if (RANGE_MACRO_VALUE >= 17.5) {
+                                        else if (AVG_MACRO_VALUE >= 44.74) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 872) {
+                                        if (X < 1752) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1752) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (RANGE_MACRO_VALUE >= 33.5) {
+                                if (X < 1800) {
+                                    if (AVG_MACRO_VALUE < 53.89) {
+                                        if (Y < 936) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 936) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 53.89) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (X >= 1800) {
+                                    if (AVG_MACRO_VALUE < 52.4) {
+                                        if (MAX_MACRO_VALUE < 76) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 76) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 52.4) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                        }
+                        else if (MAX_MACRO_VALUE >= 111.5) {
+                            if (Y < 488) {
+                                if (RANGE_MACRO_VALUE < 77.5) {
+                                    if (RANGE_MACRO_VALUE < 74.5) {
+                                        if (Y < 272) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 272) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 74.5) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 77.5) {
+                                    oneCount++;
+                                }
+                            }
+                            else if (Y >= 488) {
+                                zeroCount++;
+                            }
+                        }
+                    }
+                    else if (MAX_MACRO_VALUE >= 113.5) {
+                        if (X < 1768) {
+                            if (Y < 296) {
+                                zeroCount++;
+                            }
+                            else if (Y >= 296) {
+                                if (Y < 312) {
+                                    if (RANGE_MACRO_VALUE < 93.5) {
+                                        oneCount++;
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 93.5) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (Y >= 312) {
+                                    if (X < 232) {
+                                        if (AVGQUADRANT_MACRO_VALUE == 0) {
+                                            oneCount++;
+                                        }
+                                        else if (AVGQUADRANT_MACRO_VALUE == 1) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 232) {
+                                        if (X < 1704) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1704) {
                                             zeroCount++;
                                         }
                                     }
                                 }
                             }
                         }
-                        else if (AVG_MACRO_VALUE >= 47.79) {
-                            if (MIN_MACRO_VALUE < 110.5) {
-                                if (Y < 776) {
-                                    if (X < 376) {
-                                        if (RANGE_MACRO_VALUE < 18.5) {
-                                            if (MAX_MACRO_VALUE < 111.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 111.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 18.5) {
-                                            if (RANGE_MACRO_VALUE < 20.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 20.5) {
-                                                zeroCount++;
-                                            }
-                                        }
+                        else if (X >= 1768) {
+                            if (X < 1832) {
+                                if (RANGE_MACRO_VALUE < 113.5) {
+                                    oneCount++;
+                                }
+                                else if (RANGE_MACRO_VALUE >= 113.5) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (X >= 1832) {
+                                if (X < 1848) {
+                                    if (MIN_MACRO_VALUE < 41.5) {
+                                        oneCount++;
                                     }
-                                    else if (X >= 376) {
-                                        if (RANGE_MACRO_VALUE < 2.5) {
-                                            zeroCount++;
+                                    else if (MIN_MACRO_VALUE >= 41.5) {
+                                        if (AVG_MACRO_VALUE < 50.25) {
+                                            oneCount++;
                                         }
-                                        else if (RANGE_MACRO_VALUE >= 2.5) {
-                                            if (AVG_MACRO_VALUE < 95.86) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 95.86) {
-                                                oneCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 50.25) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
-                                else if (Y >= 776) {
-                                    if (MIN_MACRO_VALUE < 96.5) {
-                                        if (Y < 904) {
-                                            if (MAX_MACRO_VALUE < 117.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 117.5) {
-                                                oneCount++;
-                                            }
+                                else if (X >= 1848) {
+                                    zeroCount++;
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (AVG_MACRO_VALUE >= 54.06) {
+                    if (AVG_MACRO_VALUE < 134.48) {
+                        if (MIN_MACRO_VALUE < 90.5) {
+                            if (MAX_MACRO_VALUE < 202) {
+                                if (MAX_MACRO_VALUE < 192.5) {
+                                    if (Y < 536) {
+                                        if (RANGE_MACRO_VALUE < 80.5) {
+                                            oneCount++;
                                         }
-                                        else if (Y >= 904) {
-                                            if (RANGE_MACRO_VALUE < 3.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 3.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 80.5) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (MIN_MACRO_VALUE >= 96.5) {
-                                        if (Y < 936) {
-                                            if (RANGE_MACRO_VALUE < 12.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 12.5) {
-                                                zeroCount++;
-                                            }
+                                    else if (Y >= 536) {
+                                        if (RANGE_MACRO_VALUE < 43.5) {
+                                            oneCount++;
                                         }
-                                        else if (Y >= 936) {
-                                            if (MAX_MACRO_VALUE < 126.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 126.5) {
-                                                oneCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 43.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 192.5) {
+                                    if (X < 768) {
+                                        if (AVGQUADRANT_MACRO_VALUE == 0) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVGQUADRANT_MACRO_VALUE == 1) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 768) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                            else if (MAX_MACRO_VALUE >= 202) {
+                                oneCount++;
+                            }
+                        }
+                        else if (MIN_MACRO_VALUE >= 90.5) {
+                            if (MIN_MACRO_VALUE < 119.5) {
+                                if (X < 904) {
+                                    if (MAX_MACRO_VALUE < 191.5) {
+                                        if (RANGE_MACRO_VALUE < 72.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 72.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 191.5) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (X >= 904) {
+                                    if (MAX_MACRO_VALUE < 150.5) {
+                                        if (RANGE_MACRO_VALUE < 46.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 46.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 150.5) {
+                                        if (AVG_MACRO_VALUE < 129.36) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 129.36) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                             }
-                            else if (MIN_MACRO_VALUE >= 110.5) {
-                                if (AVG_MACRO_VALUE < 149.09) {
-                                    if (Y < 856) {
-                                        if (Y < 840) {
-                                            if (AVG_MACRO_VALUE < 139.69) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 139.69) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (Y >= 840) {
-                                            if (X < 808) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 808) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (Y >= 856) {
-                                        if (MAX_MACRO_VALUE < 124.5) {
+                            else if (MIN_MACRO_VALUE >= 119.5) {
+                                if (AVG_MACRO_VALUE < 134.22) {
+                                    if (X < 1768) {
+                                        if (AVG_MACRO_VALUE < 124.68) {
                                             zeroCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 124.5) {
-                                            if (X < 168) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 168) {
-                                                zeroCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 124.68) {
+                                            zeroCount++;
                                         }
                                     }
+                                    else if (X >= 1768) {
+                                        oneCount++;
+                                    }
                                 }
-                                else if (AVG_MACRO_VALUE >= 149.09) {
+                                else if (AVG_MACRO_VALUE >= 134.22) {
+                                    if (X < 1408) {
+                                        oneCount++;
+                                    }
+                                    else if (X >= 1408) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (AVG_MACRO_VALUE >= 134.48) {
+                        if (AVG_MACRO_VALUE < 135.26) {
+                            if (X < 488) {
+                                if (Y < 1024) {
                                     if (Y < 920) {
                                         zeroCount++;
                                     }
                                     else if (Y >= 920) {
-                                        if (Y < 936) {
-                                            if (AVG_MACRO_VALUE < 161.07) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 161.07) {
-                                                oneCount++;
-                                            }
+                                        if (X < 120) {
+                                            oneCount++;
                                         }
-                                        else if (Y >= 936) {
+                                        else if (X >= 120) {
                                             zeroCount++;
                                         }
+                                    }
+                                }
+                                else if (Y >= 1024) {
+                                    oneCount++;
+                                }
+                            }
+                            else if (X >= 488) {
+                                if (X < 1120) {
+                                    if (AVGQUADRANT_MACRO_VALUE == 0) {
+                                        if (MIN_MACRO_VALUE < 111.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 111.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVGQUADRANT_MACRO_VALUE == 1) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (X >= 1120) {
+                                    if (RANGE_MACRO_VALUE < 96) {
+                                        if (MIN_MACRO_VALUE < 124.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 124.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 96) {
+                                        oneCount++;
                                     }
                                 }
                             }
                         }
-                    }
-                }
-                else if (X >= 1224) {
-                    if (MIN_MACRO_VALUE < 168.5) {
-                        if (Y < 440) {
-                            if (RANGE_MACRO_VALUE < 5.5) {
-                                if (Y < 296) {
-                                    if (AVG_MACRO_VALUE < 164.75) {
-                                        if (MIN_MACRO_VALUE < 154.5) {
-                                            if (Y < 24) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 24) {
-                                                zeroCount++;
-                                            }
+                        else if (AVG_MACRO_VALUE >= 135.26) {
+                            if (MIN_MACRO_VALUE < 47.5) {
+                                if (RANGE_MACRO_VALUE < 113.5) {
+                                    if (MAX_MACRO_VALUE < 155.5) {
+                                        if (MIN_MACRO_VALUE < 44.5) {
+                                            oneCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 154.5) {
-                                            zeroCount++;
+                                        else if (MIN_MACRO_VALUE >= 44.5) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (AVG_MACRO_VALUE >= 164.75) {
-                                        if (Y < 136) {
-                                            if (X < 1384) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1384) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (Y >= 136) {
-                                            zeroCount++;
-                                        }
+                                    else if (MAX_MACRO_VALUE >= 155.5) {
+                                        zeroCount++;
                                     }
                                 }
-                                else if (Y >= 296) {
+                                else if (RANGE_MACRO_VALUE >= 113.5) {
+                                    oneCount++;
+                                }
+                            }
+                            else if (MIN_MACRO_VALUE >= 47.5) {
+                                if (AVG_MACRO_VALUE < 135.38) {
                                     zeroCount++;
                                 }
-                            }
-                            else if (RANGE_MACRO_VALUE >= 5.5) {
-                                if (MAX_MACRO_VALUE < 87.5) {
-                                    if (MAX_MACRO_VALUE < 83.5) {
-                                        if (AVG_MACRO_VALUE < 40.56) {
-                                            if (X < 1784) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1784) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 40.56) {
-                                            if (Y < 392) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 392) {
-                                                oneCount++;
-                                            }
-                                        }
+                                else if (AVG_MACRO_VALUE >= 135.38) {
+                                    if (MIN_MACRO_VALUE < 61.5) {
+                                        zeroCount++;
                                     }
-                                    else if (MAX_MACRO_VALUE >= 83.5) {
-                                        if (X < 1880) {
+                                    else if (MIN_MACRO_VALUE >= 61.5) {
+                                        if (MAX_MACRO_VALUE < 161.5) {
                                             zeroCount++;
                                         }
-                                        else if (X >= 1880) {
-                                            if (AVG_MACRO_VALUE < 76.58) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 76.58) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (MAX_MACRO_VALUE >= 87.5) {
-                                    if (MAX_MACRO_VALUE < 106.5) {
-                                        if (Y < 200) {
-                                            if (AVG_MACRO_VALUE < 72.99) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 72.99) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (Y >= 200) {
-                                            if (MIN_MACRO_VALUE < 69.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 69.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 106.5) {
-                                        if (Y < 360) {
-                                            if (RANGE_MACRO_VALUE < 6.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 6.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (Y >= 360) {
-                                            if (MIN_MACRO_VALUE < 92.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 92.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 161.5) {
+                                            oneCount++;
                                         }
                                     }
                                 }
                             }
                         }
-                        else if (Y >= 440) {
-                            if (MIN_MACRO_VALUE < 133.5) {
-                                if (AVG_MACRO_VALUE < 134.39) {
-                                    if (Y < 664) {
-                                        if (Y < 568) {
-                                            if (MAX_MACRO_VALUE < 41) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 41) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (Y >= 568) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (Y >= 664) {
-                                        if (MIN_MACRO_VALUE < 38.5) {
-                                            if (AVG_MACRO_VALUE < 47.95) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 47.95) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 38.5) {
-                                            if (AVG_MACRO_VALUE < 46.89) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 46.89) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (AVG_MACRO_VALUE >= 134.39) {
-                                    zeroCount++;
-                                }
-                            }
-                            else if (MIN_MACRO_VALUE >= 133.5) {
-                                if (X < 1256) {
-                                    if (Y < 1000) {
-                                        if (Y < 984) {
-                                            zeroCount++;
-                                        }
-                                        else if (Y >= 984) {
-                                            if (X < 1240) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1240) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (Y >= 1000) {
-                                        if (Y < 1016) {
-                                            if (MAX_MACRO_VALUE < 145.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 145.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (Y >= 1016) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                }
-                                else if (X >= 1256) {
-                                    if (X < 1304) {
-                                        if (AVG_MACRO_VALUE < 153.78) {
-                                            if (MAX_MACRO_VALUE < 139.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 139.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 153.78) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (X >= 1304) {
-                                        if (X < 1480) {
-                                            zeroCount++;
-                                        }
-                                        else if (X >= 1480) {
-                                            if (Y < 472) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 472) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else if (MIN_MACRO_VALUE >= 168.5) {
-                        zeroCount++;
                     }
                 }
             }
-            else if (RANGE_MACRO_VALUE >= 28.5) {
-                if (RANGE_MACRO_VALUE < 116.5) {
-                    if (AVG_MACRO_VALUE < 54.06) {
-                        if (MAX_MACRO_VALUE < 113.5) {
-                            if (MAX_MACRO_VALUE < 111.5) {
-                                if (RANGE_MACRO_VALUE < 33.5) {
-                                    if (AVG_MACRO_VALUE < 42.21) {
-                                        if (Y < 928) {
-                                            if (MAX_MACRO_VALUE < 27) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 27) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (Y >= 928) {
-                                            oneCount++;
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 42.21) {
-                                        if (X < 872) {
-                                            if (AVG_MACRO_VALUE < 44.74) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 44.74) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 872) {
-                                            if (X < 1752) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1752) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
+            else if (RANGE_MACRO_VALUE >= 116.5) {
+                if (X < 568) {
+                    if (Y < 936) {
+                        if (Y < 216) {
+                            if (MIN_MACRO_VALUE < 46.5) {
+                                if (RANGE_MACRO_VALUE < 190) {
+                                    zeroCount++;
                                 }
-                                else if (RANGE_MACRO_VALUE >= 33.5) {
-                                    if (X < 1800) {
-                                        if (AVG_MACRO_VALUE < 53.89) {
-                                            if (Y < 936) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 936) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 53.89) {
-                                            zeroCount++;
-                                        }
+                                else if (RANGE_MACRO_VALUE >= 190) {
+                                    if (X < 360) {
+                                        zeroCount++;
                                     }
-                                    else if (X >= 1800) {
-                                        if (AVG_MACRO_VALUE < 52.4) {
-                                            if (MAX_MACRO_VALUE < 76) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 76) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 52.4) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                }
-                            }
-                            else if (MAX_MACRO_VALUE >= 111.5) {
-                                if (Y < 488) {
-                                    if (RANGE_MACRO_VALUE < 77.5) {
-                                        if (RANGE_MACRO_VALUE < 74.5) {
-                                            if (Y < 272) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 272) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 74.5) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 77.5) {
+                                    else if (X >= 360) {
                                         oneCount++;
                                     }
                                 }
-                                else if (Y >= 488) {
-                                    zeroCount++;
+                            }
+                            else if (MIN_MACRO_VALUE >= 46.5) {
+                                if (MIN_MACRO_VALUE < 90.5) {
+                                    if (RANGE_MACRO_VALUE < 119.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 119.5) {
+                                        if (RANGE_MACRO_VALUE < 153.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 153.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 90.5) {
+                                    if (X < 272) {
+                                        zeroCount++;
+                                    }
+                                    else if (X >= 272) {
+                                        if (Y < 88) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 88) {
+                                            oneCount++;
+                                        }
+                                    }
                                 }
                             }
                         }
-                        else if (MAX_MACRO_VALUE >= 113.5) {
-                            if (X < 1768) {
-                                if (Y < 296) {
-                                    zeroCount++;
-                                }
-                                else if (Y >= 296) {
-                                    if (Y < 312) {
-                                        if (RANGE_MACRO_VALUE < 93.5) {
+                        else if (Y >= 216) {
+                            if (Y < 424) {
+                                if (X < 136) {
+                                    if (RANGE_MACRO_VALUE < 123.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 123.5) {
+                                        if (X < 40) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 40) {
                                             oneCount++;
                                         }
-                                        else if (RANGE_MACRO_VALUE >= 93.5) {
+                                    }
+                                }
+                                else if (X >= 136) {
+                                    if (Y < 248) {
+                                        if (MAX_MACRO_VALUE < 217.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 217.5) {
                                             zeroCount++;
                                         }
                                     }
-                                    else if (Y >= 312) {
-                                        if (X < 232) {
-                                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
-                                                oneCount++;
-                                            }
-                                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 232) {
-                                            if (X < 1704) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1704) {
-                                                zeroCount++;
-                                            }
-                                        }
+                                    else if (Y >= 248) {
+                                        zeroCount++;
                                     }
                                 }
                             }
-                            else if (X >= 1768) {
-                                if (X < 1832) {
-                                    if (RANGE_MACRO_VALUE < 113.5) {
-                                        oneCount++;
+                            else if (Y >= 424) {
+                                if (X < 520) {
+                                    if (AVG_MACRO_VALUE < 132.12) {
+                                        if (AVG_MACRO_VALUE < 80.64) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 80.64) {
+                                            oneCount++;
+                                        }
                                     }
-                                    else if (RANGE_MACRO_VALUE >= 113.5) {
+                                    else if (AVG_MACRO_VALUE >= 132.12) {
                                         zeroCount++;
                                     }
                                 }
-                                else if (X >= 1832) {
-                                    if (X < 1848) {
-                                        if (MIN_MACRO_VALUE < 41.5) {
+                                else if (X >= 520) {
+                                    if (AVG_MACRO_VALUE < 103.59) {
+                                        if (X < 536) {
                                             oneCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 41.5) {
-                                            if (AVG_MACRO_VALUE < 50.25) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 50.25) {
-                                                zeroCount++;
-                                            }
+                                        else if (X >= 536) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (X >= 1848) {
-                                        zeroCount++;
+                                    else if (AVG_MACRO_VALUE >= 103.59) {
+                                        if (MAX_MACRO_VALUE < 187) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 187) {
+                                            zeroCount++;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                    else if (AVG_MACRO_VALUE >= 54.06) {
-                        if (AVG_MACRO_VALUE < 134.48) {
-                            if (MIN_MACRO_VALUE < 90.5) {
-                                if (MAX_MACRO_VALUE < 202) {
-                                    if (MAX_MACRO_VALUE < 192.5) {
-                                        if (Y < 536) {
-                                            if (RANGE_MACRO_VALUE < 80.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 80.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (Y >= 536) {
-                                            if (RANGE_MACRO_VALUE < 43.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 43.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 192.5) {
-                                        if (X < 768) {
-                                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 768) {
-                                            zeroCount++;
-                                        }
-                                    }
+                    else if (Y >= 936) {
+                        if (RANGE_MACRO_VALUE < 135.5) {
+                            if (Y < 968) {
+                                if (MAX_MACRO_VALUE < 173) {
+                                    zeroCount++;
                                 }
-                                else if (MAX_MACRO_VALUE >= 202) {
+                                else if (MAX_MACRO_VALUE >= 173) {
                                     oneCount++;
                                 }
                             }
-                            else if (MIN_MACRO_VALUE >= 90.5) {
-                                if (MIN_MACRO_VALUE < 119.5) {
-                                    if (X < 904) {
-                                        if (MAX_MACRO_VALUE < 191.5) {
-                                            if (RANGE_MACRO_VALUE < 72.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 72.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 191.5) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (X >= 904) {
-                                        if (MAX_MACRO_VALUE < 150.5) {
-                                            if (RANGE_MACRO_VALUE < 46.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 46.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 150.5) {
-                                            if (AVG_MACRO_VALUE < 129.36) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 129.36) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (MIN_MACRO_VALUE >= 119.5) {
-                                    if (AVG_MACRO_VALUE < 134.22) {
-                                        if (X < 1768) {
-                                            if (AVG_MACRO_VALUE < 124.68) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 124.68) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 1768) {
-                                            oneCount++;
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 134.22) {
-                                        if (X < 1408) {
-                                            oneCount++;
-                                        }
-                                        else if (X >= 1408) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                }
+                            else if (Y >= 968) {
+                                zeroCount++;
                             }
                         }
-                        else if (AVG_MACRO_VALUE >= 134.48) {
-                            if (AVG_MACRO_VALUE < 135.26) {
-                                if (X < 488) {
-                                    if (Y < 1024) {
-                                        if (Y < 920) {
-                                            zeroCount++;
-                                        }
-                                        else if (Y >= 920) {
-                                            if (X < 120) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 120) {
-                                                zeroCount++;
-                                            }
-                                        }
+                        else if (RANGE_MACRO_VALUE >= 135.5) {
+                            if (AVG_MACRO_VALUE < 160.33) {
+                                if (RANGE_MACRO_VALUE < 179) {
+                                    if (X < 96) {
+                                        zeroCount++;
                                     }
-                                    else if (Y >= 1024) {
-                                        oneCount++;
-                                    }
-                                }
-                                else if (X >= 488) {
-                                    if (X < 1120) {
-                                        if (AVGQUADRANT_MACRO_VALUE < 0.5) {
-                                            if (MIN_MACRO_VALUE < 111.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 111.5) {
-                                                oneCount++;
-                                            }
+                                    else if (X >= 96) {
+                                        if (RANGE_MACRO_VALUE < 148.5) {
+                                            oneCount++;
                                         }
-                                        else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (X >= 1120) {
-                                        if (RANGE_MACRO_VALUE < 96) {
-                                            if (MIN_MACRO_VALUE < 124.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 124.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 96) {
+                                        else if (RANGE_MACRO_VALUE >= 148.5) {
                                             oneCount++;
                                         }
                                     }
                                 }
-                            }
-                            else if (AVG_MACRO_VALUE >= 135.26) {
-                                if (MIN_MACRO_VALUE < 47.5) {
-                                    if (RANGE_MACRO_VALUE < 113.5) {
-                                        if (MAX_MACRO_VALUE < 155.5) {
-                                            if (MIN_MACRO_VALUE < 44.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 44.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 155.5) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 113.5) {
+                                else if (RANGE_MACRO_VALUE >= 179) {
+                                    if (Y < 992) {
                                         oneCount++;
                                     }
-                                }
-                                else if (MIN_MACRO_VALUE >= 47.5) {
-                                    if (AVG_MACRO_VALUE < 135.38) {
-                                        zeroCount++;
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 135.38) {
-                                        if (MIN_MACRO_VALUE < 61.5) {
+                                    else if (Y >= 992) {
+                                        if (RANGE_MACRO_VALUE < 194) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 194) {
                                             zeroCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 61.5) {
-                                            if (MAX_MACRO_VALUE < 161.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 161.5) {
-                                                oneCount++;
-                                            }
-                                        }
                                     }
                                 }
+                            }
+                            else if (AVG_MACRO_VALUE >= 160.33) {
+                                zeroCount++;
                             }
                         }
                     }
                 }
-                else if (RANGE_MACRO_VALUE >= 116.5) {
-                    if (X < 568) {
-                        if (Y < 936) {
-                            if (Y < 216) {
-                                if (MIN_MACRO_VALUE < 46.5) {
-                                    if (RANGE_MACRO_VALUE < 190) {
-                                        zeroCount++;
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 190) {
-                                        if (X < 360) {
+                else if (X >= 568) {
+                    if (Y < 1016) {
+                        if (AVG_MACRO_VALUE < 189.6) {
+                            if (X < 712) {
+                                if (RANGE_MACRO_VALUE < 135.5) {
+                                    if (AVG_MACRO_VALUE < 187.38) {
+                                        if (AVGQUADRANT_MACRO_VALUE == 0) {
                                             zeroCount++;
                                         }
-                                        else if (X >= 360) {
+                                        else if (AVGQUADRANT_MACRO_VALUE == 1) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 187.38) {
+                                        oneCount++;
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 135.5) {
+                                    if (MAX_MACRO_VALUE < 218) {
+                                        if (AVG_MACRO_VALUE < 140.08) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 140.08) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 218) {
+                                        if (RANGE_MACRO_VALUE < 186.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 186.5) {
                                             oneCount++;
                                         }
                                     }
                                 }
-                                else if (MIN_MACRO_VALUE >= 46.5) {
-                                    if (MIN_MACRO_VALUE < 90.5) {
-                                        if (RANGE_MACRO_VALUE < 119.5) {
-                                            zeroCount++;
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 119.5) {
-                                            if (RANGE_MACRO_VALUE < 153.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 153.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 90.5) {
-                                        if (X < 272) {
-                                            zeroCount++;
-                                        }
-                                        else if (X >= 272) {
-                                            if (Y < 88) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 88) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
                             }
-                            else if (Y >= 216) {
-                                if (Y < 424) {
-                                    if (X < 136) {
-                                        if (RANGE_MACRO_VALUE < 123.5) {
-                                            zeroCount++;
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 123.5) {
-                                            if (X < 40) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 40) {
-                                                oneCount++;
-                                            }
-                                        }
+                            else if (X >= 712) {
+                                if (AVG_MACRO_VALUE < 64.52) {
+                                    if (MIN_MACRO_VALUE < 34.5) {
+                                        zeroCount++;
                                     }
-                                    else if (X >= 136) {
-                                        if (Y < 248) {
-                                            if (MAX_MACRO_VALUE < 217.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 217.5) {
-                                                zeroCount++;
-                                            }
+                                    else if (MIN_MACRO_VALUE >= 34.5) {
+                                        if (Y < 184) {
+                                            oneCount++;
                                         }
-                                        else if (Y >= 248) {
-                                            zeroCount++;
+                                        else if (Y >= 184) {
+                                            oneCount++;
                                         }
                                     }
                                 }
-                                else if (Y >= 424) {
-                                    if (X < 520) {
-                                        if (AVG_MACRO_VALUE < 132.12) {
-                                            if (AVG_MACRO_VALUE < 80.64) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 80.64) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 132.12) {
+                                else if (AVG_MACRO_VALUE >= 64.52) {
+                                    if (MIN_MACRO_VALUE < 59.5) {
+                                        if (AVG_MACRO_VALUE < 84.89) {
                                             zeroCount++;
                                         }
-                                    }
-                                    else if (X >= 520) {
-                                        if (AVG_MACRO_VALUE < 103.59) {
-                                            if (X < 536) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 536) {
-                                                oneCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 84.89) {
+                                            oneCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 103.59) {
-                                            if (MAX_MACRO_VALUE < 187) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 187) {
-                                                zeroCount++;
-                                            }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 59.5) {
+                                        if (Y < 472) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 472) {
+                                            oneCount++;
                                         }
                                     }
                                 }
                             }
                         }
-                        else if (Y >= 936) {
-                            if (RANGE_MACRO_VALUE < 135.5) {
-                                if (Y < 968) {
-                                    if (MAX_MACRO_VALUE < 173) {
-                                        zeroCount++;
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 173) {
-                                        oneCount++;
-                                    }
-                                }
-                                else if (Y >= 968) {
-                                    zeroCount++;
-                                }
+                        else if (AVG_MACRO_VALUE >= 189.6) {
+                            if (MAX_MACRO_VALUE < 235.5) {
+                                zeroCount++;
                             }
-                            else if (RANGE_MACRO_VALUE >= 135.5) {
-                                if (AVG_MACRO_VALUE < 160.33) {
-                                    if (RANGE_MACRO_VALUE < 179) {
-                                        if (X < 96) {
-                                            zeroCount++;
-                                        }
-                                        else if (X >= 96) {
-                                            if (RANGE_MACRO_VALUE < 148.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 148.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 179) {
-                                        if (Y < 992) {
-                                            oneCount++;
-                                        }
-                                        else if (Y >= 992) {
-                                            if (RANGE_MACRO_VALUE < 194) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 194) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (AVG_MACRO_VALUE >= 160.33) {
-                                    zeroCount++;
-                                }
+                            else if (MAX_MACRO_VALUE >= 235.5) {
+                                oneCount++;
                             }
                         }
                     }
-                    else if (X >= 568) {
-                        if (Y < 1016) {
-                            if (AVG_MACRO_VALUE < 189.6) {
-                                if (X < 712) {
-                                    if (RANGE_MACRO_VALUE < 135.5) {
-                                        if (AVG_MACRO_VALUE < 187.38) {
-                                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 187.38) {
-                                            oneCount++;
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 135.5) {
-                                        if (MAX_MACRO_VALUE < 218) {
-                                            if (AVG_MACRO_VALUE < 140.08) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 140.08) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 218) {
-                                            if (RANGE_MACRO_VALUE < 186.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 186.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (X >= 712) {
-                                    if (AVG_MACRO_VALUE < 64.52) {
-                                        if (MIN_MACRO_VALUE < 34.5) {
-                                            zeroCount++;
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 34.5) {
-                                            if (Y < 184) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 184) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 64.52) {
-                                        if (MIN_MACRO_VALUE < 59.5) {
-                                            if (AVG_MACRO_VALUE < 84.89) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 84.89) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 59.5) {
-                                            if (Y < 472) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 472) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
+                    else if (Y >= 1016) {
+                        if (MIN_MACRO_VALUE < 51.5) {
+                            if (X < 952) {
+                                zeroCount++;
                             }
-                            else if (AVG_MACRO_VALUE >= 189.6) {
-                                if (MAX_MACRO_VALUE < 235.5) {
+                            else if (X >= 952) {
+                                if (MIN_MACRO_VALUE < 36.5) {
                                     zeroCount++;
                                 }
-                                else if (MAX_MACRO_VALUE >= 235.5) {
-                                    oneCount++;
+                                else if (MIN_MACRO_VALUE >= 36.5) {
+                                    if (AVG_MACRO_VALUE < 53.92) {
+                                        oneCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 53.92) {
+                                        if (Y < 1048) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 1048) {
+                                            zeroCount++;
+                                        }
+                                    }
                                 }
                             }
                         }
-                        else if (Y >= 1016) {
-                            if (MIN_MACRO_VALUE < 51.5) {
-                                if (X < 952) {
-                                    zeroCount++;
+                        else if (MIN_MACRO_VALUE >= 51.5) {
+                            if (MIN_MACRO_VALUE < 52.5) {
+                                if (MAX_MACRO_VALUE < 214.5) {
+                                    oneCount++;
                                 }
-                                else if (X >= 952) {
-                                    if (MIN_MACRO_VALUE < 36.5) {
-                                        zeroCount++;
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 36.5) {
-                                        if (AVG_MACRO_VALUE < 53.92) {
-                                            oneCount++;
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 53.92) {
-                                            if (Y < 1048) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 1048) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
+                                else if (MAX_MACRO_VALUE >= 214.5) {
+                                    oneCount++;
                                 }
                             }
-                            else if (MIN_MACRO_VALUE >= 51.5) {
-                                if (MIN_MACRO_VALUE < 52.5) {
-                                    if (MAX_MACRO_VALUE < 214.5) {
-                                        oneCount++;
+                            else if (MIN_MACRO_VALUE >= 52.5) {
+                                if (MAX_MACRO_VALUE < 228) {
+                                    if (MAX_MACRO_VALUE < 225.5) {
+                                        if (RANGE_MACRO_VALUE < 165.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 165.5) {
+                                            zeroCount++;
+                                        }
                                     }
-                                    else if (MAX_MACRO_VALUE >= 214.5) {
+                                    else if (MAX_MACRO_VALUE >= 225.5) {
                                         oneCount++;
                                     }
                                 }
-                                else if (MIN_MACRO_VALUE >= 52.5) {
-                                    if (MAX_MACRO_VALUE < 228) {
-                                        if (MAX_MACRO_VALUE < 225.5) {
-                                            if (RANGE_MACRO_VALUE < 165.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 165.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 225.5) {
-                                            oneCount++;
-                                        }
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 228) {
-                                        zeroCount++;
-                                    }
+                                else if (MAX_MACRO_VALUE >= 228) {
+                                    zeroCount++;
                                 }
                             }
                         }
@@ -2758,6 +2881,7 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                 }
             }
         }
+    }
 
     //TREE 2
     if (RANGE_MACRO_VALUE < 26.5) {
@@ -3759,7 +3883,7 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                             if (MAX_MACRO_VALUE < 45.5) {
                                 if (Y < 568) {
                                     if (RANGE_MACRO_VALUE < 23.5) {
-                                        if (AVGQUADRANT_MACRO_VALUE < 0.5) {
+                                        if (AVGQUADRANT_MACRO_VALUE == 0) {
                                             if (Y < 392) {
                                                 oneCount++;
                                             }
@@ -3767,7 +3891,7 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                                 zeroCount++;
                                             }
                                         }
-                                        else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
+                                        else if (AVGQUADRANT_MACRO_VALUE == 1) {
                                             oneCount++;
                                         }
                                     }
@@ -4177,1451 +4301,1451 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                     }
                 }
             }
-        }
-        else if (RANGE_MACRO_VALUE >= 26.5) {
-            if (Y < 584) {
-                if (Y < 568) {
-                    if (X < 1048) {
-                        if (X < 664) {
-                            if (MAX_MACRO_VALUE < 115.5) {
-                                if (MAX_MACRO_VALUE < 111.5) {
-                                    if (MIN_MACRO_VALUE < 72.5) {
-                                        if (X < 344) {
-                                            if (X < 8) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 8) {
-                                                zeroCount++;
-                                            }
+    }
+    else if (RANGE_MACRO_VALUE >= 26.5) {
+        if (Y < 584) {
+            if (Y < 568) {
+                if (X < 1048) {
+                    if (X < 664) {
+                        if (MAX_MACRO_VALUE < 115.5) {
+                            if (MAX_MACRO_VALUE < 111.5) {
+                                if (MIN_MACRO_VALUE < 72.5) {
+                                    if (X < 344) {
+                                        if (X < 8) {
+                                            oneCount++;
                                         }
-                                        else if (X >= 344) {
-                                            if (MIN_MACRO_VALUE < 41.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 41.5) {
-                                                oneCount++;
-                                            }
+                                        else if (X >= 8) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (MIN_MACRO_VALUE >= 72.5) {
-                                        zeroCount++;
+                                    else if (X >= 344) {
+                                        if (MIN_MACRO_VALUE < 41.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 41.5) {
+                                            oneCount++;
+                                        }
                                     }
                                 }
-                                else if (MAX_MACRO_VALUE >= 111.5) {
-                                    if (MIN_MACRO_VALUE < 40.5) {
-                                        if (RANGE_MACRO_VALUE < 81.5) {
-                                            if (MAX_MACRO_VALUE < 112.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 112.5) {
-                                                oneCount++;
-                                            }
+                                else if (MIN_MACRO_VALUE >= 72.5) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (MAX_MACRO_VALUE >= 111.5) {
+                                if (MIN_MACRO_VALUE < 40.5) {
+                                    if (RANGE_MACRO_VALUE < 81.5) {
+                                        if (MAX_MACRO_VALUE < 112.5) {
+                                            oneCount++;
                                         }
-                                        else if (RANGE_MACRO_VALUE >= 81.5) {
-                                            if (AVG_MACRO_VALUE < 64.39) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 64.39) {
-                                                oneCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 112.5) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (MIN_MACRO_VALUE >= 40.5) {
-                                        if (AVG_MACRO_VALUE < 79.99) {
-                                            if (AVG_MACRO_VALUE < 66.69) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 66.69) {
-                                                zeroCount++;
-                                            }
+                                    else if (RANGE_MACRO_VALUE >= 81.5) {
+                                        if (AVG_MACRO_VALUE < 64.39) {
+                                            zeroCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 79.99) {
-                                            if (AVG_MACRO_VALUE < 81.93) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 81.93) {
-                                                oneCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 64.39) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 40.5) {
+                                    if (AVG_MACRO_VALUE < 79.99) {
+                                        if (AVG_MACRO_VALUE < 66.69) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 66.69) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 79.99) {
+                                        if (AVG_MACRO_VALUE < 81.93) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 81.93) {
+                                            oneCount++;
                                         }
                                     }
                                 }
                             }
-                            else if (MAX_MACRO_VALUE >= 115.5) {
-                                if (MIN_MACRO_VALUE < 49.5) {
-                                    if (MAX_MACRO_VALUE < 138.5) {
-                                        if (X < 568) {
-                                            if (Y < 552) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 552) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 568) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 138.5) {
-                                        if (MAX_MACRO_VALUE < 158.5) {
-                                            if (AVG_MACRO_VALUE < 121.16) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 121.16) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 158.5) {
-                                            if (X < 600) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 600) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (MIN_MACRO_VALUE >= 49.5) {
-                                    if (RANGE_MACRO_VALUE < 152.5) {
+                        }
+                        else if (MAX_MACRO_VALUE >= 115.5) {
+                            if (MIN_MACRO_VALUE < 49.5) {
+                                if (MAX_MACRO_VALUE < 138.5) {
+                                    if (X < 568) {
                                         if (Y < 552) {
-                                            if (AVG_MACRO_VALUE < 74.58) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 74.58) {
-                                                oneCount++;
-                                            }
+                                            zeroCount++;
                                         }
                                         else if (Y >= 552) {
                                             zeroCount++;
                                         }
                                     }
-                                    else if (RANGE_MACRO_VALUE >= 152.5) {
-                                        if (MIN_MACRO_VALUE < 73.5) {
-                                            if (AVG_MACRO_VALUE < 142.91) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 142.91) {
-                                                zeroCount++;
-                                            }
+                                    else if (X >= 568) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 138.5) {
+                                    if (MAX_MACRO_VALUE < 158.5) {
+                                        if (AVG_MACRO_VALUE < 121.16) {
+                                            oneCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 73.5) {
+                                        else if (AVG_MACRO_VALUE >= 121.16) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 158.5) {
+                                        if (X < 600) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 600) {
                                             zeroCount++;
                                         }
                                     }
                                 }
                             }
-                        }
-                        else if (X >= 664) {
-                            if (MIN_MACRO_VALUE < 29.5) {
-                                if (Y < 488) {
-                                    if (Y < 440) {
-                                        if (RANGE_MACRO_VALUE < 44.5) {
-                                            if (MAX_MACRO_VALUE < 60.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 60.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 44.5) {
-                                            if (MIN_MACRO_VALUE < 21.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 21.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (Y >= 440) {
-                                        if (X < 712) {
+                            else if (MIN_MACRO_VALUE >= 49.5) {
+                                if (RANGE_MACRO_VALUE < 152.5) {
+                                    if (Y < 552) {
+                                        if (AVG_MACRO_VALUE < 74.58) {
                                             zeroCount++;
                                         }
-                                        else if (X >= 712) {
-                                            if (MAX_MACRO_VALUE < 124.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 124.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 74.58) {
+                                            oneCount++;
                                         }
+                                    }
+                                    else if (Y >= 552) {
+                                        zeroCount++;
                                     }
                                 }
-                                else if (Y >= 488) {
-                                    if (AVG_MACRO_VALUE < 47.64) {
-                                        if (X < 824) {
-                                            if (Y < 552) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 552) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 824) {
-                                            if (RANGE_MACRO_VALUE < 78.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 78.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 47.64) {
-                                        if (MAX_MACRO_VALUE < 190) {
+                                else if (RANGE_MACRO_VALUE >= 152.5) {
+                                    if (MIN_MACRO_VALUE < 73.5) {
+                                        if (AVG_MACRO_VALUE < 142.91) {
                                             zeroCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 190) {
-                                            if (MAX_MACRO_VALUE < 192) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 192) {
-                                                zeroCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 142.91) {
+                                            zeroCount++;
                                         }
                                     }
-                                }
-                            }
-                            else if (MIN_MACRO_VALUE >= 29.5) {
-                                if (AVG_MACRO_VALUE < 37.69) {
-                                    oneCount++;
-                                }
-                                else if (AVG_MACRO_VALUE >= 37.69) {
-                                    if (MAX_MACRO_VALUE < 102.5) {
-                                        if (Y < 472) {
-                                            if (Y < 104) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 104) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (Y >= 472) {
-                                            if (X < 1000) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1000) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 102.5) {
-                                        if (Y < 440) {
-                                            if (Y < 72) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 72) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (Y >= 440) {
-                                            if (AVG_MACRO_VALUE < 123.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 123.5) {
-                                                zeroCount++;
-                                            }
-                                        }
+                                    else if (MIN_MACRO_VALUE >= 73.5) {
+                                        zeroCount++;
                                     }
                                 }
                             }
                         }
                     }
-                    else if (X >= 1048) {
-                        if (X < 1256) {
-                            if (MAX_MACRO_VALUE < 156.5) {
-                                if (AVG_MACRO_VALUE < 113.7) {
-                                    if (Y < 56) {
-                                        zeroCount++;
-                                    }
-                                    else if (Y >= 56) {
-                                        if (Y < 216) {
-                                            if (RANGE_MACRO_VALUE < 71.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 71.5) {
-                                                zeroCount++;
-                                            }
+                    else if (X >= 664) {
+                        if (MIN_MACRO_VALUE < 29.5) {
+                            if (Y < 488) {
+                                if (Y < 440) {
+                                    if (RANGE_MACRO_VALUE < 44.5) {
+                                        if (MAX_MACRO_VALUE < 60.5) {
+                                            oneCount++;
                                         }
-                                        else if (Y >= 216) {
-                                            if (RANGE_MACRO_VALUE < 113.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 113.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 60.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 44.5) {
+                                        if (MIN_MACRO_VALUE < 21.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 21.5) {
+                                            oneCount++;
                                         }
                                     }
                                 }
-                                else if (AVG_MACRO_VALUE >= 113.7) {
-                                    if (MAX_MACRO_VALUE < 153.5) {
-                                        if (RANGE_MACRO_VALUE < 58.5) {
-                                            if (Y < 72) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 72) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 58.5) {
-                                            if (MAX_MACRO_VALUE < 132.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 132.5) {
-                                                zeroCount++;
-                                            }
-                                        }
+                                else if (Y >= 440) {
+                                    if (X < 712) {
+                                        zeroCount++;
                                     }
-                                    else if (MAX_MACRO_VALUE >= 153.5) {
-                                        if (X < 1128) {
-                                            zeroCount++;
+                                    else if (X >= 712) {
+                                        if (MAX_MACRO_VALUE < 124.5) {
+                                            oneCount++;
                                         }
-                                        else if (X >= 1128) {
-                                            if (Y < 208) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 208) {
-                                                oneCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 124.5) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                             }
-                            else if (MAX_MACRO_VALUE >= 156.5) {
-                                if (MAX_MACRO_VALUE < 178.5) {
-                                    if (MIN_MACRO_VALUE < 122) {
-                                        zeroCount++;
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 122) {
-                                        if (Y < 96) {
+                            else if (Y >= 488) {
+                                if (AVG_MACRO_VALUE < 47.64) {
+                                    if (X < 824) {
+                                        if (Y < 552) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 552) {
                                             oneCount++;
                                         }
-                                        else if (Y >= 96) {
+                                    }
+                                    else if (X >= 824) {
+                                        if (RANGE_MACRO_VALUE < 78.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 78.5) {
                                             zeroCount++;
                                         }
                                     }
                                 }
-                                else if (MAX_MACRO_VALUE >= 178.5) {
-                                    if (AVG_MACRO_VALUE < 152.63) {
-                                        if (MIN_MACRO_VALUE < 71.5) {
-                                            if (X < 1112) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1112) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 71.5) {
-                                            if (RANGE_MACRO_VALUE < 83.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 83.5) {
-                                                zeroCount++;
-                                            }
-                                        }
+                                else if (AVG_MACRO_VALUE >= 47.64) {
+                                    if (MAX_MACRO_VALUE < 190) {
+                                        zeroCount++;
                                     }
-                                    else if (AVG_MACRO_VALUE >= 152.63) {
-                                        if (MAX_MACRO_VALUE < 228.5) {
-                                            if (Y < 88) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 88) {
-                                                zeroCount++;
-                                            }
+                                    else if (MAX_MACRO_VALUE >= 190) {
+                                        if (MAX_MACRO_VALUE < 192) {
+                                            oneCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 228.5) {
-                                            if (Y < 56) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 56) {
-                                                zeroCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 192) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                             }
                         }
-                        else if (X >= 1256) {
-                            if (RANGE_MACRO_VALUE < 108.5) {
-                                if (Y < 504) {
-                                    if (X < 1336) {
-                                        if (MAX_MACRO_VALUE < 167.5) {
-                                            if (Y < 120) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 120) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 167.5) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (X >= 1336) {
-                                        if (MIN_MACRO_VALUE < 17.5) {
-                                            if (RANGE_MACRO_VALUE < 92.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 92.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 17.5) {
-                                            if (AVG_MACRO_VALUE < 167.82) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 167.82) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (Y >= 504) {
-                                    if (RANGE_MACRO_VALUE < 78.5) {
-                                        if (Y < 536) {
-                                            if (RANGE_MACRO_VALUE < 69.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 69.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (Y >= 536) {
-                                            if (X < 1592) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1592) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 78.5) {
-                                        if (X < 1624) {
-                                            if (AVG_MACRO_VALUE < 49.51) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 49.51) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 1624) {
-                                            if (MAX_MACRO_VALUE < 119.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 119.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
+                        else if (MIN_MACRO_VALUE >= 29.5) {
+                            if (AVG_MACRO_VALUE < 37.69) {
+                                oneCount++;
                             }
-                            else if (RANGE_MACRO_VALUE >= 108.5) {
-                                if (MAX_MACRO_VALUE < 173.5) {
-                                    if (Y < 328) {
-                                        if (MIN_MACRO_VALUE < 44.5) {
-                                            if (AVG_MACRO_VALUE < 124.19) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 124.19) {
-                                                zeroCount++;
-                                            }
+                            else if (AVG_MACRO_VALUE >= 37.69) {
+                                if (MAX_MACRO_VALUE < 102.5) {
+                                    if (Y < 472) {
+                                        if (Y < 104) {
+                                            oneCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 44.5) {
-                                            if (MIN_MACRO_VALUE < 51.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 51.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (Y >= 104) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (Y >= 328) {
-                                        if (Y < 376) {
-                                            zeroCount++;
+                                    else if (Y >= 472) {
+                                        if (X < 1000) {
+                                            oneCount++;
                                         }
-                                        else if (Y >= 376) {
-                                            if (MIN_MACRO_VALUE < 36.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 36.5) {
-                                                oneCount++;
-                                            }
+                                        else if (X >= 1000) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
-                                else if (MAX_MACRO_VALUE >= 173.5) {
-                                    if (Y < 488) {
-                                        if (AVG_MACRO_VALUE < 199.45) {
-                                            if (Y < 472) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 472) {
-                                                oneCount++;
-                                            }
+                                else if (MAX_MACRO_VALUE >= 102.5) {
+                                    if (Y < 440) {
+                                        if (Y < 72) {
+                                            oneCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 199.45) {
-                                            zeroCount++;
+                                        else if (Y >= 72) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (Y >= 488) {
-                                        zeroCount++;
+                                    else if (Y >= 440) {
+                                        if (AVG_MACRO_VALUE < 123.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 123.5) {
+                                            zeroCount++;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-                else if (Y >= 568) {
-                    if (RANGE_MACRO_VALUE < 74.5) {
-                        if (AVG_MACRO_VALUE < 92.86) {
-                            if (AVG_MACRO_VALUE < 91.46) {
-                                if (AVG_MACRO_VALUE < 86.21) {
-                                    if (AVG_MACRO_VALUE < 79.52) {
-                                        if (RANGE_MACRO_VALUE < 73.5) {
-                                            if (X < 1560) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1560) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 73.5) {
-                                            if (X < 1040) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1040) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 79.52) {
-                                        if (RANGE_MACRO_VALUE < 48) {
-                                            if (MAX_MACRO_VALUE < 107) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 107) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 48) {
-                                            if (X < 1480) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1480) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (AVG_MACRO_VALUE >= 86.21) {
+                else if (X >= 1048) {
+                    if (X < 1256) {
+                        if (MAX_MACRO_VALUE < 156.5) {
+                            if (AVG_MACRO_VALUE < 113.7) {
+                                if (Y < 56) {
                                     zeroCount++;
                                 }
-                            }
-                            else if (AVG_MACRO_VALUE >= 91.46) {
-                                if (X < 1104) {
-                                    if (MAX_MACRO_VALUE < 121) {
-                                        oneCount++;
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 121) {
-                                        if (MAX_MACRO_VALUE < 122.5) {
+                                else if (Y >= 56) {
+                                    if (Y < 216) {
+                                        if (RANGE_MACRO_VALUE < 71.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 71.5) {
                                             zeroCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 122.5) {
-                                            if (RANGE_MACRO_VALUE < 63.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 63.5) {
-                                                zeroCount++;
-                                            }
+                                    }
+                                    else if (Y >= 216) {
+                                        if (RANGE_MACRO_VALUE < 113.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 113.5) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
-                                else if (X >= 1104) {
-                                    zeroCount++;
+                            }
+                            else if (AVG_MACRO_VALUE >= 113.7) {
+                                if (MAX_MACRO_VALUE < 153.5) {
+                                    if (RANGE_MACRO_VALUE < 58.5) {
+                                        if (Y < 72) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 72) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 58.5) {
+                                        if (MAX_MACRO_VALUE < 132.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 132.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 153.5) {
+                                    if (X < 1128) {
+                                        zeroCount++;
+                                    }
+                                    else if (X >= 1128) {
+                                        if (Y < 208) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 208) {
+                                            oneCount++;
+                                        }
+                                    }
                                 }
                             }
                         }
-                        else if (AVG_MACRO_VALUE >= 92.86) {
-                            if (MAX_MACRO_VALUE < 144.5) {
-                                if (X < 992) {
-                                    if (AVG_MACRO_VALUE < 105.7) {
-                                        zeroCount++;
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 105.7) {
-                                        if (AVG_MACRO_VALUE < 105.8) {
-                                            oneCount++;
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 105.8) {
-                                            if (MAX_MACRO_VALUE < 124.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 124.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (X >= 992) {
-                                    if (X < 1080) {
-                                        if (X < 1016) {
-                                            oneCount++;
-                                        }
-                                        else if (X >= 1016) {
-                                            if (RANGE_MACRO_VALUE < 29) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 29) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (X >= 1080) {
-                                        zeroCount++;
-                                    }
-                                }
-                            }
-                            else if (MAX_MACRO_VALUE >= 144.5) {
-                                if (X < 600) {
-                                    if (X < 440) {
-                                        zeroCount++;
-                                    }
-                                    else if (X >= 440) {
-                                        if (AVG_MACRO_VALUE < 130.39) {
-                                            oneCount++;
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 130.39) {
-                                            if (AVG_MACRO_VALUE < 135.22) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 135.22) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (X >= 600) {
+                        else if (MAX_MACRO_VALUE >= 156.5) {
+                            if (MAX_MACRO_VALUE < 178.5) {
+                                if (MIN_MACRO_VALUE < 122) {
                                     zeroCount++;
                                 }
-                            }
-                        }
-                    }
-                    else if (RANGE_MACRO_VALUE >= 74.5) {
-                        if (MIN_MACRO_VALUE < 19.5) {
-                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
-                                if (RANGE_MACRO_VALUE < 134) {
-                                    if (MAX_MACRO_VALUE < 147) {
-                                        if (AVG_MACRO_VALUE < 24.13) {
-                                            zeroCount++;
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 24.13) {
-                                            if (MAX_MACRO_VALUE < 144.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 144.5) {
-                                                oneCount++;
-                                            }
-                                        }
+                                else if (MIN_MACRO_VALUE >= 122) {
+                                    if (Y < 96) {
+                                        oneCount++;
                                     }
-                                    else if (MAX_MACRO_VALUE >= 147) {
+                                    else if (Y >= 96) {
                                         zeroCount++;
                                     }
                                 }
-                                else if (RANGE_MACRO_VALUE >= 134) {
-                                    if (MAX_MACRO_VALUE < 173) {
-                                        if (X < 1296) {
-                                            zeroCount++;
-                                        }
-                                        else if (X >= 1296) {
+                            }
+                            else if (MAX_MACRO_VALUE >= 178.5) {
+                                if (AVG_MACRO_VALUE < 152.63) {
+                                    if (MIN_MACRO_VALUE < 71.5) {
+                                        if (X < 1112) {
                                             oneCount++;
                                         }
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 173) {
-                                        oneCount++;
-                                    }
-                                }
-                            }
-                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
-                                if (RANGE_MACRO_VALUE < 86) {
-                                    if (AVG_MACRO_VALUE < 39.44) {
-                                        oneCount++;
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 39.44) {
-                                        zeroCount++;
-                                    }
-                                }
-                                else if (RANGE_MACRO_VALUE >= 86) {
-                                    if (X < 360) {
-                                        zeroCount++;
-                                    }
-                                    else if (X >= 360) {
-                                        if (X < 1104) {
-                                            if (MAX_MACRO_VALUE < 119) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 119) {
-                                                oneCount++;
-                                            }
+                                        else if (X >= 1112) {
+                                            zeroCount++;
                                         }
-                                        else if (X >= 1104) {
-                                            if (RANGE_MACRO_VALUE < 93) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 93) {
-                                                zeroCount++;
-                                            }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 71.5) {
+                                        if (RANGE_MACRO_VALUE < 83.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 83.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 152.63) {
+                                    if (MAX_MACRO_VALUE < 228.5) {
+                                        if (Y < 88) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 88) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 228.5) {
+                                        if (Y < 56) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 56) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                             }
                         }
-                        else if (MIN_MACRO_VALUE >= 19.5) {
-                            if (AVG_MACRO_VALUE < 63.56) {
-                                if (AVGQUADRANT_MACRO_VALUE < 0.5) {
-                                    if (MAX_MACRO_VALUE < 143.5) {
-                                        zeroCount++;
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 143.5) {
-                                        if (MAX_MACRO_VALUE < 146) {
-                                            if (AVG_MACRO_VALUE < 62.45) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 62.45) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 146) {
+                    }
+                    else if (X >= 1256) {
+                        if (RANGE_MACRO_VALUE < 108.5) {
+                            if (Y < 504) {
+                                if (X < 1336) {
+                                    if (MAX_MACRO_VALUE < 167.5) {
+                                        if (Y < 120) {
                                             zeroCount++;
                                         }
-                                    }
-                                }
-                                else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
-                                    if (MAX_MACRO_VALUE < 106) {
-                                        if (AVG_MACRO_VALUE < 50.82) {
+                                        else if (Y >= 120) {
                                             oneCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 50.82) {
-                                            zeroCount++;
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 167.5) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (X >= 1336) {
+                                    if (MIN_MACRO_VALUE < 17.5) {
+                                        if (RANGE_MACRO_VALUE < 92.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 92.5) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (MAX_MACRO_VALUE >= 106) {
-                                        zeroCount++;
+                                    else if (MIN_MACRO_VALUE >= 17.5) {
+                                        if (AVG_MACRO_VALUE < 167.82) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 167.82) {
+                                            oneCount++;
+                                        }
                                     }
                                 }
                             }
-                            else if (AVG_MACRO_VALUE >= 63.56) {
-                                if (MAX_MACRO_VALUE < 111.5) {
-                                    oneCount++;
+                            else if (Y >= 504) {
+                                if (RANGE_MACRO_VALUE < 78.5) {
+                                    if (Y < 536) {
+                                        if (RANGE_MACRO_VALUE < 69.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 69.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 536) {
+                                        if (X < 1592) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1592) {
+                                            oneCount++;
+                                        }
+                                    }
                                 }
-                                else if (MAX_MACRO_VALUE >= 111.5) {
-                                    if (AVG_MACRO_VALUE < 77.55) {
-                                        if (MIN_MACRO_VALUE < 42.5) {
-                                            if (RANGE_MACRO_VALUE < 120.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 120.5) {
-                                                oneCount++;
-                                            }
+                                else if (RANGE_MACRO_VALUE >= 78.5) {
+                                    if (X < 1624) {
+                                        if (AVG_MACRO_VALUE < 49.51) {
+                                            oneCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 42.5) {
-                                            if (AVG_MACRO_VALUE < 69.63) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 69.63) {
-                                                oneCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 49.51) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (AVG_MACRO_VALUE >= 77.55) {
-                                        if (AVG_MACRO_VALUE < 125.21) {
-                                            if (RANGE_MACRO_VALUE < 172.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 172.5) {
-                                                oneCount++;
-                                            }
+                                    else if (X >= 1624) {
+                                        if (MAX_MACRO_VALUE < 119.5) {
+                                            zeroCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 125.21) {
-                                            if (AVG_MACRO_VALUE < 128.76) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 128.76) {
-                                                zeroCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 119.5) {
+                                            oneCount++;
                                         }
                                     }
+                                }
+                            }
+                        }
+                        else if (RANGE_MACRO_VALUE >= 108.5) {
+                            if (MAX_MACRO_VALUE < 173.5) {
+                                if (Y < 328) {
+                                    if (MIN_MACRO_VALUE < 44.5) {
+                                        if (AVG_MACRO_VALUE < 124.19) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 124.19) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 44.5) {
+                                        if (MIN_MACRO_VALUE < 51.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 51.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (Y >= 328) {
+                                    if (Y < 376) {
+                                        zeroCount++;
+                                    }
+                                    else if (Y >= 376) {
+                                        if (MIN_MACRO_VALUE < 36.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 36.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (MAX_MACRO_VALUE >= 173.5) {
+                                if (Y < 488) {
+                                    if (AVG_MACRO_VALUE < 199.45) {
+                                        if (Y < 472) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 472) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 199.45) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (Y >= 488) {
+                                    zeroCount++;
                                 }
                             }
                         }
                     }
                 }
             }
-            else if (Y >= 584) {
-                if (RANGE_MACRO_VALUE < 52.5) {
-                    if (Y < 696) {
-                        if (AVG_MACRO_VALUE < 137.87) {
-                            if (MAX_MACRO_VALUE < 126.5) {
-                                if (MIN_MACRO_VALUE < 43.5) {
-                                    if (X < 984) {
-                                        if (X < 344) {
-                                            if (MIN_MACRO_VALUE < 23.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 23.5) {
-                                                oneCount++;
-                                            }
+            else if (Y >= 568) {
+                if (RANGE_MACRO_VALUE < 74.5) {
+                    if (AVG_MACRO_VALUE < 92.86) {
+                        if (AVG_MACRO_VALUE < 91.46) {
+                            if (AVG_MACRO_VALUE < 86.21) {
+                                if (AVG_MACRO_VALUE < 79.52) {
+                                    if (RANGE_MACRO_VALUE < 73.5) {
+                                        if (X < 1560) {
+                                            oneCount++;
                                         }
-                                        else if (X >= 344) {
-                                            if (AVG_MACRO_VALUE < 32.31) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 32.31) {
-                                                zeroCount++;
-                                            }
+                                        else if (X >= 1560) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (X >= 984) {
-                                        if (Y < 664) {
-                                            if (MAX_MACRO_VALUE < 72.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 72.5) {
-                                                zeroCount++;
-                                            }
+                                    else if (RANGE_MACRO_VALUE >= 73.5) {
+                                        if (X < 1040) {
+                                            zeroCount++;
                                         }
-                                        else if (Y >= 664) {
-                                            if (X < 1088) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1088) {
-                                                zeroCount++;
-                                            }
+                                        else if (X >= 1040) {
+                                            oneCount++;
                                         }
                                     }
                                 }
-                                else if (MIN_MACRO_VALUE >= 43.5) {
-                                    if (X < 856) {
-                                        zeroCount++;
-                                    }
-                                    else if (X >= 856) {
-                                        if (X < 936) {
-                                            if (MIN_MACRO_VALUE < 50) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 50) {
-                                                oneCount++;
-                                            }
+                                else if (AVG_MACRO_VALUE >= 79.52) {
+                                    if (RANGE_MACRO_VALUE < 48) {
+                                        if (MAX_MACRO_VALUE < 107) {
+                                            zeroCount++;
                                         }
-                                        else if (X >= 936) {
+                                        else if (MAX_MACRO_VALUE >= 107) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 48) {
+                                        if (X < 1480) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1480) {
                                             zeroCount++;
                                         }
                                     }
                                 }
                             }
-                            else if (MAX_MACRO_VALUE >= 126.5) {
-                                if (MIN_MACRO_VALUE < 87.5) {
-                                    if (AVG_MACRO_VALUE < 109.58) {
-                                        if (X < 712) {
-                                            oneCount++;
-                                        }
-                                        else if (X >= 712) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 109.58) {
-                                        oneCount++;
-                                    }
-                                }
-                                else if (MIN_MACRO_VALUE >= 87.5) {
-                                    if (AVG_MACRO_VALUE < 130.08) {
-                                        if (MAX_MACRO_VALUE < 131.5) {
-                                            if (AVG_MACRO_VALUE < 119.94) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 119.94) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 131.5) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 130.08) {
-                                        if (MAX_MACRO_VALUE < 150.5) {
-                                            zeroCount++;
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 150.5) {
-                                            oneCount++;
-                                        }
-                                    }
-                                }
+                            else if (AVG_MACRO_VALUE >= 86.21) {
+                                zeroCount++;
                             }
                         }
-                        else if (AVG_MACRO_VALUE >= 137.87) {
-                            zeroCount++;
+                        else if (AVG_MACRO_VALUE >= 91.46) {
+                            if (X < 1104) {
+                                if (MAX_MACRO_VALUE < 121) {
+                                    oneCount++;
+                                }
+                                else if (MAX_MACRO_VALUE >= 121) {
+                                    if (MAX_MACRO_VALUE < 122.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 122.5) {
+                                        if (RANGE_MACRO_VALUE < 63.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 63.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (X >= 1104) {
+                                zeroCount++;
+                            }
                         }
                     }
-                    else if (Y >= 696) {
-                        if (RANGE_MACRO_VALUE < 34.5) {
-                            if (AVG_MACRO_VALUE < 144.8) {
-                                if (MAX_MACRO_VALUE < 48.5) {
-                                    if (RANGE_MACRO_VALUE < 27.5) {
-                                        if (X < 1680) {
-                                            if (AVG_MACRO_VALUE < 23.76) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 23.76) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 1680) {
-                                            if (X < 1752) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1752) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 27.5) {
-                                        if (AVGQUADRANT_MACRO_VALUE < 0.5) {
-                                            if (AVG_MACRO_VALUE < 31.2) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 31.2) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
-                                            zeroCount++;
-                                        }
-                                    }
+                    else if (AVG_MACRO_VALUE >= 92.86) {
+                        if (MAX_MACRO_VALUE < 144.5) {
+                            if (X < 992) {
+                                if (AVG_MACRO_VALUE < 105.7) {
+                                    zeroCount++;
                                 }
-                                else if (MAX_MACRO_VALUE >= 48.5) {
-                                    if (AVG_MACRO_VALUE < 30.15) {
-                                        if (AVG_MACRO_VALUE < 26.55) {
-                                            if (AVG_MACRO_VALUE < 26.21) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 26.21) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 26.55) {
+                                else if (AVG_MACRO_VALUE >= 105.7) {
+                                    if (AVG_MACRO_VALUE < 105.8) {
+                                        oneCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 105.8) {
+                                        if (MAX_MACRO_VALUE < 124.5) {
                                             zeroCount++;
                                         }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 30.15) {
-                                        if (Y < 760) {
-                                            if (X < 1832) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1832) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (Y >= 760) {
-                                            if (Y < 776) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 776) {
-                                                zeroCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 124.5) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                             }
-                            else if (AVG_MACRO_VALUE >= 144.8) {
-                                if (AVG_MACRO_VALUE < 157.97) {
-                                    if (RANGE_MACRO_VALUE < 28.5) {
-                                        zeroCount++;
+                            else if (X >= 992) {
+                                if (X < 1080) {
+                                    if (X < 1016) {
+                                        oneCount++;
                                     }
-                                    else if (RANGE_MACRO_VALUE >= 28.5) {
-                                        if (X < 912) {
-                                            if (Y < 1040) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 1040) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 912) {
+                                    else if (X >= 1016) {
+                                        if (RANGE_MACRO_VALUE < 29) {
                                             oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 29) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
-                                else if (AVG_MACRO_VALUE >= 157.97) {
-                                    if (X < 1880) {
-                                        if (X < 1672) {
-                                            if (MIN_MACRO_VALUE < 150.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 150.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 1672) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (X >= 1880) {
-                                        if (X < 1896) {
-                                            oneCount++;
-                                        }
-                                        else if (X >= 1896) {
-                                            zeroCount++;
-                                        }
-                                    }
+                                else if (X >= 1080) {
+                                    zeroCount++;
                                 }
                             }
                         }
-                        else if (RANGE_MACRO_VALUE >= 34.5) {
-                            if (MAX_MACRO_VALUE < 87.5) {
-                                if (AVG_MACRO_VALUE < 30.18) {
-                                    if (X < 1064) {
-                                        if (AVG_MACRO_VALUE < 30.15) {
-                                            if (MAX_MACRO_VALUE < 59.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 59.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 30.15) {
-                                            oneCount++;
-                                        }
+                        else if (MAX_MACRO_VALUE >= 144.5) {
+                            if (X < 600) {
+                                if (X < 440) {
+                                    zeroCount++;
+                                }
+                                else if (X >= 440) {
+                                    if (AVG_MACRO_VALUE < 130.39) {
+                                        oneCount++;
                                     }
-                                    else if (X >= 1064) {
-                                        if (AVG_MACRO_VALUE < 17.95) {
-                                            oneCount++;
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 17.95) {
+                                    else if (AVG_MACRO_VALUE >= 130.39) {
+                                        if (AVG_MACRO_VALUE < 135.22) {
                                             zeroCount++;
                                         }
-                                    }
-                                }
-                                else if (AVG_MACRO_VALUE >= 30.18) {
-                                    if (AVG_MACRO_VALUE < 42.49) {
-                                        if (MIN_MACRO_VALUE < 17.5) {
-                                            if (X < 360) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 360) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 17.5) {
-                                            if (MIN_MACRO_VALUE < 21.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 21.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 42.49) {
-                                        if (X < 168) {
-                                            if (MAX_MACRO_VALUE < 62) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 62) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 168) {
-                                            if (AVG_MACRO_VALUE < 64.98) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 64.98) {
-                                                zeroCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 135.22) {
+                                            oneCount++;
                                         }
                                     }
                                 }
                             }
-                            else if (MAX_MACRO_VALUE >= 87.5) {
-                                if (Y < 904) {
-                                    if (X < 1816) {
-                                        if (MIN_MACRO_VALUE < 44.5) {
-                                            if (MAX_MACRO_VALUE < 91.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 91.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 44.5) {
-                                            if (RANGE_MACRO_VALUE < 40.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 40.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (X >= 1816) {
-                                        if (AVG_MACRO_VALUE < 63.21) {
-                                            oneCount++;
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 63.21) {
-                                            if (MIN_MACRO_VALUE < 100.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 100.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (Y >= 904) {
-                                    if (RANGE_MACRO_VALUE < 41.5) {
-                                        if (AVG_MACRO_VALUE < 70.29) {
-                                            if (MAX_MACRO_VALUE < 91.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 91.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 70.29) {
-                                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 41.5) {
-                                        if (MIN_MACRO_VALUE < 40.5) {
-                                            zeroCount++;
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 40.5) {
-                                            if (X < 1736) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1736) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
+                            else if (X >= 600) {
+                                zeroCount++;
                             }
                         }
                     }
                 }
-                else if (RANGE_MACRO_VALUE >= 52.5) {
-                    if (Y < 792) {
-                        if (X < 1160) {
-                            if (MIN_MACRO_VALUE < 17.5) {
-                                if (Y < 760) {
-                                    if (X < 104) {
-                                        if (AVG_MACRO_VALUE < 42.64) {
-                                            if (Y < 688) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 688) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 42.64) {
-                                            if (RANGE_MACRO_VALUE < 218.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 218.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (X >= 104) {
-                                        if (AVG_MACRO_VALUE < 59.06) {
-                                            if (AVG_MACRO_VALUE < 37.33) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 37.33) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 59.06) {
-                                            if (X < 768) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 768) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (Y >= 760) {
-                                    if (X < 336) {
-                                        if (MAX_MACRO_VALUE < 87.5) {
-                                            zeroCount++;
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 87.5) {
-                                            if (RANGE_MACRO_VALUE < 102) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 102) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (X >= 336) {
+                else if (RANGE_MACRO_VALUE >= 74.5) {
+                    if (MIN_MACRO_VALUE < 19.5) {
+                        if (AVGQUADRANT_MACRO_VALUE == 0) {
+                            if (RANGE_MACRO_VALUE < 134) {
+                                if (MAX_MACRO_VALUE < 147) {
+                                    if (AVG_MACRO_VALUE < 24.13) {
                                         zeroCount++;
                                     }
-                                }
-                            }
-                            else if (MIN_MACRO_VALUE >= 17.5) {
-                                if (X < 120) {
-                                    if (X < 8) {
-                                        zeroCount++;
-                                    }
-                                    else if (X >= 8) {
-                                        if (AVG_MACRO_VALUE < 41.82) {
-                                            if (AVG_MACRO_VALUE < 38.81) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 38.81) {
-                                                zeroCount++;
-                                            }
+                                    else if (AVG_MACRO_VALUE >= 24.13) {
+                                        if (MAX_MACRO_VALUE < 144.5) {
+                                            oneCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 41.82) {
-                                            if (RANGE_MACRO_VALUE < 64.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 64.5) {
-                                                oneCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 144.5) {
+                                            oneCount++;
                                         }
                                     }
                                 }
-                                else if (X >= 120) {
-                                    if (RANGE_MACRO_VALUE < 210.5) {
-                                        if (Y < 760) {
-                                            if (AVG_MACRO_VALUE < 75.01) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 75.01) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (Y >= 760) {
-                                            if (RANGE_MACRO_VALUE < 191.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 191.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 210.5) {
-                                        zeroCount++;
-                                    }
-                                }
-                            }
-                        }
-                        else if (X >= 1160) {
-                            if (Y < 744) {
-                                if (MIN_MACRO_VALUE < 93.5) {
-                                    if (RANGE_MACRO_VALUE < 54.5) {
-                                        if (X < 1608) {
-                                            if (X < 1568) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1568) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 1608) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 54.5) {
-                                        if (X < 1256) {
-                                            if (AVG_MACRO_VALUE < 66.55) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 66.55) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 1256) {
-                                            if (Y < 616) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 616) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (MIN_MACRO_VALUE >= 93.5) {
+                                else if (MAX_MACRO_VALUE >= 147) {
                                     zeroCount++;
                                 }
                             }
-                            else if (Y >= 744) {
-                                if (AVG_MACRO_VALUE < 44.05) {
-                                    if (MAX_MACRO_VALUE < 88) {
-                                        if (X < 1512) {
-                                            oneCount++;
-                                        }
-                                        else if (X >= 1512) {
-                                            if (MAX_MACRO_VALUE < 85) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 85) {
-                                                oneCount++;
-                                            }
-                                        }
+                            else if (RANGE_MACRO_VALUE >= 134) {
+                                if (MAX_MACRO_VALUE < 173) {
+                                    if (X < 1296) {
+                                        zeroCount++;
                                     }
-                                    else if (MAX_MACRO_VALUE >= 88) {
-                                        if (Y < 760) {
-                                            if (AVG_MACRO_VALUE < 40.74) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 40.74) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (Y >= 760) {
-                                            zeroCount++;
-                                        }
+                                    else if (X >= 1296) {
+                                        oneCount++;
                                     }
                                 }
-                                else if (AVG_MACRO_VALUE >= 44.05) {
-                                    if (MAX_MACRO_VALUE < 101.5) {
-                                        if (AVG_MACRO_VALUE < 57.17) {
-                                            if (X < 1672) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1672) {
-                                                zeroCount++;
-                                            }
+                                else if (MAX_MACRO_VALUE >= 173) {
+                                    oneCount++;
+                                }
+                            }
+                        }
+                        else if (AVGQUADRANT_MACRO_VALUE == 1) {
+                            if (RANGE_MACRO_VALUE < 86) {
+                                if (AVG_MACRO_VALUE < 39.44) {
+                                    oneCount++;
+                                }
+                                else if (AVG_MACRO_VALUE >= 39.44) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (RANGE_MACRO_VALUE >= 86) {
+                                if (X < 360) {
+                                    zeroCount++;
+                                }
+                                else if (X >= 360) {
+                                    if (X < 1104) {
+                                        if (MAX_MACRO_VALUE < 119) {
+                                            oneCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 57.17) {
-                                            zeroCount++;
+                                        else if (MAX_MACRO_VALUE >= 119) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (MAX_MACRO_VALUE >= 101.5) {
-                                        if (RANGE_MACRO_VALUE < 78.5) {
-                                            zeroCount++;
+                                    else if (X >= 1104) {
+                                        if (RANGE_MACRO_VALUE < 93) {
+                                            oneCount++;
                                         }
-                                        else if (RANGE_MACRO_VALUE >= 78.5) {
-                                            if (Y < 760) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 760) {
-                                                zeroCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 93) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                    else if (Y >= 792) {
-                        if (X < 24) {
-                            if (MAX_MACRO_VALUE < 229.5) {
-                                if (Y < 840) {
-                                    if (MIN_MACRO_VALUE < 24) {
-                                        if (AVG_MACRO_VALUE < 39.43) {
-                                            zeroCount++;
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 39.43) {
+                    else if (MIN_MACRO_VALUE >= 19.5) {
+                        if (AVG_MACRO_VALUE < 63.56) {
+                            if (AVGQUADRANT_MACRO_VALUE == 0) {
+                                if (MAX_MACRO_VALUE < 143.5) {
+                                    zeroCount++;
+                                }
+                                else if (MAX_MACRO_VALUE >= 143.5) {
+                                    if (MAX_MACRO_VALUE < 146) {
+                                        if (AVG_MACRO_VALUE < 62.45) {
                                             oneCount++;
                                         }
+                                        else if (AVG_MACRO_VALUE >= 62.45) {
+                                            zeroCount++;
+                                        }
                                     }
-                                    else if (MIN_MACRO_VALUE >= 24) {
+                                    else if (MAX_MACRO_VALUE >= 146) {
                                         zeroCount++;
                                     }
                                 }
-                                else if (Y >= 840) {
+                            }
+                            else if (AVGQUADRANT_MACRO_VALUE == 1) {
+                                if (MAX_MACRO_VALUE < 106) {
+                                    if (AVG_MACRO_VALUE < 50.82) {
+                                        oneCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 50.82) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 106) {
                                     zeroCount++;
                                 }
                             }
-                            else if (MAX_MACRO_VALUE >= 229.5) {
+                        }
+                        else if (AVG_MACRO_VALUE >= 63.56) {
+                            if (MAX_MACRO_VALUE < 111.5) {
                                 oneCount++;
                             }
-                        }
-                        else if (X >= 24) {
-                            if (X < 1896) {
-                                if (MIN_MACRO_VALUE < 28.5) {
-                                    if (X < 56) {
-                                        if (MAX_MACRO_VALUE < 201) {
+                            else if (MAX_MACRO_VALUE >= 111.5) {
+                                if (AVG_MACRO_VALUE < 77.55) {
+                                    if (MIN_MACRO_VALUE < 42.5) {
+                                        if (RANGE_MACRO_VALUE < 120.5) {
                                             zeroCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 201) {
-                                            if (MIN_MACRO_VALUE < 19) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 19) {
-                                                oneCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 120.5) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (X >= 56) {
-                                        if (X < 408) {
-                                            if (MIN_MACRO_VALUE < 25.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 25.5) {
-                                                zeroCount++;
-                                            }
+                                    else if (MIN_MACRO_VALUE >= 42.5) {
+                                        if (AVG_MACRO_VALUE < 69.63) {
+                                            zeroCount++;
                                         }
-                                        else if (X >= 408) {
-                                            if (MAX_MACRO_VALUE < 92.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 92.5) {
-                                                oneCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 69.63) {
+                                            oneCount++;
                                         }
                                     }
                                 }
-                                else if (MIN_MACRO_VALUE >= 28.5) {
-                                    if (Y < 856) {
-                                        if (MAX_MACRO_VALUE < 112.5) {
-                                            if (AVG_MACRO_VALUE < 59.93) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 59.93) {
-                                                oneCount++;
-                                            }
+                                else if (AVG_MACRO_VALUE >= 77.55) {
+                                    if (AVG_MACRO_VALUE < 125.21) {
+                                        if (RANGE_MACRO_VALUE < 172.5) {
+                                            zeroCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 112.5) {
-                                            if (AVG_MACRO_VALUE < 131.75) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 131.75) {
-                                                zeroCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 172.5) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (Y >= 856) {
-                                        if (MIN_MACRO_VALUE < 41.5) {
-                                            if (AVG_MACRO_VALUE < 60.26) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 60.26) {
-                                                oneCount++;
-                                            }
+                                    else if (AVG_MACRO_VALUE >= 125.21) {
+                                        if (AVG_MACRO_VALUE < 128.76) {
+                                            oneCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 41.5) {
-                                            if (RANGE_MACRO_VALUE < 53.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 53.5) {
-                                                oneCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 128.76) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
-                            }
-                            else if (X >= 1896) {
-                                zeroCount++;
                             }
                         }
                     }
                 }
             }
         }
-
+        else if (Y >= 584) {
+            if (RANGE_MACRO_VALUE < 52.5) {
+                if (Y < 696) {
+                    if (AVG_MACRO_VALUE < 137.87) {
+                        if (MAX_MACRO_VALUE < 126.5) {
+                            if (MIN_MACRO_VALUE < 43.5) {
+                                if (X < 984) {
+                                    if (X < 344) {
+                                        if (MIN_MACRO_VALUE < 23.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 23.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 344) {
+                                        if (AVG_MACRO_VALUE < 32.31) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 32.31) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 984) {
+                                    if (Y < 664) {
+                                        if (MAX_MACRO_VALUE < 72.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 72.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 664) {
+                                        if (X < 1088) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1088) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (MIN_MACRO_VALUE >= 43.5) {
+                                if (X < 856) {
+                                    zeroCount++;
+                                }
+                                else if (X >= 856) {
+                                    if (X < 936) {
+                                        if (MIN_MACRO_VALUE < 50) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 50) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 936) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                        }
+                        else if (MAX_MACRO_VALUE >= 126.5) {
+                            if (MIN_MACRO_VALUE < 87.5) {
+                                if (AVG_MACRO_VALUE < 109.58) {
+                                    if (X < 712) {
+                                        oneCount++;
+                                    }
+                                    else if (X >= 712) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 109.58) {
+                                    oneCount++;
+                                }
+                            }
+                            else if (MIN_MACRO_VALUE >= 87.5) {
+                                if (AVG_MACRO_VALUE < 130.08) {
+                                    if (MAX_MACRO_VALUE < 131.5) {
+                                        if (AVG_MACRO_VALUE < 119.94) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 119.94) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 131.5) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 130.08) {
+                                    if (MAX_MACRO_VALUE < 150.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 150.5) {
+                                        oneCount++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (AVG_MACRO_VALUE >= 137.87) {
+                        zeroCount++;
+                    }
+                }
+                else if (Y >= 696) {
+                    if (RANGE_MACRO_VALUE < 34.5) {
+                        if (AVG_MACRO_VALUE < 144.8) {
+                            if (MAX_MACRO_VALUE < 48.5) {
+                                if (RANGE_MACRO_VALUE < 27.5) {
+                                    if (X < 1680) {
+                                        if (AVG_MACRO_VALUE < 23.76) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 23.76) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 1680) {
+                                        if (X < 1752) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1752) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 27.5) {
+                                    if (AVGQUADRANT_MACRO_VALUE == 0) {
+                                        if (AVG_MACRO_VALUE < 31.2) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 31.2) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVGQUADRANT_MACRO_VALUE == 1) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                            else if (MAX_MACRO_VALUE >= 48.5) {
+                                if (AVG_MACRO_VALUE < 30.15) {
+                                    if (AVG_MACRO_VALUE < 26.55) {
+                                        if (AVG_MACRO_VALUE < 26.21) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 26.21) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 26.55) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 30.15) {
+                                    if (Y < 760) {
+                                        if (X < 1832) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1832) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (Y >= 760) {
+                                        if (Y < 776) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 776) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (AVG_MACRO_VALUE >= 144.8) {
+                            if (AVG_MACRO_VALUE < 157.97) {
+                                if (RANGE_MACRO_VALUE < 28.5) {
+                                    zeroCount++;
+                                }
+                                else if (RANGE_MACRO_VALUE >= 28.5) {
+                                    if (X < 912) {
+                                        if (Y < 1040) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 1040) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 912) {
+                                        oneCount++;
+                                    }
+                                }
+                            }
+                            else if (AVG_MACRO_VALUE >= 157.97) {
+                                if (X < 1880) {
+                                    if (X < 1672) {
+                                        if (MIN_MACRO_VALUE < 150.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 150.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 1672) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (X >= 1880) {
+                                    if (X < 1896) {
+                                        oneCount++;
+                                    }
+                                    else if (X >= 1896) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (RANGE_MACRO_VALUE >= 34.5) {
+                        if (MAX_MACRO_VALUE < 87.5) {
+                            if (AVG_MACRO_VALUE < 30.18) {
+                                if (X < 1064) {
+                                    if (AVG_MACRO_VALUE < 30.15) {
+                                        if (MAX_MACRO_VALUE < 59.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 59.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 30.15) {
+                                        oneCount++;
+                                    }
+                                }
+                                else if (X >= 1064) {
+                                    if (AVG_MACRO_VALUE < 17.95) {
+                                        oneCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 17.95) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                            else if (AVG_MACRO_VALUE >= 30.18) {
+                                if (AVG_MACRO_VALUE < 42.49) {
+                                    if (MIN_MACRO_VALUE < 17.5) {
+                                        if (X < 360) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 360) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 17.5) {
+                                        if (MIN_MACRO_VALUE < 21.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 21.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 42.49) {
+                                    if (X < 168) {
+                                        if (MAX_MACRO_VALUE < 62) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 62) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 168) {
+                                        if (AVG_MACRO_VALUE < 64.98) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 64.98) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (MAX_MACRO_VALUE >= 87.5) {
+                            if (Y < 904) {
+                                if (X < 1816) {
+                                    if (MIN_MACRO_VALUE < 44.5) {
+                                        if (MAX_MACRO_VALUE < 91.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 91.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 44.5) {
+                                        if (RANGE_MACRO_VALUE < 40.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 40.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 1816) {
+                                    if (AVG_MACRO_VALUE < 63.21) {
+                                        oneCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 63.21) {
+                                        if (MIN_MACRO_VALUE < 100.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 100.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (Y >= 904) {
+                                if (RANGE_MACRO_VALUE < 41.5) {
+                                    if (AVG_MACRO_VALUE < 70.29) {
+                                        if (MAX_MACRO_VALUE < 91.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 91.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 70.29) {
+                                        if (AVGQUADRANT_MACRO_VALUE == 0) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVGQUADRANT_MACRO_VALUE == 1) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 41.5) {
+                                    if (MIN_MACRO_VALUE < 40.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 40.5) {
+                                        if (X < 1736) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1736) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else if (RANGE_MACRO_VALUE >= 52.5) {
+                if (Y < 792) {
+                    if (X < 1160) {
+                        if (MIN_MACRO_VALUE < 17.5) {
+                            if (Y < 760) {
+                                if (X < 104) {
+                                    if (AVG_MACRO_VALUE < 42.64) {
+                                        if (Y < 688) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 688) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 42.64) {
+                                        if (RANGE_MACRO_VALUE < 218.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 218.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 104) {
+                                    if (AVG_MACRO_VALUE < 59.06) {
+                                        if (AVG_MACRO_VALUE < 37.33) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 37.33) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 59.06) {
+                                        if (X < 768) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 768) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (Y >= 760) {
+                                if (X < 336) {
+                                    if (MAX_MACRO_VALUE < 87.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 87.5) {
+                                        if (RANGE_MACRO_VALUE < 102) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 102) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 336) {
+                                    zeroCount++;
+                                }
+                            }
+                        }
+                        else if (MIN_MACRO_VALUE >= 17.5) {
+                            if (X < 120) {
+                                if (X < 8) {
+                                    zeroCount++;
+                                }
+                                else if (X >= 8) {
+                                    if (AVG_MACRO_VALUE < 41.82) {
+                                        if (AVG_MACRO_VALUE < 38.81) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 38.81) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 41.82) {
+                                        if (RANGE_MACRO_VALUE < 64.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 64.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (X >= 120) {
+                                if (RANGE_MACRO_VALUE < 210.5) {
+                                    if (Y < 760) {
+                                        if (AVG_MACRO_VALUE < 75.01) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 75.01) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (Y >= 760) {
+                                        if (RANGE_MACRO_VALUE < 191.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 191.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 210.5) {
+                                    zeroCount++;
+                                }
+                            }
+                        }
+                    }
+                    else if (X >= 1160) {
+                        if (Y < 744) {
+                            if (MIN_MACRO_VALUE < 93.5) {
+                                if (RANGE_MACRO_VALUE < 54.5) {
+                                    if (X < 1608) {
+                                        if (X < 1568) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1568) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 1608) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 54.5) {
+                                    if (X < 1256) {
+                                        if (AVG_MACRO_VALUE < 66.55) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 66.55) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 1256) {
+                                        if (Y < 616) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 616) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (MIN_MACRO_VALUE >= 93.5) {
+                                zeroCount++;
+                            }
+                        }
+                        else if (Y >= 744) {
+                            if (AVG_MACRO_VALUE < 44.05) {
+                                if (MAX_MACRO_VALUE < 88) {
+                                    if (X < 1512) {
+                                        oneCount++;
+                                    }
+                                    else if (X >= 1512) {
+                                        if (MAX_MACRO_VALUE < 85) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 85) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 88) {
+                                    if (Y < 760) {
+                                        if (AVG_MACRO_VALUE < 40.74) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 40.74) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 760) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                            else if (AVG_MACRO_VALUE >= 44.05) {
+                                if (MAX_MACRO_VALUE < 101.5) {
+                                    if (AVG_MACRO_VALUE < 57.17) {
+                                        if (X < 1672) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1672) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 57.17) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 101.5) {
+                                    if (RANGE_MACRO_VALUE < 78.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 78.5) {
+                                        if (Y < 760) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 760) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (Y >= 792) {
+                    if (X < 24) {
+                        if (MAX_MACRO_VALUE < 229.5) {
+                            if (Y < 840) {
+                                if (MIN_MACRO_VALUE < 24) {
+                                    if (AVG_MACRO_VALUE < 39.43) {
+                                        zeroCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 39.43) {
+                                        oneCount++;
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 24) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (Y >= 840) {
+                                zeroCount++;
+                            }
+                        }
+                        else if (MAX_MACRO_VALUE >= 229.5) {
+                            oneCount++;
+                        }
+                    }
+                    else if (X >= 24) {
+                        if (X < 1896) {
+                            if (MIN_MACRO_VALUE < 28.5) {
+                                if (X < 56) {
+                                    if (MAX_MACRO_VALUE < 201) {
+                                        zeroCount++;
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 201) {
+                                        if (MIN_MACRO_VALUE < 19) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 19) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 56) {
+                                    if (X < 408) {
+                                        if (MIN_MACRO_VALUE < 25.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 25.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 408) {
+                                        if (MAX_MACRO_VALUE < 92.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 92.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (MIN_MACRO_VALUE >= 28.5) {
+                                if (Y < 856) {
+                                    if (MAX_MACRO_VALUE < 112.5) {
+                                        if (AVG_MACRO_VALUE < 59.93) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 59.93) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 112.5) {
+                                        if (AVG_MACRO_VALUE < 131.75) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 131.75) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (Y >= 856) {
+                                    if (MIN_MACRO_VALUE < 41.5) {
+                                        if (AVG_MACRO_VALUE < 60.26) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 60.26) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 41.5) {
+                                        if (RANGE_MACRO_VALUE < 53.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 53.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (X >= 1896) {
+                            zeroCount++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     //TREE 3
     if (MIN_MACRO_VALUE < 34.5) {
             if (MAX_MACRO_VALUE < 18.5) {
@@ -6040,7 +6164,7 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                             else if (RANGE_MACRO_VALUE >= 104.5) {
                                 if (Y < 248) {
                                     if (AVG_MACRO_VALUE < 98.66) {
-                                        if (AVGQUADRANT_MACRO_VALUE < 0.5) {
+                                        if (AVGQUADRANT_MACRO_VALUE == 0) {
                                             if (Y < 232) {
                                                 oneCount++;
                                             }
@@ -6048,7 +6172,7 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                                 oneCount++;
                                             }
                                         }
-                                        else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
+                                        else if (AVGQUADRANT_MACRO_VALUE == 1) {
                                             if (MAX_MACRO_VALUE < 131.5) {
                                                 oneCount++;
                                             }
@@ -6133,7 +6257,7 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                 }
                             }
                             else if (RANGE_MACRO_VALUE >= 52) {
-                                if (AVGQUADRANT_MACRO_VALUE < 0.5) {
+                                if (AVGQUADRANT_MACRO_VALUE == 0) {
                                     if (RANGE_MACRO_VALUE < 115) {
                                         zeroCount++;
                                     }
@@ -6151,7 +6275,7 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                         }
                                     }
                                 }
-                                else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
+                                else if (AVGQUADRANT_MACRO_VALUE == 1) {
                                     if (AVG_MACRO_VALUE < 40.79) {
                                         if (X < 1080) {
                                             oneCount++;
@@ -6477,10 +6601,10 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                     }
                                     else if (X >= 568) {
                                         if (MAX_MACRO_VALUE < 230.5) {
-                                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
+                                            if (AVGQUADRANT_MACRO_VALUE == 0) {
                                                 zeroCount++;
                                             }
-                                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
+                                            else if (AVGQUADRANT_MACRO_VALUE == 1) {
                                                 oneCount++;
                                             }
                                         }
@@ -6825,480 +6949,261 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                     }
                 }
             }
-        }
-        else if (MIN_MACRO_VALUE >= 34.5) {
-            if (RANGE_MACRO_VALUE < 26.5) {
-                if (AVG_MACRO_VALUE < 193.63) {
-                    if (X < 952) {
-                        if (Y < 536) {
-                            if (Y < 280) {
-                                if (X < 872) {
-                                    if (Y < 40) {
-                                        if (MIN_MACRO_VALUE < 36.5) {
-                                            if (X < 848) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 848) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 36.5) {
+    }
+    else if (MIN_MACRO_VALUE >= 34.5) {
+        if (RANGE_MACRO_VALUE < 26.5) {
+            if (AVG_MACRO_VALUE < 193.63) {
+                if (X < 952) {
+                    if (Y < 536) {
+                        if (Y < 280) {
+                            if (X < 872) {
+                                if (Y < 40) {
+                                    if (MIN_MACRO_VALUE < 36.5) {
+                                        if (X < 848) {
                                             zeroCount++;
                                         }
+                                        else if (X >= 848) {
+                                            oneCount++;
+                                        }
                                     }
-                                    else if (Y >= 40) {
-                                        if (MIN_MACRO_VALUE < 120.5) {
-                                            if (AVG_MACRO_VALUE < 43.64) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 43.64) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 120.5) {
-                                            if (MIN_MACRO_VALUE < 144.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 144.5) {
-                                                zeroCount++;
-                                            }
-                                        }
+                                    else if (MIN_MACRO_VALUE >= 36.5) {
+                                        zeroCount++;
                                     }
                                 }
-                                else if (X >= 872) {
-                                    if (MAX_MACRO_VALUE < 72.5) {
-                                        if (AVG_MACRO_VALUE < 54.92) {
-                                            if (RANGE_MACRO_VALUE < 13.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 13.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 54.92) {
+                                else if (Y >= 40) {
+                                    if (MIN_MACRO_VALUE < 120.5) {
+                                        if (AVG_MACRO_VALUE < 43.64) {
                                             zeroCount++;
                                         }
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 72.5) {
-                                        if (Y < 104) {
-                                            if (MIN_MACRO_VALUE < 59.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 59.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 43.64) {
+                                            oneCount++;
                                         }
-                                        else if (Y >= 104) {
-                                            if (AVG_MACRO_VALUE < 181.3) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 181.3) {
-                                                oneCount++;
-                                            }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 120.5) {
+                                        if (MIN_MACRO_VALUE < 144.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 144.5) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                             }
-                            else if (Y >= 280) {
-                                if (X < 520) {
-                                    if (Y < 360) {
-                                        if (AVG_MACRO_VALUE < 111.47) {
+                            else if (X >= 872) {
+                                if (MAX_MACRO_VALUE < 72.5) {
+                                    if (AVG_MACRO_VALUE < 54.92) {
+                                        if (RANGE_MACRO_VALUE < 13.5) {
                                             zeroCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 111.47) {
-                                            if (X < 312) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 312) {
-                                                zeroCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 13.5) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (Y >= 360) {
-                                        if (X < 408) {
-                                            if (RANGE_MACRO_VALUE < 5.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 5.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 408) {
-                                            if (RANGE_MACRO_VALUE < 9.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 9.5) {
-                                                zeroCount++;
-                                            }
-                                        }
+                                    else if (AVG_MACRO_VALUE >= 54.92) {
+                                        zeroCount++;
                                     }
                                 }
-                                else if (X >= 520) {
-                                    if (MIN_MACRO_VALUE < 55.5) {
-                                        if (RANGE_MACRO_VALUE < 22.5) {
-                                            if (Y < 392) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 392) {
-                                                zeroCount++;
-                                            }
+                                else if (MAX_MACRO_VALUE >= 72.5) {
+                                    if (Y < 104) {
+                                        if (MIN_MACRO_VALUE < 59.5) {
+                                            oneCount++;
                                         }
-                                        else if (RANGE_MACRO_VALUE >= 22.5) {
-                                            if (AVG_MACRO_VALUE < 45.47) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 45.47) {
-                                                zeroCount++;
-                                            }
+                                        else if (MIN_MACRO_VALUE >= 59.5) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (MIN_MACRO_VALUE >= 55.5) {
-                                        if (AVG_MACRO_VALUE < 88.28) {
-                                            if (MAX_MACRO_VALUE < 74.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 74.5) {
-                                                zeroCount++;
-                                            }
+                                    else if (Y >= 104) {
+                                        if (AVG_MACRO_VALUE < 181.3) {
+                                            zeroCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 88.28) {
-                                            if (MAX_MACRO_VALUE < 152.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 152.5) {
-                                                oneCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 181.3) {
+                                            oneCount++;
                                         }
                                     }
                                 }
                             }
                         }
-                        else if (Y >= 536) {
-                            if (Y < 552) {
-                                if (AVG_MACRO_VALUE < 97.25) {
-                                    if (X < 776) {
-                                        if (AVG_MACRO_VALUE < 49.99) {
-                                            if (AVG_MACRO_VALUE < 46.7) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 46.7) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 49.99) {
-                                            if (X < 744) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 744) {
-                                                oneCount++;
-                                            }
-                                        }
+                        else if (Y >= 280) {
+                            if (X < 520) {
+                                if (Y < 360) {
+                                    if (AVG_MACRO_VALUE < 111.47) {
+                                        zeroCount++;
                                     }
-                                    else if (X >= 776) {
-                                        if (MAX_MACRO_VALUE < 54.5) {
-                                            zeroCount++;
+                                    else if (AVG_MACRO_VALUE >= 111.47) {
+                                        if (X < 312) {
+                                            oneCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 54.5) {
-                                            if (RANGE_MACRO_VALUE < 16.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 16.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (X >= 312) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
-                                else if (AVG_MACRO_VALUE >= 97.25) {
-                                    zeroCount++;
+                                else if (Y >= 360) {
+                                    if (X < 408) {
+                                        if (RANGE_MACRO_VALUE < 5.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 5.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 408) {
+                                        if (RANGE_MACRO_VALUE < 9.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 9.5) {
+                                            zeroCount++;
+                                        }
+                                    }
                                 }
                             }
-                            else if (Y >= 552) {
-                                if (AVG_MACRO_VALUE < 47.78) {
-                                    if (AVG_MACRO_VALUE < 47.35) {
-                                        if (X < 680) {
-                                            if (AVG_MACRO_VALUE < 43.49) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 43.49) {
-                                                zeroCount++;
-                                            }
+                            else if (X >= 520) {
+                                if (MIN_MACRO_VALUE < 55.5) {
+                                    if (RANGE_MACRO_VALUE < 22.5) {
+                                        if (Y < 392) {
+                                            zeroCount++;
                                         }
-                                        else if (X >= 680) {
-                                            if (RANGE_MACRO_VALUE < 12.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 12.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (Y >= 392) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (AVG_MACRO_VALUE >= 47.35) {
-                                        if (X < 40) {
-                                            if (MAX_MACRO_VALUE < 59.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 59.5) {
-                                                oneCount++;
-                                            }
+                                    else if (RANGE_MACRO_VALUE >= 22.5) {
+                                        if (AVG_MACRO_VALUE < 45.47) {
+                                            zeroCount++;
                                         }
-                                        else if (X >= 40) {
+                                        else if (AVG_MACRO_VALUE >= 45.47) {
                                             zeroCount++;
                                         }
                                     }
                                 }
-                                else if (AVG_MACRO_VALUE >= 47.78) {
-                                    if (AVG_MACRO_VALUE < 56.85) {
-                                        if (MIN_MACRO_VALUE < 37.5) {
-                                            if (X < 16) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 16) {
-                                                zeroCount++;
-                                            }
+                                else if (MIN_MACRO_VALUE >= 55.5) {
+                                    if (AVG_MACRO_VALUE < 88.28) {
+                                        if (MAX_MACRO_VALUE < 74.5) {
+                                            zeroCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 37.5) {
-                                            if (Y < 936) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 936) {
-                                                oneCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 74.5) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (AVG_MACRO_VALUE >= 56.85) {
-                                        if (X < 600) {
-                                            if (AVG_MACRO_VALUE < 57.23) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 57.23) {
-                                                zeroCount++;
-                                            }
+                                    else if (AVG_MACRO_VALUE >= 88.28) {
+                                        if (MAX_MACRO_VALUE < 152.5) {
+                                            zeroCount++;
                                         }
-                                        else if (X >= 600) {
-                                            if (AVG_MACRO_VALUE < 101.21) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 101.21) {
-                                                zeroCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 152.5) {
+                                            oneCount++;
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                    else if (X >= 952) {
-                        if (RANGE_MACRO_VALUE < 3.5) {
-                            if (X < 1880) {
-                                if (AVG_MACRO_VALUE < 166.22) {
-                                    if (Y < 24) {
-                                        if (AVG_MACRO_VALUE < 43.91) {
-                                            if (X < 1432) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1432) {
-                                                oneCount++;
-                                            }
+                    else if (Y >= 536) {
+                        if (Y < 552) {
+                            if (AVG_MACRO_VALUE < 97.25) {
+                                if (X < 776) {
+                                    if (AVG_MACRO_VALUE < 49.99) {
+                                        if (AVG_MACRO_VALUE < 46.7) {
+                                            oneCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 43.91) {
-                                            if (MAX_MACRO_VALUE < 55) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 55) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (Y >= 24) {
-                                        if (X < 1064) {
-                                            if (MAX_MACRO_VALUE < 115) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 115) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 1064) {
-                                            if (Y < 40) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 40) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (AVG_MACRO_VALUE >= 166.22) {
-                                    if (Y < 120) {
-                                        zeroCount++;
-                                    }
-                                    else if (Y >= 120) {
-                                        if (MIN_MACRO_VALUE < 169) {
-                                            if (Y < 168) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 168) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 169) {
-                                            if (Y < 248) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 248) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            else if (X >= 1880) {
-                                zeroCount++;
-                            }
-                        }
-                        else if (RANGE_MACRO_VALUE >= 3.5) {
-                            if (X < 1768) {
-                                if (MAX_MACRO_VALUE < 91.5) {
-                                    if (MIN_MACRO_VALUE < 72.5) {
-                                        if (Y < 472) {
-                                            if (MIN_MACRO_VALUE < 47.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 47.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (Y >= 472) {
-                                            if (X < 968) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 968) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 72.5) {
-                                        if (X < 1032) {
-                                            if (MIN_MACRO_VALUE < 83.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 83.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 1032) {
-                                            if (RANGE_MACRO_VALUE < 10.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 10.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (MAX_MACRO_VALUE >= 91.5) {
-                                    if (AVG_MACRO_VALUE < 100.1) {
-                                        if (X < 1672) {
-                                            if (MIN_MACRO_VALUE < 83.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 83.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 1672) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 100.1) {
-                                        if (MIN_MACRO_VALUE < 96.5) {
-                                            if (X < 1128) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1128) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 96.5) {
-                                            if (X < 1304) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1304) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            else if (X >= 1768) {
-                                if (Y < 744) {
-                                    if (AVG_MACRO_VALUE < 81.34) {
-                                        if (AVG_MACRO_VALUE < 81.2) {
-                                            if (AVG_MACRO_VALUE < 77.02) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 77.02) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 81.2) {
+                                        else if (AVG_MACRO_VALUE >= 46.7) {
                                             oneCount++;
                                         }
                                     }
-                                    else if (AVG_MACRO_VALUE >= 81.34) {
-                                        if (X < 1880) {
-                                            if (AVG_MACRO_VALUE < 125.18) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 125.18) {
-                                                oneCount++;
-                                            }
+                                    else if (AVG_MACRO_VALUE >= 49.99) {
+                                        if (X < 744) {
+                                            zeroCount++;
                                         }
-                                        else if (X >= 1880) {
-                                            if (MIN_MACRO_VALUE < 94) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 94) {
-                                                zeroCount++;
-                                            }
+                                        else if (X >= 744) {
+                                            oneCount++;
                                         }
                                     }
                                 }
-                                else if (Y >= 744) {
-                                    if (AVG_MACRO_VALUE < 45.72) {
-                                        if (X < 1800) {
-                                            if (MAX_MACRO_VALUE < 49.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 49.5) {
-                                                zeroCount++;
-                                            }
+                                else if (X >= 776) {
+                                    if (MAX_MACRO_VALUE < 54.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 54.5) {
+                                        if (RANGE_MACRO_VALUE < 16.5) {
+                                            oneCount++;
                                         }
-                                        else if (X >= 1800) {
-                                            if (X < 1864) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1864) {
-                                                zeroCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 16.5) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (AVG_MACRO_VALUE >= 45.72) {
-                                        if (AVG_MACRO_VALUE < 45.82) {
-                                            if (Y < 1016) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 1016) {
-                                                oneCount++;
-                                            }
+                                }
+                            }
+                            else if (AVG_MACRO_VALUE >= 97.25) {
+                                zeroCount++;
+                            }
+                        }
+                        else if (Y >= 552) {
+                            if (AVG_MACRO_VALUE < 47.78) {
+                                if (AVG_MACRO_VALUE < 47.35) {
+                                    if (X < 680) {
+                                        if (AVG_MACRO_VALUE < 43.49) {
+                                            zeroCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 45.82) {
-                                            if (RANGE_MACRO_VALUE < 8.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 8.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 43.49) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 680) {
+                                        if (RANGE_MACRO_VALUE < 12.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 12.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 47.35) {
+                                    if (X < 40) {
+                                        if (MAX_MACRO_VALUE < 59.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 59.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 40) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                            else if (AVG_MACRO_VALUE >= 47.78) {
+                                if (AVG_MACRO_VALUE < 56.85) {
+                                    if (MIN_MACRO_VALUE < 37.5) {
+                                        if (X < 16) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 16) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 37.5) {
+                                        if (Y < 936) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 936) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 56.85) {
+                                    if (X < 600) {
+                                        if (AVG_MACRO_VALUE < 57.23) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 57.23) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 600) {
+                                        if (AVG_MACRO_VALUE < 101.21) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 101.21) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
@@ -7306,615 +7211,833 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                         }
                     }
                 }
-                else if (AVG_MACRO_VALUE >= 193.63) {
-                    if (MAX_MACRO_VALUE < 231) {
-                        zeroCount++;
-                    }
-                    else if (MAX_MACRO_VALUE >= 231) {
-                        if (MAX_MACRO_VALUE < 232.5) {
-                            if (X < 840) {
-                                if (RANGE_MACRO_VALUE < 6) {
+                else if (X >= 952) {
+                    if (RANGE_MACRO_VALUE < 3.5) {
+                        if (X < 1880) {
+                            if (AVG_MACRO_VALUE < 166.22) {
+                                if (Y < 24) {
+                                    if (AVG_MACRO_VALUE < 43.91) {
+                                        if (X < 1432) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1432) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 43.91) {
+                                        if (MAX_MACRO_VALUE < 55) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 55) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (Y >= 24) {
+                                    if (X < 1064) {
+                                        if (MAX_MACRO_VALUE < 115) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 115) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 1064) {
+                                        if (Y < 40) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 40) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (AVG_MACRO_VALUE >= 166.22) {
+                                if (Y < 120) {
                                     zeroCount++;
                                 }
-                                else if (RANGE_MACRO_VALUE >= 6) {
-                                    oneCount++;
+                                else if (Y >= 120) {
+                                    if (MIN_MACRO_VALUE < 169) {
+                                        if (Y < 168) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 168) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 169) {
+                                        if (Y < 248) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 248) {
+                                            oneCount++;
+                                        }
+                                    }
                                 }
                             }
-                            else if (X >= 840) {
-                                zeroCount++;
-                            }
                         }
-                        else if (MAX_MACRO_VALUE >= 232.5) {
+                        else if (X >= 1880) {
                             zeroCount++;
                         }
                     }
-                }
-            }
-            else if (RANGE_MACRO_VALUE >= 26.5) {
-                if (MAX_MACRO_VALUE < 71.5) {
-                    if (X < 344) {
-                        if (X < 120) {
-                            if (RANGE_MACRO_VALUE < 27.5) {
-                                if (Y < 904) {
-                                    zeroCount++;
-                                }
-                                else if (Y >= 904) {
-                                    if (Y < 992) {
-                                        if (AVGQUADRANT_MACRO_VALUE < 0.5) {
-                                            zeroCount++;
-                                        }
-                                        else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
-                                            oneCount++;
-                                        }
-                                    }
-                                    else if (Y >= 992) {
-                                        oneCount++;
-                                    }
-                                }
-                            }
-                            else if (RANGE_MACRO_VALUE >= 27.5) {
-                                if (RANGE_MACRO_VALUE < 34.5) {
-                                    zeroCount++;
-                                }
-                                else if (RANGE_MACRO_VALUE >= 34.5) {
-                                    if (AVG_MACRO_VALUE < 48.01) {
-                                        oneCount++;
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 48.01) {
-                                        zeroCount++;
-                                    }
-                                }
-                            }
-                        }
-                        else if (X >= 120) {
-                            if (MIN_MACRO_VALUE < 42.5) {
-                                if (RANGE_MACRO_VALUE < 33.5) {
-                                    if (AVG_MACRO_VALUE < 46.18) {
-                                        if (Y < 904) {
-                                            zeroCount++;
-                                        }
-                                        else if (Y >= 904) {
-                                            oneCount++;
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 46.18) {
-                                        if (AVG_MACRO_VALUE < 51.36) {
-                                            zeroCount++;
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 51.36) {
-                                            if (AVG_MACRO_VALUE < 52.26) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 52.26) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (RANGE_MACRO_VALUE >= 33.5) {
-                                    if (X < 288) {
-                                        zeroCount++;
-                                    }
-                                    else if (X >= 288) {
-                                        oneCount++;
-                                    }
-                                }
-                            }
-                            else if (MIN_MACRO_VALUE >= 42.5) {
-                                if (Y < 960) {
-                                    oneCount++;
-                                }
-                                else if (Y >= 960) {
-                                    zeroCount++;
-                                }
-                            }
-                        }
-                    }
-                    else if (X >= 344) {
-                        if (X < 1816) {
-                            if (Y < 664) {
-                                if (MAX_MACRO_VALUE < 69.5) {
-                                    if (Y < 584) {
-                                        if (X < 712) {
-                                            zeroCount++;
-                                        }
-                                        else if (X >= 712) {
-                                            if (AVG_MACRO_VALUE < 56.42) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 56.42) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (Y >= 584) {
-                                        zeroCount++;
-                                    }
-                                }
-                                else if (MAX_MACRO_VALUE >= 69.5) {
-                                    if (RANGE_MACRO_VALUE < 32.5) {
-                                        if (X < 960) {
-                                            if (Y < 576) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 576) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 960) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 32.5) {
-                                        zeroCount++;
-                                    }
-                                }
-                            }
-                            else if (Y >= 664) {
-                                if (RANGE_MACRO_VALUE < 32.5) {
-                                    if (MAX_MACRO_VALUE < 65.5) {
-                                        zeroCount++;
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 65.5) {
-                                        if (X < 1688) {
-                                            if (AVG_MACRO_VALUE < 51.62) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 51.62) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 1688) {
-                                            oneCount++;
-                                        }
-                                    }
-                                }
-                                else if (RANGE_MACRO_VALUE >= 32.5) {
-                                    if (MAX_MACRO_VALUE < 69.5) {
-                                        if (AVGQUADRANT_MACRO_VALUE < 0.5) {
-                                            if (AVG_MACRO_VALUE < 115.24) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 115.24) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
-                                            if (MIN_MACRO_VALUE < 61.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 61.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 69.5) {
-                                        if (MAX_MACRO_VALUE < 70.5) {
-                                            oneCount++;
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 70.5) {
-                                            if (Y < 800) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 800) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else if (X >= 1816) {
-                            if (MIN_MACRO_VALUE < 118.5) {
-                                zeroCount++;
-                            }
-                            else if (MIN_MACRO_VALUE >= 118.5) {
-                                oneCount++;
-                            }
-                        }
-                    }
-                }
-                else if (MAX_MACRO_VALUE >= 71.5) {
-                    if (RANGE_MACRO_VALUE < 185.5) {
-                        if (X < 1864) {
-                            if (MAX_MACRO_VALUE < 132.5) {
-                                if (MIN_MACRO_VALUE < 59.5) {
-                                    if (AVG_MACRO_VALUE < 54.37) {
-                                        if (AVG_MACRO_VALUE < 54.16) {
-                                            if (X < 1032) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1032) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 54.16) {
-                                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 54.37) {
-                                        if (Y < 1032) {
-                                            if (AVG_MACRO_VALUE < 56.88) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 56.88) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (Y >= 1032) {
-                                            if (X < 1808) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1808) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (MIN_MACRO_VALUE >= 59.5) {
-                                    if (AVG_MACRO_VALUE < 71.02) {
-                                        if (AVG_MACRO_VALUE < 63.57) {
-                                            if (Y < 952) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 952) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 63.57) {
-                                            if (AVG_MACRO_VALUE < 68.82) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 68.82) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 71.02) {
-                                        if (X < 1800) {
-                                            if (RANGE_MACRO_VALUE < 68.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 68.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 1800) {
-                                            if (Y < 272) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 272) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            else if (MAX_MACRO_VALUE >= 132.5) {
-                                if (AVG_MACRO_VALUE < 146.62) {
-                                    if (MAX_MACRO_VALUE < 196.5) {
-                                        if (RANGE_MACRO_VALUE < 34.5) {
-                                            if (MIN_MACRO_VALUE < 103.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 103.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 34.5) {
-                                            if (X < 456) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 456) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 196.5) {
-                                        if (Y < 1048) {
-                                            if (X < 1848) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1848) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (Y >= 1048) {
-                                            if (MAX_MACRO_VALUE < 201) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 201) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (AVG_MACRO_VALUE >= 146.62) {
-                                    if (MIN_MACRO_VALUE < 50.5) {
-                                        if (X < 920) {
-                                            if (MIN_MACRO_VALUE < 36.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 36.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 920) {
-                                            if (AVG_MACRO_VALUE < 149.77) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 149.77) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 50.5) {
-                                        if (X < 1608) {
-                                            if (X < 1352) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1352) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 1608) {
-                                            if (RANGE_MACRO_VALUE < 83.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 83.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else if (X >= 1864) {
-                            if (Y < 936) {
-                                if (Y < 88) {
-                                    if (Y < 56) {
-                                        if (X < 1880) {
-                                            if (RANGE_MACRO_VALUE < 134) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 134) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 1880) {
-                                            if (MAX_MACRO_VALUE < 88.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 88.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (Y >= 56) {
-                                        if (RANGE_MACRO_VALUE < 50) {
-                                            zeroCount++;
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 50) {
-                                            if (X < 1880) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1880) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (Y >= 88) {
-                                    if (RANGE_MACRO_VALUE < 31.5) {
-                                        if (MAX_MACRO_VALUE < 82.5) {
-                                            zeroCount++;
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 82.5) {
-                                            if (RANGE_MACRO_VALUE < 28.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 28.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 31.5) {
-                                        if (Y < 744) {
-                                            zeroCount++;
-                                        }
-                                        else if (Y >= 744) {
-                                            if (RANGE_MACRO_VALUE < 148) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 148) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            else if (Y >= 936) {
-                                if (MAX_MACRO_VALUE < 112) {
-                                    if (MIN_MACRO_VALUE < 50) {
-                                        zeroCount++;
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 50) {
-                                        if (MAX_MACRO_VALUE < 100.5) {
-                                            if (Y < 1000) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 1000) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 100.5) {
-                                            oneCount++;
-                                        }
-                                    }
-                                }
-                                else if (MAX_MACRO_VALUE >= 112) {
-                                    if (MIN_MACRO_VALUE < 115) {
-                                        if (RANGE_MACRO_VALUE < 96.5) {
-                                            zeroCount++;
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 96.5) {
-                                            oneCount++;
-                                        }
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 115) {
-                                        if (Y < 1000) {
-                                            if (X < 1896) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1896) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (Y >= 1000) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else if (RANGE_MACRO_VALUE >= 185.5) {
-                        if (X < 616) {
-                            if (MIN_MACRO_VALUE < 40.5) {
-                                if (X < 216) {
-                                    if (Y < 432) {
-                                        oneCount++;
-                                    }
-                                    else if (Y >= 432) {
-                                        if (Y < 928) {
-                                            if (AVG_MACRO_VALUE < 101.35) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 101.35) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (Y >= 928) {
-                                            if (RANGE_MACRO_VALUE < 190.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 190.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (X >= 216) {
-                                    if (MIN_MACRO_VALUE < 37.5) {
-                                        oneCount++;
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 37.5) {
-                                        if (RANGE_MACRO_VALUE < 196.5) {
-                                            oneCount++;
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 196.5) {
-                                            if (AVG_MACRO_VALUE < 109.52) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 109.52) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            else if (MIN_MACRO_VALUE >= 40.5) {
-                                if (MAX_MACRO_VALUE < 235.5) {
-                                    oneCount++;
-                                }
-                                else if (MAX_MACRO_VALUE >= 235.5) {
-                                    zeroCount++;
-                                }
-                            }
-                        }
-                        else if (X >= 616) {
-                            if (X < 1320) {
-                                if (MIN_MACRO_VALUE < 43.5) {
-                                    if (X < 760) {
-                                        if (Y < 952) {
-                                            oneCount++;
-                                        }
-                                        else if (Y >= 952) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (X >= 760) {
-                                        zeroCount++;
-                                    }
-                                }
-                                else if (MIN_MACRO_VALUE >= 43.5) {
-                                    if (X < 1024) {
+                    else if (RANGE_MACRO_VALUE >= 3.5) {
+                        if (X < 1768) {
+                            if (MAX_MACRO_VALUE < 91.5) {
+                                if (MIN_MACRO_VALUE < 72.5) {
+                                    if (Y < 472) {
                                         if (MIN_MACRO_VALUE < 47.5) {
-                                            if (Y < 520) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 520) {
-                                                oneCount++;
-                                            }
+                                            oneCount++;
                                         }
                                         else if (MIN_MACRO_VALUE >= 47.5) {
                                             zeroCount++;
                                         }
                                     }
-                                    else if (X >= 1024) {
+                                    else if (Y >= 472) {
+                                        if (X < 968) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 968) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 72.5) {
+                                    if (X < 1032) {
+                                        if (MIN_MACRO_VALUE < 83.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 83.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 1032) {
+                                        if (RANGE_MACRO_VALUE < 10.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 10.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (MAX_MACRO_VALUE >= 91.5) {
+                                if (AVG_MACRO_VALUE < 100.1) {
+                                    if (X < 1672) {
+                                        if (MIN_MACRO_VALUE < 83.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 83.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 1672) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 100.1) {
+                                    if (MIN_MACRO_VALUE < 96.5) {
+                                        if (X < 1128) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1128) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 96.5) {
+                                        if (X < 1304) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1304) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (X >= 1768) {
+                            if (Y < 744) {
+                                if (AVG_MACRO_VALUE < 81.34) {
+                                    if (AVG_MACRO_VALUE < 81.2) {
+                                        if (AVG_MACRO_VALUE < 77.02) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 77.02) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 81.2) {
+                                        oneCount++;
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 81.34) {
+                                    if (X < 1880) {
+                                        if (AVG_MACRO_VALUE < 125.18) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 125.18) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 1880) {
+                                        if (MIN_MACRO_VALUE < 94) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 94) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (Y >= 744) {
+                                if (AVG_MACRO_VALUE < 45.72) {
+                                    if (X < 1800) {
+                                        if (MAX_MACRO_VALUE < 49.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 49.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 1800) {
+                                        if (X < 1864) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1864) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 45.72) {
+                                    if (AVG_MACRO_VALUE < 45.82) {
+                                        if (Y < 1016) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 1016) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 45.82) {
+                                        if (RANGE_MACRO_VALUE < 8.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 8.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else if (AVG_MACRO_VALUE >= 193.63) {
+                if (MAX_MACRO_VALUE < 231) {
+                    zeroCount++;
+                }
+                else if (MAX_MACRO_VALUE >= 231) {
+                    if (MAX_MACRO_VALUE < 232.5) {
+                        if (X < 840) {
+                            if (RANGE_MACRO_VALUE < 6) {
+                                zeroCount++;
+                            }
+                            else if (RANGE_MACRO_VALUE >= 6) {
+                                oneCount++;
+                            }
+                        }
+                        else if (X >= 840) {
+                            zeroCount++;
+                        }
+                    }
+                    else if (MAX_MACRO_VALUE >= 232.5) {
+                        zeroCount++;
+                    }
+                }
+            }
+        }
+        else if (RANGE_MACRO_VALUE >= 26.5) {
+            if (MAX_MACRO_VALUE < 71.5) {
+                if (X < 344) {
+                    if (X < 120) {
+                        if (RANGE_MACRO_VALUE < 27.5) {
+                            if (Y < 904) {
+                                zeroCount++;
+                            }
+                            else if (Y >= 904) {
+                                if (Y < 992) {
+                                    if (AVGQUADRANT_MACRO_VALUE == 0) {
+                                        zeroCount++;
+                                    }
+                                    else if (AVGQUADRANT_MACRO_VALUE == 1) {
+                                        oneCount++;
+                                    }
+                                }
+                                else if (Y >= 992) {
+                                    oneCount++;
+                                }
+                            }
+                        }
+                        else if (RANGE_MACRO_VALUE >= 27.5) {
+                            if (RANGE_MACRO_VALUE < 34.5) {
+                                zeroCount++;
+                            }
+                            else if (RANGE_MACRO_VALUE >= 34.5) {
+                                if (AVG_MACRO_VALUE < 48.01) {
+                                    oneCount++;
+                                }
+                                else if (AVG_MACRO_VALUE >= 48.01) {
+                                    zeroCount++;
+                                }
+                            }
+                        }
+                    }
+                    else if (X >= 120) {
+                        if (MIN_MACRO_VALUE < 42.5) {
+                            if (RANGE_MACRO_VALUE < 33.5) {
+                                if (AVG_MACRO_VALUE < 46.18) {
+                                    if (Y < 904) {
+                                        zeroCount++;
+                                    }
+                                    else if (Y >= 904) {
+                                        oneCount++;
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 46.18) {
+                                    if (AVG_MACRO_VALUE < 51.36) {
+                                        zeroCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 51.36) {
+                                        if (AVG_MACRO_VALUE < 52.26) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 52.26) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (RANGE_MACRO_VALUE >= 33.5) {
+                                if (X < 288) {
+                                    zeroCount++;
+                                }
+                                else if (X >= 288) {
+                                    oneCount++;
+                                }
+                            }
+                        }
+                        else if (MIN_MACRO_VALUE >= 42.5) {
+                            if (Y < 960) {
+                                oneCount++;
+                            }
+                            else if (Y >= 960) {
+                                zeroCount++;
+                            }
+                        }
+                    }
+                }
+                else if (X >= 344) {
+                    if (X < 1816) {
+                        if (Y < 664) {
+                            if (MAX_MACRO_VALUE < 69.5) {
+                                if (Y < 584) {
+                                    if (X < 712) {
+                                        zeroCount++;
+                                    }
+                                    else if (X >= 712) {
+                                        if (AVG_MACRO_VALUE < 56.42) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 56.42) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (Y >= 584) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (MAX_MACRO_VALUE >= 69.5) {
+                                if (RANGE_MACRO_VALUE < 32.5) {
+                                    if (X < 960) {
+                                        if (Y < 576) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 576) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 960) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 32.5) {
+                                    zeroCount++;
+                                }
+                            }
+                        }
+                        else if (Y >= 664) {
+                            if (RANGE_MACRO_VALUE < 32.5) {
+                                if (MAX_MACRO_VALUE < 65.5) {
+                                    zeroCount++;
+                                }
+                                else if (MAX_MACRO_VALUE >= 65.5) {
+                                    if (X < 1688) {
+                                        if (AVG_MACRO_VALUE < 51.62) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 51.62) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 1688) {
+                                        oneCount++;
+                                    }
+                                }
+                            }
+                            else if (RANGE_MACRO_VALUE >= 32.5) {
+                                if (MAX_MACRO_VALUE < 69.5) {
+                                    if (AVGQUADRANT_MACRO_VALUE == 0) {
+                                        if (AVG_MACRO_VALUE < 115.24) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 115.24) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVGQUADRANT_MACRO_VALUE == 1) {
+                                        if (MIN_MACRO_VALUE < 61.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 61.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 69.5) {
+                                    if (MAX_MACRO_VALUE < 70.5) {
+                                        oneCount++;
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 70.5) {
+                                        if (Y < 800) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 800) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (X >= 1816) {
+                        if (MIN_MACRO_VALUE < 118.5) {
+                            zeroCount++;
+                        }
+                        else if (MIN_MACRO_VALUE >= 118.5) {
+                            oneCount++;
+                        }
+                    }
+                }
+            }
+            else if (MAX_MACRO_VALUE >= 71.5) {
+                if (RANGE_MACRO_VALUE < 185.5) {
+                    if (X < 1864) {
+                        if (MAX_MACRO_VALUE < 132.5) {
+                            if (MIN_MACRO_VALUE < 59.5) {
+                                if (AVG_MACRO_VALUE < 54.37) {
+                                    if (AVG_MACRO_VALUE < 54.16) {
+                                        if (X < 1032) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1032) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 54.16) {
+                                        if (AVGQUADRANT_MACRO_VALUE == 0) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVGQUADRANT_MACRO_VALUE == 1) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 54.37) {
+                                    if (Y < 1032) {
+                                        if (AVG_MACRO_VALUE < 56.88) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 56.88) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (Y >= 1032) {
+                                        if (X < 1808) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1808) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (MIN_MACRO_VALUE >= 59.5) {
+                                if (AVG_MACRO_VALUE < 71.02) {
+                                    if (AVG_MACRO_VALUE < 63.57) {
+                                        if (Y < 952) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 952) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 63.57) {
+                                        if (AVG_MACRO_VALUE < 68.82) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 68.82) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 71.02) {
+                                    if (X < 1800) {
+                                        if (RANGE_MACRO_VALUE < 68.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 68.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 1800) {
+                                        if (Y < 272) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 272) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (MAX_MACRO_VALUE >= 132.5) {
+                            if (AVG_MACRO_VALUE < 146.62) {
+                                if (MAX_MACRO_VALUE < 196.5) {
+                                    if (RANGE_MACRO_VALUE < 34.5) {
+                                        if (MIN_MACRO_VALUE < 103.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 103.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 34.5) {
+                                        if (X < 456) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 456) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 196.5) {
+                                    if (Y < 1048) {
+                                        if (X < 1848) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1848) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (Y >= 1048) {
+                                        if (MAX_MACRO_VALUE < 201) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 201) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (AVG_MACRO_VALUE >= 146.62) {
+                                if (MIN_MACRO_VALUE < 50.5) {
+                                    if (X < 920) {
+                                        if (MIN_MACRO_VALUE < 36.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 36.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 920) {
+                                        if (AVG_MACRO_VALUE < 149.77) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 149.77) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 50.5) {
+                                    if (X < 1608) {
+                                        if (X < 1352) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1352) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 1608) {
+                                        if (RANGE_MACRO_VALUE < 83.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 83.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (X >= 1864) {
+                        if (Y < 936) {
+                            if (Y < 88) {
+                                if (Y < 56) {
+                                    if (X < 1880) {
+                                        if (RANGE_MACRO_VALUE < 134) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 134) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 1880) {
+                                        if (MAX_MACRO_VALUE < 88.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 88.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (Y >= 56) {
+                                    if (RANGE_MACRO_VALUE < 50) {
+                                        zeroCount++;
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 50) {
+                                        if (X < 1880) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1880) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (Y >= 88) {
+                                if (RANGE_MACRO_VALUE < 31.5) {
+                                    if (MAX_MACRO_VALUE < 82.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 82.5) {
+                                        if (RANGE_MACRO_VALUE < 28.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 28.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 31.5) {
+                                    if (Y < 744) {
+                                        zeroCount++;
+                                    }
+                                    else if (Y >= 744) {
+                                        if (RANGE_MACRO_VALUE < 148) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 148) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (Y >= 936) {
+                            if (MAX_MACRO_VALUE < 112) {
+                                if (MIN_MACRO_VALUE < 50) {
+                                    zeroCount++;
+                                }
+                                else if (MIN_MACRO_VALUE >= 50) {
+                                    if (MAX_MACRO_VALUE < 100.5) {
+                                        if (Y < 1000) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 1000) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 100.5) {
+                                        oneCount++;
+                                    }
+                                }
+                            }
+                            else if (MAX_MACRO_VALUE >= 112) {
+                                if (MIN_MACRO_VALUE < 115) {
+                                    if (RANGE_MACRO_VALUE < 96.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 96.5) {
+                                        oneCount++;
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 115) {
+                                    if (Y < 1000) {
+                                        if (X < 1896) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1896) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 1000) {
                                         zeroCount++;
                                     }
                                 }
                             }
-                            else if (X >= 1320) {
-                                if (MIN_MACRO_VALUE < 39.5) {
-                                    if (MIN_MACRO_VALUE < 38.5) {
-                                        if (RANGE_MACRO_VALUE < 197.5) {
-                                            if (Y < 920) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 920) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 197.5) {
+                        }
+                    }
+                }
+                else if (RANGE_MACRO_VALUE >= 185.5) {
+                    if (X < 616) {
+                        if (MIN_MACRO_VALUE < 40.5) {
+                            if (X < 216) {
+                                if (Y < 432) {
+                                    oneCount++;
+                                }
+                                else if (Y >= 432) {
+                                    if (Y < 928) {
+                                        if (AVG_MACRO_VALUE < 101.35) {
                                             oneCount++;
                                         }
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 38.5) {
-                                        if (Y < 984) {
+                                        else if (AVG_MACRO_VALUE >= 101.35) {
                                             zeroCount++;
                                         }
-                                        else if (Y >= 984) {
+                                    }
+                                    else if (Y >= 928) {
+                                        if (RANGE_MACRO_VALUE < 190.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 190.5) {
                                             oneCount++;
                                         }
                                     }
                                 }
-                                else if (MIN_MACRO_VALUE >= 39.5) {
-                                    if (Y < 224) {
-                                        if (X < 1776) {
+                            }
+                            else if (X >= 216) {
+                                if (MIN_MACRO_VALUE < 37.5) {
+                                    oneCount++;
+                                }
+                                else if (MIN_MACRO_VALUE >= 37.5) {
+                                    if (RANGE_MACRO_VALUE < 196.5) {
+                                        oneCount++;
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 196.5) {
+                                        if (AVG_MACRO_VALUE < 109.52) {
                                             oneCount++;
                                         }
-                                        else if (X >= 1776) {
+                                        else if (AVG_MACRO_VALUE >= 109.52) {
                                             zeroCount++;
                                         }
                                     }
-                                    else if (Y >= 224) {
-                                        if (AVG_MACRO_VALUE < 96.96) {
+                                }
+                            }
+                        }
+                        else if (MIN_MACRO_VALUE >= 40.5) {
+                            if (MAX_MACRO_VALUE < 235.5) {
+                                oneCount++;
+                            }
+                            else if (MAX_MACRO_VALUE >= 235.5) {
+                                zeroCount++;
+                            }
+                        }
+                    }
+                    else if (X >= 616) {
+                        if (X < 1320) {
+                            if (MIN_MACRO_VALUE < 43.5) {
+                                if (X < 760) {
+                                    if (Y < 952) {
+                                        oneCount++;
+                                    }
+                                    else if (Y >= 952) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (X >= 760) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (MIN_MACRO_VALUE >= 43.5) {
+                                if (X < 1024) {
+                                    if (MIN_MACRO_VALUE < 47.5) {
+                                        if (Y < 520) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 520) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 47.5) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (X >= 1024) {
+                                    zeroCount++;
+                                }
+                            }
+                        }
+                        else if (X >= 1320) {
+                            if (MIN_MACRO_VALUE < 39.5) {
+                                if (MIN_MACRO_VALUE < 38.5) {
+                                    if (RANGE_MACRO_VALUE < 197.5) {
+                                        if (Y < 920) {
                                             zeroCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 96.96) {
-                                            if (X < 1600) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1600) {
-                                                oneCount++;
-                                            }
+                                        else if (Y >= 920) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 197.5) {
+                                        oneCount++;
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 38.5) {
+                                    if (Y < 984) {
+                                        zeroCount++;
+                                    }
+                                    else if (Y >= 984) {
+                                        oneCount++;
+                                    }
+                                }
+                            }
+                            else if (MIN_MACRO_VALUE >= 39.5) {
+                                if (Y < 224) {
+                                    if (X < 1776) {
+                                        oneCount++;
+                                    }
+                                    else if (X >= 1776) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (Y >= 224) {
+                                    if (AVG_MACRO_VALUE < 96.96) {
+                                        zeroCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 96.96) {
+                                        if (X < 1600) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1600) {
+                                            oneCount++;
                                         }
                                     }
                                 }
@@ -7924,7 +8047,8 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                 }
             }
         }
-
+    }
+        
     //TREE 4
     if (MAX_MACRO_VALUE < 73.5) {
             if (X < 1320) {
@@ -9157,7 +9281,7 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                         zeroCount++;
                                     }
                                     else if (Y >= 376) {
-                                        if (AVGQUADRANT_MACRO_VALUE < 0.5) {
+                                        if (AVGQUADRANT_MACRO_VALUE == 0) {
                                             if (X < 1584) {
                                                 zeroCount++;
                                             }
@@ -9165,7 +9289,7 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                                 oneCount++;
                                             }
                                         }
-                                        else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
+                                        else if (AVGQUADRANT_MACRO_VALUE == 1) {
                                             zeroCount++;
                                         }
                                     }
@@ -9238,932 +9362,932 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                     }
                 }
             }
-        }
-        else if (MAX_MACRO_VALUE >= 73.5) {
-            if (RANGE_MACRO_VALUE < 28.5) {
-                if (MIN_MACRO_VALUE < 191.5) {
-                    if (MAX_MACRO_VALUE < 129.5) {
-                        if (Y < 152) {
-                            if (MAX_MACRO_VALUE < 103.5) {
-                                if (X < 760) {
-                                    if (X < 456) {
-                                        if (MAX_MACRO_VALUE < 76.5) {
-                                            if (X < 168) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 168) {
-                                                zeroCount++;
-                                            }
+    }
+    else if (MAX_MACRO_VALUE >= 73.5) {
+        if (RANGE_MACRO_VALUE < 28.5) {
+            if (MIN_MACRO_VALUE < 191.5) {
+                if (MAX_MACRO_VALUE < 129.5) {
+                    if (Y < 152) {
+                        if (MAX_MACRO_VALUE < 103.5) {
+                            if (X < 760) {
+                                if (X < 456) {
+                                    if (MAX_MACRO_VALUE < 76.5) {
+                                        if (X < 168) {
+                                            oneCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 76.5) {
-                                            if (MAX_MACRO_VALUE < 82.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 82.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (X >= 168) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (X >= 456) {
-                                        if (AVG_MACRO_VALUE < 87.42) {
-                                            if (X < 712) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 712) {
-                                                oneCount++;
-                                            }
+                                    else if (MAX_MACRO_VALUE >= 76.5) {
+                                        if (MAX_MACRO_VALUE < 82.5) {
+                                            zeroCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 87.42) {
-                                            if (X < 648) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 648) {
-                                                zeroCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 82.5) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
-                                else if (X >= 760) {
-                                    if (MIN_MACRO_VALUE < 78.5) {
-                                        if (RANGE_MACRO_VALUE < 27.5) {
-                                            if (MIN_MACRO_VALUE < 75.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 75.5) {
-                                                oneCount++;
-                                            }
+                                else if (X >= 456) {
+                                    if (AVG_MACRO_VALUE < 87.42) {
+                                        if (X < 712) {
+                                            zeroCount++;
                                         }
-                                        else if (RANGE_MACRO_VALUE >= 27.5) {
-                                            if (MAX_MACRO_VALUE < 86) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 86) {
-                                                zeroCount++;
-                                            }
+                                        else if (X >= 712) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (MIN_MACRO_VALUE >= 78.5) {
-                                        zeroCount++;
+                                    else if (AVG_MACRO_VALUE >= 87.42) {
+                                        if (X < 648) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 648) {
+                                            zeroCount++;
+                                        }
                                     }
                                 }
                             }
-                            else if (MAX_MACRO_VALUE >= 103.5) {
-                                if (AVG_MACRO_VALUE < 125.18) {
-                                    if (MAX_MACRO_VALUE < 105.5) {
-                                        if (MIN_MACRO_VALUE < 100.5) {
+                            else if (X >= 760) {
+                                if (MIN_MACRO_VALUE < 78.5) {
+                                    if (RANGE_MACRO_VALUE < 27.5) {
+                                        if (MIN_MACRO_VALUE < 75.5) {
                                             zeroCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 100.5) {
+                                        else if (MIN_MACRO_VALUE >= 75.5) {
                                             oneCount++;
                                         }
                                     }
-                                    else if (MAX_MACRO_VALUE >= 105.5) {
-                                        zeroCount++;
+                                    else if (RANGE_MACRO_VALUE >= 27.5) {
+                                        if (MAX_MACRO_VALUE < 86) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 86) {
+                                            zeroCount++;
+                                        }
                                     }
                                 }
-                                else if (AVG_MACRO_VALUE >= 125.18) {
-                                    if (AVG_MACRO_VALUE < 125.29) {
-                                        if (AVG_MACRO_VALUE < 125.28) {
-                                            if (RANGE_MACRO_VALUE < 10.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 10.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 125.28) {
-                                            oneCount++;
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 125.29) {
-                                        zeroCount++;
-                                    }
+                                else if (MIN_MACRO_VALUE >= 78.5) {
+                                    zeroCount++;
                                 }
                             }
                         }
-                        else if (Y >= 152) {
-                            if (Y < 200) {
-                                if (AVG_MACRO_VALUE < 105.04) {
+                        else if (MAX_MACRO_VALUE >= 103.5) {
+                            if (AVG_MACRO_VALUE < 125.18) {
+                                if (MAX_MACRO_VALUE < 105.5) {
+                                    if (MIN_MACRO_VALUE < 100.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 100.5) {
+                                        oneCount++;
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 105.5) {
                                     zeroCount++;
                                 }
-                                else if (AVG_MACRO_VALUE >= 105.04) {
-                                    if (MAX_MACRO_VALUE < 113.5) {
-                                        if (AVG_MACRO_VALUE < 111.16) {
-                                            if (X < 496) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 496) {
-                                                zeroCount++;
-                                            }
+                            }
+                            else if (AVG_MACRO_VALUE >= 125.18) {
+                                if (AVG_MACRO_VALUE < 125.29) {
+                                    if (AVG_MACRO_VALUE < 125.28) {
+                                        if (RANGE_MACRO_VALUE < 10.5) {
+                                            oneCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 111.16) {
+                                        else if (RANGE_MACRO_VALUE >= 10.5) {
                                             oneCount++;
                                         }
                                     }
-                                    else if (MAX_MACRO_VALUE >= 113.5) {
-                                        zeroCount++;
+                                    else if (AVG_MACRO_VALUE >= 125.28) {
+                                        oneCount++;
                                     }
+                                }
+                                else if (AVG_MACRO_VALUE >= 125.29) {
+                                    zeroCount++;
                                 }
                             }
-                            else if (Y >= 200) {
-                                if (Y < 968) {
-                                    if (MAX_MACRO_VALUE < 128.5) {
-                                        if (Y < 920) {
-                                            if (Y < 904) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 904) {
-                                                oneCount++;
-                                            }
+                        }
+                    }
+                    else if (Y >= 152) {
+                        if (Y < 200) {
+                            if (AVG_MACRO_VALUE < 105.04) {
+                                zeroCount++;
+                            }
+                            else if (AVG_MACRO_VALUE >= 105.04) {
+                                if (MAX_MACRO_VALUE < 113.5) {
+                                    if (AVG_MACRO_VALUE < 111.16) {
+                                        if (X < 496) {
+                                            oneCount++;
                                         }
-                                        else if (Y >= 920) {
-                                            if (MIN_MACRO_VALUE < 99.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 99.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (X >= 496) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (MAX_MACRO_VALUE >= 128.5) {
-                                        zeroCount++;
+                                    else if (AVG_MACRO_VALUE >= 111.16) {
+                                        oneCount++;
                                     }
                                 }
-                                else if (Y >= 968) {
-                                    if (Y < 1000) {
-                                        if (X < 824) {
-                                            if (Y < 984) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 984) {
-                                                zeroCount++;
-                                            }
+                                else if (MAX_MACRO_VALUE >= 113.5) {
+                                    zeroCount++;
+                                }
+                            }
+                        }
+                        else if (Y >= 200) {
+                            if (Y < 968) {
+                                if (MAX_MACRO_VALUE < 128.5) {
+                                    if (Y < 920) {
+                                        if (Y < 904) {
+                                            zeroCount++;
                                         }
-                                        else if (X >= 824) {
-                                            if (Y < 984) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 984) {
-                                                oneCount++;
-                                            }
+                                        else if (Y >= 904) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (Y >= 1000) {
-                                        if (MAX_MACRO_VALUE < 114) {
-                                            if (X < 1576) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1576) {
-                                                zeroCount++;
-                                            }
+                                    else if (Y >= 920) {
+                                        if (MIN_MACRO_VALUE < 99.5) {
+                                            zeroCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 114) {
-                                            if (AVG_MACRO_VALUE < 110.96) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 110.96) {
-                                                zeroCount++;
-                                            }
+                                        else if (MIN_MACRO_VALUE >= 99.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 128.5) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (Y >= 968) {
+                                if (Y < 1000) {
+                                    if (X < 824) {
+                                        if (Y < 984) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 984) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 824) {
+                                        if (Y < 984) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 984) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (Y >= 1000) {
+                                    if (MAX_MACRO_VALUE < 114) {
+                                        if (X < 1576) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1576) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 114) {
+                                        if (AVG_MACRO_VALUE < 110.96) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 110.96) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                    else if (MAX_MACRO_VALUE >= 129.5) {
-                        if (MAX_MACRO_VALUE < 130.5) {
-                            if (RANGE_MACRO_VALUE < 12.5) {
-                                if (RANGE_MACRO_VALUE < 3.5) {
-                                    if (X < 520) {
-                                        zeroCount++;
-                                    }
-                                    else if (X >= 520) {
-                                        oneCount++;
-                                    }
+                }
+                else if (MAX_MACRO_VALUE >= 129.5) {
+                    if (MAX_MACRO_VALUE < 130.5) {
+                        if (RANGE_MACRO_VALUE < 12.5) {
+                            if (RANGE_MACRO_VALUE < 3.5) {
+                                if (X < 520) {
+                                    zeroCount++;
                                 }
-                                else if (RANGE_MACRO_VALUE >= 3.5) {
-                                    if (AVG_MACRO_VALUE < 126.49) {
-                                        zeroCount++;
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 126.49) {
-                                        if (AVG_MACRO_VALUE < 126.65) {
-                                            if (Y < 1000) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 1000) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 126.65) {
-                                            if (AVG_MACRO_VALUE < 127.02) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 127.02) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
+                                else if (X >= 520) {
+                                    oneCount++;
                                 }
                             }
-                            else if (RANGE_MACRO_VALUE >= 12.5) {
-                                if (RANGE_MACRO_VALUE < 13.5) {
-                                    if (X < 640) {
-                                        oneCount++;
-                                    }
-                                    else if (X >= 640) {
-                                        zeroCount++;
-                                    }
+                            else if (RANGE_MACRO_VALUE >= 3.5) {
+                                if (AVG_MACRO_VALUE < 126.49) {
+                                    zeroCount++;
                                 }
-                                else if (RANGE_MACRO_VALUE >= 13.5) {
-                                    if (RANGE_MACRO_VALUE < 16.5) {
-                                        if (RANGE_MACRO_VALUE < 14.5) {
-                                            zeroCount++;
+                                else if (AVG_MACRO_VALUE >= 126.49) {
+                                    if (AVG_MACRO_VALUE < 126.65) {
+                                        if (Y < 1000) {
+                                            oneCount++;
                                         }
-                                        else if (RANGE_MACRO_VALUE >= 14.5) {
-                                            if (X < 136) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 136) {
-                                                zeroCount++;
-                                            }
+                                        else if (Y >= 1000) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (RANGE_MACRO_VALUE >= 16.5) {
-                                        if (Y < 952) {
+                                    else if (AVG_MACRO_VALUE >= 126.65) {
+                                        if (AVG_MACRO_VALUE < 127.02) {
                                             zeroCount++;
                                         }
-                                        else if (Y >= 952) {
-                                            if (RANGE_MACRO_VALUE < 21.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 21.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 127.02) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                             }
                         }
-                        else if (MAX_MACRO_VALUE >= 130.5) {
-                            if (X < 24) {
-                                zeroCount++;
+                        else if (RANGE_MACRO_VALUE >= 12.5) {
+                            if (RANGE_MACRO_VALUE < 13.5) {
+                                if (X < 640) {
+                                    oneCount++;
+                                }
+                                else if (X >= 640) {
+                                    zeroCount++;
+                                }
                             }
-                            else if (X >= 24) {
+                            else if (RANGE_MACRO_VALUE >= 13.5) {
                                 if (RANGE_MACRO_VALUE < 16.5) {
-                                    if (AVG_MACRO_VALUE < 127.58) {
-                                        if (MIN_MACRO_VALUE < 116.5) {
-                                            if (AVG_MACRO_VALUE < 126.65) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 126.65) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 116.5) {
-                                            if (Y < 1032) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 1032) {
-                                                zeroCount++;
-                                            }
-                                        }
+                                    if (RANGE_MACRO_VALUE < 14.5) {
+                                        zeroCount++;
                                     }
-                                    else if (AVG_MACRO_VALUE >= 127.58) {
-                                        if (AVG_MACRO_VALUE < 127.85) {
-                                            if (X < 632) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 632) {
-                                                zeroCount++;
-                                            }
+                                    else if (RANGE_MACRO_VALUE >= 14.5) {
+                                        if (X < 136) {
+                                            oneCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 127.85) {
-                                            if (Y < 440) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 440) {
-                                                zeroCount++;
-                                            }
+                                        else if (X >= 136) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                                 else if (RANGE_MACRO_VALUE >= 16.5) {
                                     if (Y < 952) {
-                                        if (MIN_MACRO_VALUE < 113.5) {
-                                            if (RANGE_MACRO_VALUE < 26.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 26.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 113.5) {
-                                            if (AVG_MACRO_VALUE < 124.57) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 124.57) {
-                                                zeroCount++;
-                                            }
-                                        }
+                                        zeroCount++;
                                     }
                                     else if (Y >= 952) {
-                                        if (AVG_MACRO_VALUE < 125.01) {
-                                            if (X < 688) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 688) {
-                                                oneCount++;
-                                            }
+                                        if (RANGE_MACRO_VALUE < 21.5) {
+                                            oneCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 125.01) {
-                                            if (Y < 968) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 968) {
-                                                zeroCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 21.5) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                else if (MIN_MACRO_VALUE >= 191.5) {
-                    if (X < 616) {
-                        if (RANGE_MACRO_VALUE < 7.5) {
+                    else if (MAX_MACRO_VALUE >= 130.5) {
+                        if (X < 24) {
                             zeroCount++;
                         }
-                        else if (RANGE_MACRO_VALUE >= 7.5) {
-                            if (Y < 136) {
-                                zeroCount++;
+                        else if (X >= 24) {
+                            if (RANGE_MACRO_VALUE < 16.5) {
+                                if (AVG_MACRO_VALUE < 127.58) {
+                                    if (MIN_MACRO_VALUE < 116.5) {
+                                        if (AVG_MACRO_VALUE < 126.65) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 126.65) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 116.5) {
+                                        if (Y < 1032) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 1032) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 127.58) {
+                                    if (AVG_MACRO_VALUE < 127.85) {
+                                        if (X < 632) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 632) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 127.85) {
+                                        if (Y < 440) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 440) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
                             }
-                            else if (Y >= 136) {
-                                oneCount++;
+                            else if (RANGE_MACRO_VALUE >= 16.5) {
+                                if (Y < 952) {
+                                    if (MIN_MACRO_VALUE < 113.5) {
+                                        if (RANGE_MACRO_VALUE < 26.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 26.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 113.5) {
+                                        if (AVG_MACRO_VALUE < 124.57) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 124.57) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (Y >= 952) {
+                                    if (AVG_MACRO_VALUE < 125.01) {
+                                        if (X < 688) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 688) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 125.01) {
+                                        if (Y < 968) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 968) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
                             }
                         }
-                    }
-                    else if (X >= 616) {
-                        zeroCount++;
                     }
                 }
             }
-            else if (RANGE_MACRO_VALUE >= 28.5) {
-                if (MAX_MACRO_VALUE < 100.5) {
-                    if (MIN_MACRO_VALUE < 66.5) {
-                        if (RANGE_MACRO_VALUE < 84.5) {
-                            if (Y < 584) {
-                                if (RANGE_MACRO_VALUE < 75.5) {
-                                    if (Y < 568) {
-                                        if (Y < 552) {
-                                            if (MAX_MACRO_VALUE < 99.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 99.5) {
-                                                oneCount++;
-                                            }
+            else if (MIN_MACRO_VALUE >= 191.5) {
+                if (X < 616) {
+                    if (RANGE_MACRO_VALUE < 7.5) {
+                        zeroCount++;
+                    }
+                    else if (RANGE_MACRO_VALUE >= 7.5) {
+                        if (Y < 136) {
+                            zeroCount++;
+                        }
+                        else if (Y >= 136) {
+                            oneCount++;
+                        }
+                    }
+                }
+                else if (X >= 616) {
+                    zeroCount++;
+                }
+            }
+        }
+        else if (RANGE_MACRO_VALUE >= 28.5) {
+            if (MAX_MACRO_VALUE < 100.5) {
+                if (MIN_MACRO_VALUE < 66.5) {
+                    if (RANGE_MACRO_VALUE < 84.5) {
+                        if (Y < 584) {
+                            if (RANGE_MACRO_VALUE < 75.5) {
+                                if (Y < 568) {
+                                    if (Y < 552) {
+                                        if (MAX_MACRO_VALUE < 99.5) {
+                                            oneCount++;
                                         }
-                                        else if (Y >= 552) {
-                                            if (RANGE_MACRO_VALUE < 48.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 48.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 99.5) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (Y >= 568) {
-                                        if (X < 1096) {
-                                            if (MIN_MACRO_VALUE < 29.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 29.5) {
-                                                oneCount++;
-                                            }
+                                    else if (Y >= 552) {
+                                        if (RANGE_MACRO_VALUE < 48.5) {
+                                            oneCount++;
                                         }
-                                        else if (X >= 1096) {
-                                            if (MIN_MACRO_VALUE < 55.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 55.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 48.5) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
-                                else if (RANGE_MACRO_VALUE >= 75.5) {
-                                    if (Y < 488) {
-                                        if (Y < 328) {
-                                            if (MAX_MACRO_VALUE < 98.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 98.5) {
-                                                oneCount++;
-                                            }
+                                else if (Y >= 568) {
+                                    if (X < 1096) {
+                                        if (MIN_MACRO_VALUE < 29.5) {
+                                            zeroCount++;
                                         }
-                                        else if (Y >= 328) {
-                                            if (Y < 440) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 440) {
-                                                oneCount++;
-                                            }
+                                        else if (MIN_MACRO_VALUE >= 29.5) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (Y >= 488) {
-                                        if (Y < 520) {
-                                            if (MIN_MACRO_VALUE < 17.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 17.5) {
-                                                oneCount++;
-                                            }
+                                    else if (X >= 1096) {
+                                        if (MIN_MACRO_VALUE < 55.5) {
+                                            oneCount++;
                                         }
-                                        else if (Y >= 520) {
-                                            if (Y < 552) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 552) {
-                                                oneCount++;
-                                            }
+                                        else if (MIN_MACRO_VALUE >= 55.5) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
                             }
-                            else if (Y >= 584) {
-                                if (MAX_MACRO_VALUE < 92.5) {
-                                    if (MIN_MACRO_VALUE < 58.5) {
-                                        if (AVG_MACRO_VALUE < 70.12) {
-                                            if (X < 1560) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1560) {
-                                                oneCount++;
-                                            }
+                            else if (RANGE_MACRO_VALUE >= 75.5) {
+                                if (Y < 488) {
+                                    if (Y < 328) {
+                                        if (MAX_MACRO_VALUE < 98.5) {
+                                            zeroCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 70.12) {
-                                            if (Y < 920) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 920) {
-                                                zeroCount++;
-                                            }
+                                        else if (MAX_MACRO_VALUE >= 98.5) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (MIN_MACRO_VALUE >= 58.5) {
-                                        zeroCount++;
+                                    else if (Y >= 328) {
+                                        if (Y < 440) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 440) {
+                                            oneCount++;
+                                        }
                                     }
                                 }
-                                else if (MAX_MACRO_VALUE >= 92.5) {
-                                    if (X < 1768) {
-                                        if (X < 920) {
-                                            if (AVG_MACRO_VALUE < 41.78) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 41.78) {
-                                                oneCount++;
-                                            }
+                                else if (Y >= 488) {
+                                    if (Y < 520) {
+                                        if (MIN_MACRO_VALUE < 17.5) {
+                                            zeroCount++;
                                         }
-                                        else if (X >= 920) {
-                                            if (MIN_MACRO_VALUE < 61) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 61) {
-                                                zeroCount++;
-                                            }
+                                        else if (MIN_MACRO_VALUE >= 17.5) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (X >= 1768) {
-                                        if (X < 1864) {
-                                            if (AVG_MACRO_VALUE < 74.99) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 74.99) {
-                                                zeroCount++;
-                                            }
+                                    else if (Y >= 520) {
+                                        if (Y < 552) {
+                                            zeroCount++;
                                         }
-                                        else if (X >= 1864) {
-                                            if (Y < 984) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 984) {
-                                                oneCount++;
-                                            }
+                                        else if (Y >= 552) {
+                                            oneCount++;
                                         }
                                     }
                                 }
                             }
                         }
-                        else if (RANGE_MACRO_VALUE >= 84.5) {
-                            if (X < 928) {
-                                zeroCount++;
-                            }
-                            else if (X >= 928) {
-                                if (AVGQUADRANT_MACRO_VALUE < 0.5) {
-                                    oneCount++;
-                                }
-                                else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
-                                    if (Y < 240) {
-                                        zeroCount++;
+                        else if (Y >= 584) {
+                            if (MAX_MACRO_VALUE < 92.5) {
+                                if (MIN_MACRO_VALUE < 58.5) {
+                                    if (AVG_MACRO_VALUE < 70.12) {
+                                        if (X < 1560) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1560) {
+                                            oneCount++;
+                                        }
                                     }
-                                    else if (Y >= 240) {
-                                        oneCount++;
+                                    else if (AVG_MACRO_VALUE >= 70.12) {
+                                        if (Y < 920) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 920) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 58.5) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (MAX_MACRO_VALUE >= 92.5) {
+                                if (X < 1768) {
+                                    if (X < 920) {
+                                        if (AVG_MACRO_VALUE < 41.78) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 41.78) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 920) {
+                                        if (MIN_MACRO_VALUE < 61) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 61) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 1768) {
+                                    if (X < 1864) {
+                                        if (AVG_MACRO_VALUE < 74.99) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 74.99) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 1864) {
+                                        if (Y < 984) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 984) {
+                                            oneCount++;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                    else if (MIN_MACRO_VALUE >= 66.5) {
-                        if (Y < 720) {
-                            if (AVG_MACRO_VALUE < 82.47) {
-                                zeroCount++;
+                    else if (RANGE_MACRO_VALUE >= 84.5) {
+                        if (X < 928) {
+                            zeroCount++;
+                        }
+                        else if (X >= 928) {
+                            if (AVGQUADRANT_MACRO_VALUE == 0) {
+                                oneCount++;
                             }
-                            else if (AVG_MACRO_VALUE >= 82.47) {
-                                if (Y < 408) {
-                                    if (Y < 344) {
-                                        zeroCount++;
-                                    }
-                                    else if (Y >= 344) {
-                                        if (X < 1304) {
-                                            zeroCount++;
-                                        }
-                                        else if (X >= 1304) {
-                                            oneCount++;
-                                        }
-                                    }
+                            else if (AVGQUADRANT_MACRO_VALUE == 1) {
+                                if (Y < 240) {
+                                    zeroCount++;
                                 }
-                                else if (Y >= 408) {
-                                    if (MAX_MACRO_VALUE < 96.5) {
-                                        if (X < 696) {
-                                            oneCount++;
-                                        }
-                                        else if (X >= 696) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 96.5) {
-                                        zeroCount++;
-                                    }
+                                else if (Y >= 240) {
+                                    oneCount++;
                                 }
                             }
                         }
-                        else if (Y >= 720) {
-                            if (Y < 888) {
-                                oneCount++;
-                            }
-                            else if (Y >= 888) {
-                                if (X < 416) {
-                                    if (X < 256) {
+                    }
+                }
+                else if (MIN_MACRO_VALUE >= 66.5) {
+                    if (Y < 720) {
+                        if (AVG_MACRO_VALUE < 82.47) {
+                            zeroCount++;
+                        }
+                        else if (AVG_MACRO_VALUE >= 82.47) {
+                            if (Y < 408) {
+                                if (Y < 344) {
+                                    zeroCount++;
+                                }
+                                else if (Y >= 344) {
+                                    if (X < 1304) {
+                                        zeroCount++;
+                                    }
+                                    else if (X >= 1304) {
                                         oneCount++;
                                     }
-                                    else if (X >= 256) {
-                                        if (X < 328) {
-                                            zeroCount++;
-                                        }
-                                        else if (X >= 328) {
-                                            oneCount++;
-                                        }
+                                }
+                            }
+                            else if (Y >= 408) {
+                                if (MAX_MACRO_VALUE < 96.5) {
+                                    if (X < 696) {
+                                        oneCount++;
+                                    }
+                                    else if (X >= 696) {
+                                        zeroCount++;
                                     }
                                 }
-                                else if (X >= 416) {
+                                else if (MAX_MACRO_VALUE >= 96.5) {
                                     zeroCount++;
                                 }
                             }
                         }
                     }
-                }
-                else if (MAX_MACRO_VALUE >= 100.5) {
-                    if (MAX_MACRO_VALUE < 104.5) {
-                        if (AVG_MACRO_VALUE < 53.55) {
-                            if (RANGE_MACRO_VALUE < 85.5) {
-                                if (Y < 648) {
-                                    if (X < 872) {
-                                        if (AVG_MACRO_VALUE < 35.76) {
-                                            if (Y < 192) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 192) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 35.76) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (X >= 872) {
-                                        if (X < 888) {
-                                            if (AVG_MACRO_VALUE < 48.27) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 48.27) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 888) {
-                                            if (AVG_MACRO_VALUE < 44.54) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 44.54) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
+                    else if (Y >= 720) {
+                        if (Y < 888) {
+                            oneCount++;
+                        }
+                        else if (Y >= 888) {
+                            if (X < 416) {
+                                if (X < 256) {
+                                    oneCount++;
                                 }
-                                else if (Y >= 648) {
-                                    if (X < 704) {
-                                        if (Y < 664) {
-                                            if (MIN_MACRO_VALUE < 20) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 20) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (Y >= 664) {
-                                            if (RANGE_MACRO_VALUE < 71) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 71) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (X >= 704) {
-                                        if (MIN_MACRO_VALUE < 24.5) {
-                                            zeroCount++;
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 24.5) {
-                                            if (RANGE_MACRO_VALUE < 74.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 74.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            else if (RANGE_MACRO_VALUE >= 85.5) {
-                                if (MIN_MACRO_VALUE < 15.5) {
-                                    if (X < 1016) {
-                                        if (AVG_MACRO_VALUE < 42.52) {
-                                            if (X < 152) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 152) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 42.52) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (X >= 1016) {
+                                else if (X >= 256) {
+                                    if (X < 328) {
                                         zeroCount++;
                                     }
-                                }
-                                else if (MIN_MACRO_VALUE >= 15.5) {
-                                    if (AVG_MACRO_VALUE < 35.38) {
-                                        if (Y < 712) {
-                                            if (AVG_MACRO_VALUE < 30.38) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 30.38) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (Y >= 712) {
-                                            if (AVG_MACRO_VALUE < 26.09) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 26.09) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 35.38) {
-                                        if (AVG_MACRO_VALUE < 45.54) {
-                                            if (Y < 704) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 704) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 45.54) {
-                                            if (AVG_MACRO_VALUE < 48.8) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 48.8) {
-                                                zeroCount++;
-                                            }
-                                        }
+                                    else if (X >= 328) {
+                                        oneCount++;
                                     }
                                 }
                             }
-                        }
-                        else if (AVG_MACRO_VALUE >= 53.55) {
-                            if (RANGE_MACRO_VALUE < 31.5) {
+                            else if (X >= 416) {
                                 zeroCount++;
                             }
-                            else if (RANGE_MACRO_VALUE >= 31.5) {
-                                if (X < 1000) {
-                                    if (RANGE_MACRO_VALUE < 84.5) {
-                                        if (RANGE_MACRO_VALUE < 82.5) {
-                                            if (Y < 56) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 56) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 82.5) {
-                                            if (AVG_MACRO_VALUE < 78.73) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 78.73) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 84.5) {
-                                        if (Y < 880) {
-                                            zeroCount++;
-                                        }
-                                        else if (Y >= 880) {
-                                            if (Y < 968) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 968) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (X >= 1000) {
-                                    if (AVG_MACRO_VALUE < 67.63) {
-                                        if (Y < 312) {
-                                            if (AVG_MACRO_VALUE < 58.38) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 58.38) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (Y >= 312) {
-                                            if (RANGE_MACRO_VALUE < 74.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 74.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 67.63) {
-                                        if (MAX_MACRO_VALUE < 102.5) {
-                                            if (Y < 904) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 904) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 102.5) {
-                                            if (X < 1192) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1192) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else if (MAX_MACRO_VALUE >= 104.5) {
-                        if (X < 1896) {
-                            if (X < 8) {
-                                if (AVGQUADRANT_MACRO_VALUE < 0.5) {
-                                    if (RANGE_MACRO_VALUE < 68) {
-                                        if (Y < 112) {
-                                            oneCount++;
-                                        }
-                                        else if (Y >= 112) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 68) {
-                                        if (AVG_MACRO_VALUE < 67.67) {
-                                            zeroCount++;
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 67.67) {
-                                            if (RANGE_MACRO_VALUE < 72.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 72.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
-                                    if (MAX_MACRO_VALUE < 116.5) {
-                                        if (AVG_MACRO_VALUE < 72.97) {
-                                            zeroCount++;
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 72.97) {
-                                            oneCount++;
-                                        }
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 116.5) {
-                                        if (Y < 176) {
-                                            if (MAX_MACRO_VALUE < 121.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 121.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (Y >= 176) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                }
-                            }
-                            else if (X >= 8) {
-                                if (RANGE_MACRO_VALUE < 36.5) {
-                                    if (MIN_MACRO_VALUE < 71.5) {
-                                        zeroCount++;
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 71.5) {
-                                        if (X < 776) {
-                                            if (MAX_MACRO_VALUE < 147.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 147.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 776) {
-                                            if (X < 808) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 808) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (RANGE_MACRO_VALUE >= 36.5) {
-                                    if (AVG_MACRO_VALUE < 160.33) {
-                                        if (MIN_MACRO_VALUE < 17.5) {
-                                            if (Y < 344) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 344) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 17.5) {
-                                            if (Y < 792) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 792) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 160.33) {
-                                        if (AVG_MACRO_VALUE < 164.54) {
-                                            if (MIN_MACRO_VALUE < 125.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 125.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 164.54) {
-                                            if (RANGE_MACRO_VALUE < 153.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 153.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else if (X >= 1896) {
-                            zeroCount++;
                         }
                     }
                 }
             }
+            else if (MAX_MACRO_VALUE >= 100.5) {
+                if (MAX_MACRO_VALUE < 104.5) {
+                    if (AVG_MACRO_VALUE < 53.55) {
+                        if (RANGE_MACRO_VALUE < 85.5) {
+                            if (Y < 648) {
+                                if (X < 872) {
+                                    if (AVG_MACRO_VALUE < 35.76) {
+                                        if (Y < 192) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 192) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 35.76) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (X >= 872) {
+                                    if (X < 888) {
+                                        if (AVG_MACRO_VALUE < 48.27) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 48.27) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 888) {
+                                        if (AVG_MACRO_VALUE < 44.54) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 44.54) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (Y >= 648) {
+                                if (X < 704) {
+                                    if (Y < 664) {
+                                        if (MIN_MACRO_VALUE < 20) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 20) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (Y >= 664) {
+                                        if (RANGE_MACRO_VALUE < 71) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 71) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 704) {
+                                    if (MIN_MACRO_VALUE < 24.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 24.5) {
+                                        if (RANGE_MACRO_VALUE < 74.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 74.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (RANGE_MACRO_VALUE >= 85.5) {
+                            if (MIN_MACRO_VALUE < 15.5) {
+                                if (X < 1016) {
+                                    if (AVG_MACRO_VALUE < 42.52) {
+                                        if (X < 152) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 152) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 42.52) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (X >= 1016) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (MIN_MACRO_VALUE >= 15.5) {
+                                if (AVG_MACRO_VALUE < 35.38) {
+                                    if (Y < 712) {
+                                        if (AVG_MACRO_VALUE < 30.38) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 30.38) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 712) {
+                                        if (AVG_MACRO_VALUE < 26.09) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 26.09) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 35.38) {
+                                    if (AVG_MACRO_VALUE < 45.54) {
+                                        if (Y < 704) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 704) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 45.54) {
+                                        if (AVG_MACRO_VALUE < 48.8) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 48.8) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (AVG_MACRO_VALUE >= 53.55) {
+                        if (RANGE_MACRO_VALUE < 31.5) {
+                            zeroCount++;
+                        }
+                        else if (RANGE_MACRO_VALUE >= 31.5) {
+                            if (X < 1000) {
+                                if (RANGE_MACRO_VALUE < 84.5) {
+                                    if (RANGE_MACRO_VALUE < 82.5) {
+                                        if (Y < 56) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 56) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 82.5) {
+                                        if (AVG_MACRO_VALUE < 78.73) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 78.73) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 84.5) {
+                                    if (Y < 880) {
+                                        zeroCount++;
+                                    }
+                                    else if (Y >= 880) {
+                                        if (Y < 968) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 968) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (X >= 1000) {
+                                if (AVG_MACRO_VALUE < 67.63) {
+                                    if (Y < 312) {
+                                        if (AVG_MACRO_VALUE < 58.38) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 58.38) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 312) {
+                                        if (RANGE_MACRO_VALUE < 74.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 74.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 67.63) {
+                                    if (MAX_MACRO_VALUE < 102.5) {
+                                        if (Y < 904) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 904) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 102.5) {
+                                        if (X < 1192) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1192) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (MAX_MACRO_VALUE >= 104.5) {
+                    if (X < 1896) {
+                        if (X < 8) {
+                            if (AVGQUADRANT_MACRO_VALUE == 0) {
+                                if (RANGE_MACRO_VALUE < 68) {
+                                    if (Y < 112) {
+                                        oneCount++;
+                                    }
+                                    else if (Y >= 112) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 68) {
+                                    if (AVG_MACRO_VALUE < 67.67) {
+                                        zeroCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 67.67) {
+                                        if (RANGE_MACRO_VALUE < 72.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 72.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (AVGQUADRANT_MACRO_VALUE == 1) {
+                                if (MAX_MACRO_VALUE < 116.5) {
+                                    if (AVG_MACRO_VALUE < 72.97) {
+                                        zeroCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 72.97) {
+                                        oneCount++;
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 116.5) {
+                                    if (Y < 176) {
+                                        if (MAX_MACRO_VALUE < 121.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 121.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (Y >= 176) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                        }
+                        else if (X >= 8) {
+                            if (RANGE_MACRO_VALUE < 36.5) {
+                                if (MIN_MACRO_VALUE < 71.5) {
+                                    zeroCount++;
+                                }
+                                else if (MIN_MACRO_VALUE >= 71.5) {
+                                    if (X < 776) {
+                                        if (MAX_MACRO_VALUE < 147.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 147.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 776) {
+                                        if (X < 808) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 808) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (RANGE_MACRO_VALUE >= 36.5) {
+                                if (AVG_MACRO_VALUE < 160.33) {
+                                    if (MIN_MACRO_VALUE < 17.5) {
+                                        if (Y < 344) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 344) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 17.5) {
+                                        if (Y < 792) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 792) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 160.33) {
+                                    if (AVG_MACRO_VALUE < 164.54) {
+                                        if (MIN_MACRO_VALUE < 125.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 125.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 164.54) {
+                                        if (RANGE_MACRO_VALUE < 153.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 153.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (X >= 1896) {
+                        zeroCount++;
+                    }
+                }
+            }
         }
+    }
 
-    //TREE 5 (FINAL TREE)
+    //TREE 5
     if (MIN_MACRO_VALUE < 34.5) {
             if (RANGE_MACRO_VALUE < 1.5) {
                 if (Y < 360) {
@@ -10592,10 +10716,10 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                             }
                                         }
                                         else if (MIN_MACRO_VALUE >= 18.5) {
-                                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
+                                            if (AVGQUADRANT_MACRO_VALUE == 0) {
                                                 zeroCount++;
                                             }
-                                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
+                                            else if (AVGQUADRANT_MACRO_VALUE == 1) {
                                                 zeroCount++;
                                             }
                                         }
@@ -10758,10 +10882,10 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                             }
                                         }
                                         else if (X >= 40) {
-                                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
+                                            if (AVGQUADRANT_MACRO_VALUE == 0) {
                                                 oneCount++;
                                             }
-                                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
+                                            else if (AVGQUADRANT_MACRO_VALUE == 1) {
                                                 zeroCount++;
                                             }
                                         }
@@ -10788,10 +10912,10 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                     }
                                     else if (X >= 440) {
                                         if (RANGE_MACRO_VALUE < 91.5) {
-                                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
+                                            if (AVGQUADRANT_MACRO_VALUE == 0) {
                                                 zeroCount++;
                                             }
-                                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
+                                            else if (AVGQUADRANT_MACRO_VALUE == 1) {
                                                 oneCount++;
                                             }
                                         }
@@ -10820,10 +10944,10 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                                             }
                                         }
                                         else if (X >= 648) {
-                                            if (AVGQUADRANT_MACRO_VALUE < 0.5) {
+                                            if (AVGQUADRANT_MACRO_VALUE == 0) {
                                                 oneCount++;
                                             }
-                                            else if (AVGQUADRANT_MACRO_VALUE >= 0.5) {
+                                            else if (AVGQUADRANT_MACRO_VALUE == 1) {
                                                 oneCount++;
                                             }
                                         }
@@ -11426,873 +11550,474 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                     }
                 }
             }
-        }
-        else if (MIN_MACRO_VALUE >= 34.5) {
-            if (MAX_MACRO_VALUE < 69.5) {
-                if (MAX_MACRO_VALUE < 60.5) {
-                    if (Y < 888) {
-                        if (X < 1768) {
-                            if (Y < 824) {
-                                if (MAX_MACRO_VALUE < 49.5) {
-                                    if (MAX_MACRO_VALUE < 47.5) {
-                                        if (RANGE_MACRO_VALUE < 8.5) {
-                                            if (Y < 680) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 680) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 8.5) {
-                                            if (Y < 616) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 616) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 47.5) {
-                                        if (MIN_MACRO_VALUE < 35.5) {
-                                            if (Y < 312) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 312) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 35.5) {
-                                            if (AVG_MACRO_VALUE < 46.23) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 46.23) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (MAX_MACRO_VALUE >= 49.5) {
-                                    if (MIN_MACRO_VALUE < 41.5) {
-                                        if (RANGE_MACRO_VALUE < 9.5) {
+    }
+    else if (MIN_MACRO_VALUE >= 34.5) {
+        if (MAX_MACRO_VALUE < 69.5) {
+            if (MAX_MACRO_VALUE < 60.5) {
+                if (Y < 888) {
+                    if (X < 1768) {
+                        if (Y < 824) {
+                            if (MAX_MACRO_VALUE < 49.5) {
+                                if (MAX_MACRO_VALUE < 47.5) {
+                                    if (RANGE_MACRO_VALUE < 8.5) {
+                                        if (Y < 680) {
                                             zeroCount++;
                                         }
-                                        else if (RANGE_MACRO_VALUE >= 9.5) {
-                                            if (AVG_MACRO_VALUE < 49.96) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 49.96) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 41.5) {
-                                        if (AVG_MACRO_VALUE < 53.79) {
-                                            if (X < 104) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 104) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 53.79) {
-                                            if (AVG_MACRO_VALUE < 55.65) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 55.65) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            else if (Y >= 824) {
-                                if (MIN_MACRO_VALUE < 38.5) {
-                                    if (MAX_MACRO_VALUE < 52.5) {
-                                        zeroCount++;
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 52.5) {
-                                        if (MIN_MACRO_VALUE < 37.5) {
-                                            if (RANGE_MACRO_VALUE < 17.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 17.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 37.5) {
-                                            if (X < 144) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 144) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (MIN_MACRO_VALUE >= 38.5) {
-                                    zeroCount++;
-                                }
-                            }
-                        }
-                        else if (X >= 1768) {
-                            if (Y < 664) {
-                                if (Y < 408) {
-                                    if (Y < 8) {
-                                        if (MAX_MACRO_VALUE < 50) {
-                                            if (X < 1848) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1848) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 50) {
-                                            if (MIN_MACRO_VALUE < 39.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 39.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (Y >= 8) {
-                                        if (AVG_MACRO_VALUE < 49.64) {
-                                            if (MAX_MACRO_VALUE < 51.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 51.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 49.64) {
-                                            if (X < 1784) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1784) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (Y >= 408) {
-                                    zeroCount++;
-                                }
-                            }
-                            else if (Y >= 664) {
-                                if (Y < 744) {
-                                    if (X < 1880) {
-                                        if (AVG_MACRO_VALUE < 43.26) {
-                                            zeroCount++;
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 43.26) {
-                                            if (X < 1864) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1864) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (X >= 1880) {
-                                        zeroCount++;
-                                    }
-                                }
-                                else if (Y >= 744) {
-                                    if (RANGE_MACRO_VALUE < 16.5) {
-                                        if (AVG_MACRO_VALUE < 47.85) {
-                                            if (MIN_MACRO_VALUE < 38.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 38.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 47.85) {
-                                            if (MIN_MACRO_VALUE < 45.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 45.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 16.5) {
-                                        zeroCount++;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else if (Y >= 888) {
-                        if (RANGE_MACRO_VALUE < 20.5) {
-                            if (X < 840) {
-                                if (RANGE_MACRO_VALUE < 9.5) {
-                                    if (MIN_MACRO_VALUE < 40.5) {
-                                        if (AVG_MACRO_VALUE < 41.83) {
-                                            if (Y < 984) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 984) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 41.83) {
+                                        else if (Y >= 680) {
                                             zeroCount++;
                                         }
                                     }
-                                    else if (MIN_MACRO_VALUE >= 40.5) {
-                                        if (MAX_MACRO_VALUE < 46.5) {
-                                            if (AVG_MACRO_VALUE < 41.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 41.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 46.5) {
-                                            if (X < 120) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 120) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (RANGE_MACRO_VALUE >= 9.5) {
-                                    if (MIN_MACRO_VALUE < 44.5) {
-                                        if (X < 568) {
-                                            if (MAX_MACRO_VALUE < 55.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 55.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 568) {
-                                            if (MAX_MACRO_VALUE < 47.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 47.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 44.5) {
-                                        if (MIN_MACRO_VALUE < 49.5) {
+                                    else if (RANGE_MACRO_VALUE >= 8.5) {
+                                        if (Y < 616) {
                                             zeroCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 49.5) {
-                                            if (AVG_MACRO_VALUE < 56.65) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 56.65) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            else if (X >= 840) {
-                                if (X < 1016) {
-                                    if (MIN_MACRO_VALUE < 37.5) {
-                                        zeroCount++;
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 37.5) {
-                                        if (X < 888) {
-                                            if (Y < 968) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 968) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 888) {
-                                            if (MAX_MACRO_VALUE < 53.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 53.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (X >= 1016) {
-                                    if (RANGE_MACRO_VALUE < 16.5) {
-                                        if (X < 1144) {
-                                            if (AVG_MACRO_VALUE < 55.78) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 55.78) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 1144) {
-                                            if (MIN_MACRO_VALUE < 36.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 36.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 16.5) {
-                                        if (AVG_MACRO_VALUE < 45.77) {
-                                            zeroCount++;
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 45.77) {
-                                            if (AVG_MACRO_VALUE < 45.93) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 45.93) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else if (RANGE_MACRO_VALUE >= 20.5) {
-                            if (Y < 920) {
-                                zeroCount++;
-                            }
-                            else if (Y >= 920) {
-                                if (X < 552) {
-                                    if (Y < 936) {
-                                        oneCount++;
-                                    }
-                                    else if (Y >= 936) {
-                                        if (X < 168) {
-                                            if (Y < 984) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 984) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 168) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                }
-                                else if (X >= 552) {
-                                    if (MAX_MACRO_VALUE < 21.5) {
-                                        if (X < 776) {
-                                            zeroCount++;
-                                        }
-                                        else if (X >= 776) {
+                                        else if (Y >= 616) {
                                             oneCount++;
                                         }
                                     }
-                                    else if (MAX_MACRO_VALUE >= 21.5) {
-                                        if (MIN_MACRO_VALUE < 35.5) {
-                                            if (Y < 976) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 976) {
-                                                zeroCount++;
-                                            }
+                                }
+                                else if (MAX_MACRO_VALUE >= 47.5) {
+                                    if (MIN_MACRO_VALUE < 35.5) {
+                                        if (Y < 312) {
+                                            zeroCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 35.5) {
+                                        else if (Y >= 312) {
                                             zeroCount++;
                                         }
                                     }
+                                    else if (MIN_MACRO_VALUE >= 35.5) {
+                                        if (AVG_MACRO_VALUE < 46.23) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 46.23) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (MAX_MACRO_VALUE >= 49.5) {
+                                if (MIN_MACRO_VALUE < 41.5) {
+                                    if (RANGE_MACRO_VALUE < 9.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 9.5) {
+                                        if (AVG_MACRO_VALUE < 49.96) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 49.96) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 41.5) {
+                                    if (AVG_MACRO_VALUE < 53.79) {
+                                        if (X < 104) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 104) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 53.79) {
+                                        if (AVG_MACRO_VALUE < 55.65) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 55.65) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (Y >= 824) {
+                            if (MIN_MACRO_VALUE < 38.5) {
+                                if (MAX_MACRO_VALUE < 52.5) {
+                                    zeroCount++;
+                                }
+                                else if (MAX_MACRO_VALUE >= 52.5) {
+                                    if (MIN_MACRO_VALUE < 37.5) {
+                                        if (RANGE_MACRO_VALUE < 17.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 17.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 37.5) {
+                                        if (X < 144) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 144) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (MIN_MACRO_VALUE >= 38.5) {
+                                zeroCount++;
+                            }
+                        }
+                    }
+                    else if (X >= 1768) {
+                        if (Y < 664) {
+                            if (Y < 408) {
+                                if (Y < 8) {
+                                    if (MAX_MACRO_VALUE < 50) {
+                                        if (X < 1848) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1848) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 50) {
+                                        if (MIN_MACRO_VALUE < 39.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 39.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (Y >= 8) {
+                                    if (AVG_MACRO_VALUE < 49.64) {
+                                        if (MAX_MACRO_VALUE < 51.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 51.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 49.64) {
+                                        if (X < 1784) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1784) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (Y >= 408) {
+                                zeroCount++;
+                            }
+                        }
+                        else if (Y >= 664) {
+                            if (Y < 744) {
+                                if (X < 1880) {
+                                    if (AVG_MACRO_VALUE < 43.26) {
+                                        zeroCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 43.26) {
+                                        if (X < 1864) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1864) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 1880) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (Y >= 744) {
+                                if (RANGE_MACRO_VALUE < 16.5) {
+                                    if (AVG_MACRO_VALUE < 47.85) {
+                                        if (MIN_MACRO_VALUE < 38.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 38.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 47.85) {
+                                        if (MIN_MACRO_VALUE < 45.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 45.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 16.5) {
+                                    zeroCount++;
                                 }
                             }
                         }
                     }
                 }
-                else if (MAX_MACRO_VALUE >= 60.5) {
-                    if (X < 232) {
-                        if (Y < 536) {
-                            zeroCount++;
-                        }
-                        else if (Y >= 536) {
-                            if (X < 56) {
-                                if (Y < 952) {
-                                    if (AVG_MACRO_VALUE < 51.86) {
-                                        if (Y < 904) {
+                else if (Y >= 888) {
+                    if (RANGE_MACRO_VALUE < 20.5) {
+                        if (X < 840) {
+                            if (RANGE_MACRO_VALUE < 9.5) {
+                                if (MIN_MACRO_VALUE < 40.5) {
+                                    if (AVG_MACRO_VALUE < 41.83) {
+                                        if (Y < 984) {
                                             zeroCount++;
                                         }
-                                        else if (Y >= 904) {
-                                            if (RANGE_MACRO_VALUE < 24.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 24.5) {
-                                                oneCount++;
-                                            }
+                                        else if (Y >= 984) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (AVG_MACRO_VALUE >= 51.86) {
-                                        if (Y < 816) {
-                                            zeroCount++;
-                                        }
-                                        else if (Y >= 816) {
-                                            if (AVG_MACRO_VALUE < 52.83) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 52.83) {
-                                                oneCount++;
-                                            }
-                                        }
+                                    else if (AVG_MACRO_VALUE >= 41.83) {
+                                        zeroCount++;
                                     }
                                 }
-                                else if (Y >= 952) {
-                                    if (RANGE_MACRO_VALUE < 2.5) {
-                                        oneCount++;
+                                else if (MIN_MACRO_VALUE >= 40.5) {
+                                    if (MAX_MACRO_VALUE < 46.5) {
+                                        if (AVG_MACRO_VALUE < 41.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 41.5) {
+                                            oneCount++;
+                                        }
                                     }
-                                    else if (RANGE_MACRO_VALUE >= 2.5) {
-                                        zeroCount++;
+                                    else if (MAX_MACRO_VALUE >= 46.5) {
+                                        if (X < 120) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 120) {
+                                            zeroCount++;
+                                        }
                                     }
                                 }
                             }
-                            else if (X >= 56) {
-                                if (AVG_MACRO_VALUE < 46.8) {
-                                    if (Y < 960) {
-                                        if (RANGE_MACRO_VALUE < 26.5) {
-                                            if (RANGE_MACRO_VALUE < 23.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 23.5) {
-                                                oneCount++;
-                                            }
+                            else if (RANGE_MACRO_VALUE >= 9.5) {
+                                if (MIN_MACRO_VALUE < 44.5) {
+                                    if (X < 568) {
+                                        if (MAX_MACRO_VALUE < 55.5) {
+                                            zeroCount++;
                                         }
-                                        else if (RANGE_MACRO_VALUE >= 26.5) {
+                                        else if (MAX_MACRO_VALUE >= 55.5) {
                                             zeroCount++;
                                         }
                                     }
-                                    else if (Y >= 960) {
-                                        zeroCount++;
+                                    else if (X >= 568) {
+                                        if (MAX_MACRO_VALUE < 47.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 47.5) {
+                                            zeroCount++;
+                                        }
                                     }
                                 }
-                                else if (AVG_MACRO_VALUE >= 46.8) {
-                                    if (AVG_MACRO_VALUE < 51.51) {
-                                        if (MAX_MACRO_VALUE < 65.5) {
+                                else if (MIN_MACRO_VALUE >= 44.5) {
+                                    if (MIN_MACRO_VALUE < 49.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 49.5) {
+                                        if (AVG_MACRO_VALUE < 56.65) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 56.65) {
                                             zeroCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 65.5) {
-                                            if (X < 96) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 96) {
-                                                zeroCount++;
-                                            }
-                                        }
                                     }
-                                    else if (AVG_MACRO_VALUE >= 51.51) {
+                                }
+                            }
+                        }
+                        else if (X >= 840) {
+                            if (X < 1016) {
+                                if (MIN_MACRO_VALUE < 37.5) {
+                                    zeroCount++;
+                                }
+                                else if (MIN_MACRO_VALUE >= 37.5) {
+                                    if (X < 888) {
                                         if (Y < 968) {
-                                            if (AVG_MACRO_VALUE < 52.84) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 52.84) {
-                                                zeroCount++;
-                                            }
+                                            oneCount++;
                                         }
                                         else if (Y >= 968) {
-                                            if (Y < 1016) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 1016) {
-                                                zeroCount++;
-                                            }
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 888) {
+                                        if (MAX_MACRO_VALUE < 53.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 53.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (X >= 1016) {
+                                if (RANGE_MACRO_VALUE < 16.5) {
+                                    if (X < 1144) {
+                                        if (AVG_MACRO_VALUE < 55.78) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 55.78) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 1144) {
+                                        if (MIN_MACRO_VALUE < 36.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 36.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 16.5) {
+                                    if (AVG_MACRO_VALUE < 45.77) {
+                                        zeroCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 45.77) {
+                                        if (AVG_MACRO_VALUE < 45.93) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 45.93) {
+                                            oneCount++;
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                    else if (X >= 232) {
-                        if (Y < 1000) {
-                            if (AVG_MACRO_VALUE < 45.44) {
-                                if (Y < 888) {
-                                    if (Y < 488) {
-                                        if (AVG_MACRO_VALUE < 43.73) {
-                                            if (X < 560) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 560) {
-                                                zeroCount++;
-                                            }
+                    else if (RANGE_MACRO_VALUE >= 20.5) {
+                        if (Y < 920) {
+                            zeroCount++;
+                        }
+                        else if (Y >= 920) {
+                            if (X < 552) {
+                                if (Y < 936) {
+                                    oneCount++;
+                                }
+                                else if (Y >= 936) {
+                                    if (X < 168) {
+                                        if (Y < 984) {
+                                            oneCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 43.73) {
-                                            if (AVG_MACRO_VALUE < 43.92) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 43.92) {
-                                                oneCount++;
-                                            }
+                                        else if (Y >= 984) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (Y >= 488) {
+                                    else if (X >= 168) {
                                         zeroCount++;
                                     }
                                 }
-                                else if (Y >= 888) {
-                                    if (AVG_MACRO_VALUE < 44.66) {
+                            }
+                            else if (X >= 552) {
+                                if (MAX_MACRO_VALUE < 21.5) {
+                                    if (X < 776) {
+                                        zeroCount++;
+                                    }
+                                    else if (X >= 776) {
                                         oneCount++;
                                     }
-                                    else if (AVG_MACRO_VALUE >= 44.66) {
-                                        if (Y < 944) {
-                                            oneCount++;
+                                }
+                                else if (MAX_MACRO_VALUE >= 21.5) {
+                                    if (MIN_MACRO_VALUE < 35.5) {
+                                        if (Y < 976) {
+                                            zeroCount++;
                                         }
-                                        else if (Y >= 944) {
+                                        else if (Y >= 976) {
                                             zeroCount++;
                                         }
                                     }
-                                }
-                            }
-                            else if (AVG_MACRO_VALUE >= 45.44) {
-                                if (AVG_MACRO_VALUE < 46.48) {
-                                    zeroCount++;
-                                }
-                                else if (AVG_MACRO_VALUE >= 46.48) {
-                                    if (MIN_MACRO_VALUE < 41.5) {
-                                        if (X < 712) {
-                                            if (RANGE_MACRO_VALUE < 26.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 26.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 712) {
-                                            if (X < 792) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 792) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 41.5) {
-                                        if (RANGE_MACRO_VALUE < 19.5) {
-                                            if (MIN_MACRO_VALUE < 44.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 44.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 19.5) {
-                                            if (MAX_MACRO_VALUE < 64.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 64.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else if (Y >= 1000) {
-                            if (X < 280) {
-                                if (X < 264) {
-                                    oneCount++;
-                                }
-                                else if (X >= 264) {
-                                    if (RANGE_MACRO_VALUE < 26) {
-                                        oneCount++;
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 26) {
+                                    else if (MIN_MACRO_VALUE >= 35.5) {
                                         zeroCount++;
                                     }
                                 }
-                            }
-                            else if (X >= 280) {
-                                zeroCount++;
                             }
                         }
                     }
                 }
             }
-            else if (MAX_MACRO_VALUE >= 69.5) {
-                if (RANGE_MACRO_VALUE < 26.5) {
-                    if (Y < 152) {
-                        if (MAX_MACRO_VALUE < 105.5) {
-                            if (MIN_MACRO_VALUE < 81.5) {
-                                if (AVG_MACRO_VALUE < 58.54) {
-                                    if (MIN_MACRO_VALUE < 47.5) {
-                                        if (MAX_MACRO_VALUE < 70.5) {
-                                            if (MIN_MACRO_VALUE < 45.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 45.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 70.5) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 47.5) {
-                                        if (X < 1168) {
-                                            zeroCount++;
-                                        }
-                                        else if (X >= 1168) {
-                                            if (Y < 56) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 56) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (AVG_MACRO_VALUE >= 58.54) {
-                                    if (Y < 104) {
-                                        if (MIN_MACRO_VALUE < 78.5) {
-                                            if (RANGE_MACRO_VALUE < 5.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 5.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 78.5) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (Y >= 104) {
-                                        zeroCount++;
-                                    }
-                                }
-                            }
-                            else if (MIN_MACRO_VALUE >= 81.5) {
-                                if (Y < 104) {
-                                    zeroCount++;
-                                }
-                                else if (Y >= 104) {
-                                    if (MAX_MACRO_VALUE < 96.5) {
-                                        zeroCount++;
-                                    }
-                                    else if (MAX_MACRO_VALUE >= 96.5) {
-                                        if (X < 648) {
-                                            if (MAX_MACRO_VALUE < 100.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 100.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (X >= 648) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else if (MAX_MACRO_VALUE >= 105.5) {
-                            if (MIN_MACRO_VALUE < 117.5) {
-                                zeroCount++;
-                            }
-                            else if (MIN_MACRO_VALUE >= 117.5) {
-                                if (X < 1272) {
-                                    if (X < 1048) {
-                                        if (RANGE_MACRO_VALUE < 4.5) {
-                                            if (X < 80) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 80) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 4.5) {
-                                            if (X < 56) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 56) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (X >= 1048) {
-                                        zeroCount++;
-                                    }
-                                }
-                                else if (X >= 1272) {
-                                    if (MIN_MACRO_VALUE < 162.5) {
-                                        if (AVG_MACRO_VALUE < 125.29) {
-                                            if (AVG_MACRO_VALUE < 125.16) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 125.16) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 125.29) {
-                                            zeroCount++;
-                                        }
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 162.5) {
-                                        if (AVG_MACRO_VALUE < 170.06) {
-                                            if (X < 1448) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1448) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 170.06) {
-                                            if (X < 1648) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1648) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+            else if (MAX_MACRO_VALUE >= 60.5) {
+                if (X < 232) {
+                    if (Y < 536) {
+                        zeroCount++;
                     }
-                    else if (Y >= 152) {
-                        if (Y < 248) {
-                            if (MAX_MACRO_VALUE < 90.5) {
-                                if (MIN_MACRO_VALUE < 50.5) {
-                                    if (RANGE_MACRO_VALUE < 20.5) {
-                                        if (Y < 224) {
+                    else if (Y >= 536) {
+                        if (X < 56) {
+                            if (Y < 952) {
+                                if (AVG_MACRO_VALUE < 51.86) {
+                                    if (Y < 904) {
+                                        zeroCount++;
+                                    }
+                                    else if (Y >= 904) {
+                                        if (RANGE_MACRO_VALUE < 24.5) {
                                             zeroCount++;
                                         }
-                                        else if (Y >= 224) {
+                                        else if (RANGE_MACRO_VALUE >= 24.5) {
                                             oneCount++;
                                         }
                                     }
-                                    else if (RANGE_MACRO_VALUE >= 20.5) {
+                                }
+                                else if (AVG_MACRO_VALUE >= 51.86) {
+                                    if (Y < 816) {
                                         zeroCount++;
                                     }
-                                }
-                                else if (MIN_MACRO_VALUE >= 50.5) {
-                                    zeroCount++;
+                                    else if (Y >= 816) {
+                                        if (AVG_MACRO_VALUE < 52.83) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 52.83) {
+                                            oneCount++;
+                                        }
+                                    }
                                 }
                             }
-                            else if (MAX_MACRO_VALUE >= 90.5) {
-                                if (MIN_MACRO_VALUE < 155.5) {
-                                    if (RANGE_MACRO_VALUE < 17.5) {
-                                        if (X < 1256) {
-                                            if (X < 792) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 792) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (X >= 1256) {
-                                            if (X < 1368) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1368) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (RANGE_MACRO_VALUE >= 17.5) {
-                                        zeroCount++;
-                                    }
+                            else if (Y >= 952) {
+                                if (RANGE_MACRO_VALUE < 2.5) {
+                                    oneCount++;
                                 }
-                                else if (MIN_MACRO_VALUE >= 155.5) {
+                                else if (RANGE_MACRO_VALUE >= 2.5) {
                                     zeroCount++;
                                 }
                             }
                         }
-                        else if (Y >= 248) {
-                            if (MAX_MACRO_VALUE < 70.5) {
-                                if (X < 1112) {
-                                    if (Y < 536) {
-                                        if (AVG_MACRO_VALUE < 63.21) {
-                                            zeroCount++;
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 63.21) {
-                                            if (AVG_MACRO_VALUE < 66.56) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 66.56) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (Y >= 536) {
-                                        if (AVG_MACRO_VALUE < 57.83) {
-                                            if (Y < 928) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 928) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 57.83) {
-                                            if (MIN_MACRO_VALUE < 52.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 52.5) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (X >= 1112) {
-                                    if (X < 1824) {
-                                        zeroCount++;
-                                    }
-                                    else if (X >= 1824) {
-                                        if (MIN_MACRO_VALUE < 53) {
+                        else if (X >= 56) {
+                            if (AVG_MACRO_VALUE < 46.8) {
+                                if (Y < 960) {
+                                    if (RANGE_MACRO_VALUE < 26.5) {
+                                        if (RANGE_MACRO_VALUE < 23.5) {
                                             oneCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 53) {
-                                            zeroCount++;
+                                        else if (RANGE_MACRO_VALUE >= 23.5) {
+                                            oneCount++;
                                         }
                                     }
-                                }
-                            }
-                            else if (MAX_MACRO_VALUE >= 70.5) {
-                                if (AVG_MACRO_VALUE < 58.25) {
-                                    if (X < 104) {
-                                        if (MAX_MACRO_VALUE < 72.5) {
-                                            zeroCount++;
-                                        }
-                                        else if (MAX_MACRO_VALUE >= 72.5) {
-                                            if (X < 48) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 48) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (X >= 104) {
+                                    else if (RANGE_MACRO_VALUE >= 26.5) {
                                         zeroCount++;
                                     }
                                 }
-                                else if (AVG_MACRO_VALUE >= 58.25) {
-                                    if (X < 1240) {
-                                        if (RANGE_MACRO_VALUE < 3.5) {
-                                            if (AVG_MACRO_VALUE < 152.72) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 152.72) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (RANGE_MACRO_VALUE >= 3.5) {
-                                            if (Y < 440) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 440) {
-                                                zeroCount++;
-                                            }
-                                        }
+                                else if (Y >= 960) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (AVG_MACRO_VALUE >= 46.8) {
+                                if (AVG_MACRO_VALUE < 51.51) {
+                                    if (MAX_MACRO_VALUE < 65.5) {
+                                        zeroCount++;
                                     }
-                                    else if (X >= 1240) {
-                                        if (MIN_MACRO_VALUE < 52.5) {
+                                    else if (MAX_MACRO_VALUE >= 65.5) {
+                                        if (X < 96) {
                                             zeroCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 52.5) {
-                                            if (AVG_MACRO_VALUE < 164.37) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 164.37) {
-                                                zeroCount++;
-                                            }
+                                        else if (X >= 96) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 51.51) {
+                                    if (Y < 968) {
+                                        if (AVG_MACRO_VALUE < 52.84) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 52.84) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 968) {
+                                        if (Y < 1016) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 1016) {
+                                            zeroCount++;
                                         }
                                     }
                                 }
@@ -12300,376 +12025,775 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
                         }
                     }
                 }
-                else if (RANGE_MACRO_VALUE >= 26.5) {
-                    if (MAX_MACRO_VALUE < 100.5) {
-                        if (X < 472) {
-                            if (MAX_MACRO_VALUE < 77.5) {
-                                if (RANGE_MACRO_VALUE < 35.5) {
-                                    if (AVG_MACRO_VALUE < 62.38) {
-                                        if (MIN_MACRO_VALUE < 38.5) {
-                                            if (X < 288) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 288) {
-                                                oneCount++;
-                                            }
+                else if (X >= 232) {
+                    if (Y < 1000) {
+                        if (AVG_MACRO_VALUE < 45.44) {
+                            if (Y < 888) {
+                                if (Y < 488) {
+                                    if (AVG_MACRO_VALUE < 43.73) {
+                                        if (X < 560) {
+                                            oneCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 38.5) {
-                                            if (AVG_MACRO_VALUE < 59.38) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 59.38) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (AVG_MACRO_VALUE >= 62.38) {
-                                        zeroCount++;
-                                    }
-                                }
-                                else if (RANGE_MACRO_VALUE >= 35.5) {
-                                    zeroCount++;
-                                }
-                            }
-                            else if (MAX_MACRO_VALUE >= 77.5) {
-                                if (Y < 264) {
-                                    if (RANGE_MACRO_VALUE < 47.5) {
-                                        if (Y < 152) {
-                                            if (AVG_MACRO_VALUE < 62.56) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 62.56) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (Y >= 152) {
+                                        else if (X >= 560) {
                                             zeroCount++;
                                         }
                                     }
-                                    else if (RANGE_MACRO_VALUE >= 47.5) {
+                                    else if (AVG_MACRO_VALUE >= 43.73) {
+                                        if (AVG_MACRO_VALUE < 43.92) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 43.92) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (Y >= 488) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (Y >= 888) {
+                                if (AVG_MACRO_VALUE < 44.66) {
+                                    oneCount++;
+                                }
+                                else if (AVG_MACRO_VALUE >= 44.66) {
+                                    if (Y < 944) {
+                                        oneCount++;
+                                    }
+                                    else if (Y >= 944) {
                                         zeroCount++;
                                     }
                                 }
-                                else if (Y >= 264) {
-                                    if (AVG_MACRO_VALUE < 54.72) {
-                                        if (AVG_MACRO_VALUE < 53.52) {
-                                            if (RANGE_MACRO_VALUE < 59.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 59.5) {
-                                                oneCount++;
-                                            }
+                            }
+                        }
+                        else if (AVG_MACRO_VALUE >= 45.44) {
+                            if (AVG_MACRO_VALUE < 46.48) {
+                                zeroCount++;
+                            }
+                            else if (AVG_MACRO_VALUE >= 46.48) {
+                                if (MIN_MACRO_VALUE < 41.5) {
+                                    if (X < 712) {
+                                        if (RANGE_MACRO_VALUE < 26.5) {
+                                            zeroCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 53.52) {
-                                            if (RANGE_MACRO_VALUE < 57.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 57.5) {
-                                                zeroCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 26.5) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (AVG_MACRO_VALUE >= 54.72) {
+                                    else if (X >= 712) {
+                                        if (X < 792) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 792) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 41.5) {
+                                    if (RANGE_MACRO_VALUE < 19.5) {
+                                        if (MIN_MACRO_VALUE < 44.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 44.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 19.5) {
+                                        if (MAX_MACRO_VALUE < 64.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 64.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (Y >= 1000) {
+                        if (X < 280) {
+                            if (X < 264) {
+                                oneCount++;
+                            }
+                            else if (X >= 264) {
+                                if (RANGE_MACRO_VALUE < 26) {
+                                    oneCount++;
+                                }
+                                else if (RANGE_MACRO_VALUE >= 26) {
+                                    zeroCount++;
+                                }
+                            }
+                        }
+                        else if (X >= 280) {
+                            zeroCount++;
+                        }
+                    }
+                }
+            }
+        }
+        else if (MAX_MACRO_VALUE >= 69.5) {
+            if (RANGE_MACRO_VALUE < 26.5) {
+                if (Y < 152) {
+                    if (MAX_MACRO_VALUE < 105.5) {
+                        if (MIN_MACRO_VALUE < 81.5) {
+                            if (AVG_MACRO_VALUE < 58.54) {
+                                if (MIN_MACRO_VALUE < 47.5) {
+                                    if (MAX_MACRO_VALUE < 70.5) {
+                                        if (MIN_MACRO_VALUE < 45.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 45.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 70.5) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 47.5) {
+                                    if (X < 1168) {
+                                        zeroCount++;
+                                    }
+                                    else if (X >= 1168) {
+                                        if (Y < 56) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 56) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (AVG_MACRO_VALUE >= 58.54) {
+                                if (Y < 104) {
+                                    if (MIN_MACRO_VALUE < 78.5) {
+                                        if (RANGE_MACRO_VALUE < 5.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 5.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 78.5) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (Y >= 104) {
+                                    zeroCount++;
+                                }
+                            }
+                        }
+                        else if (MIN_MACRO_VALUE >= 81.5) {
+                            if (Y < 104) {
+                                zeroCount++;
+                            }
+                            else if (Y >= 104) {
+                                if (MAX_MACRO_VALUE < 96.5) {
+                                    zeroCount++;
+                                }
+                                else if (MAX_MACRO_VALUE >= 96.5) {
+                                    if (X < 648) {
+                                        if (MAX_MACRO_VALUE < 100.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 100.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (X >= 648) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (MAX_MACRO_VALUE >= 105.5) {
+                        if (MIN_MACRO_VALUE < 117.5) {
+                            zeroCount++;
+                        }
+                        else if (MIN_MACRO_VALUE >= 117.5) {
+                            if (X < 1272) {
+                                if (X < 1048) {
+                                    if (RANGE_MACRO_VALUE < 4.5) {
+                                        if (X < 80) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 80) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 4.5) {
+                                        if (X < 56) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 56) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 1048) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (X >= 1272) {
+                                if (MIN_MACRO_VALUE < 162.5) {
+                                    if (AVG_MACRO_VALUE < 125.29) {
+                                        if (AVG_MACRO_VALUE < 125.16) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 125.16) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 125.29) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 162.5) {
+                                    if (AVG_MACRO_VALUE < 170.06) {
+                                        if (X < 1448) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1448) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 170.06) {
+                                        if (X < 1648) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 1648) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (Y >= 152) {
+                    if (Y < 248) {
+                        if (MAX_MACRO_VALUE < 90.5) {
+                            if (MIN_MACRO_VALUE < 50.5) {
+                                if (RANGE_MACRO_VALUE < 20.5) {
+                                    if (Y < 224) {
+                                        zeroCount++;
+                                    }
+                                    else if (Y >= 224) {
+                                        oneCount++;
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 20.5) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (MIN_MACRO_VALUE >= 50.5) {
+                                zeroCount++;
+                            }
+                        }
+                        else if (MAX_MACRO_VALUE >= 90.5) {
+                            if (MIN_MACRO_VALUE < 155.5) {
+                                if (RANGE_MACRO_VALUE < 17.5) {
+                                    if (X < 1256) {
+                                        if (X < 792) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 792) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (X >= 1256) {
+                                        if (X < 1368) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1368) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 17.5) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (MIN_MACRO_VALUE >= 155.5) {
+                                zeroCount++;
+                            }
+                        }
+                    }
+                    else if (Y >= 248) {
+                        if (MAX_MACRO_VALUE < 70.5) {
+                            if (X < 1112) {
+                                if (Y < 536) {
+                                    if (AVG_MACRO_VALUE < 63.21) {
+                                        zeroCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 63.21) {
+                                        if (AVG_MACRO_VALUE < 66.56) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 66.56) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (Y >= 536) {
+                                    if (AVG_MACRO_VALUE < 57.83) {
+                                        if (Y < 928) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 928) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 57.83) {
+                                        if (MIN_MACRO_VALUE < 52.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 52.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (X >= 1112) {
+                                if (X < 1824) {
+                                    zeroCount++;
+                                }
+                                else if (X >= 1824) {
+                                    if (MIN_MACRO_VALUE < 53) {
+                                        oneCount++;
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 53) {
+                                        zeroCount++;
+                                    }
+                                }
+                            }
+                        }
+                        else if (MAX_MACRO_VALUE >= 70.5) {
+                            if (AVG_MACRO_VALUE < 58.25) {
+                                if (X < 104) {
+                                    if (MAX_MACRO_VALUE < 72.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 72.5) {
+                                        if (X < 48) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 48) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 104) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (AVG_MACRO_VALUE >= 58.25) {
+                                if (X < 1240) {
+                                    if (RANGE_MACRO_VALUE < 3.5) {
+                                        if (AVG_MACRO_VALUE < 152.72) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 152.72) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (RANGE_MACRO_VALUE >= 3.5) {
+                                        if (Y < 440) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 440) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 1240) {
+                                    if (MIN_MACRO_VALUE < 52.5) {
+                                        zeroCount++;
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 52.5) {
+                                        if (AVG_MACRO_VALUE < 164.37) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 164.37) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else if (RANGE_MACRO_VALUE >= 26.5) {
+                if (MAX_MACRO_VALUE < 100.5) {
+                    if (X < 472) {
+                        if (MAX_MACRO_VALUE < 77.5) {
+                            if (RANGE_MACRO_VALUE < 35.5) {
+                                if (AVG_MACRO_VALUE < 62.38) {
+                                    if (MIN_MACRO_VALUE < 38.5) {
+                                        if (X < 288) {
+                                            zeroCount++;
+                                        }
+                                        else if (X >= 288) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 38.5) {
+                                        if (AVG_MACRO_VALUE < 59.38) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 59.38) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (AVG_MACRO_VALUE >= 62.38) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (RANGE_MACRO_VALUE >= 35.5) {
+                                zeroCount++;
+                            }
+                        }
+                        else if (MAX_MACRO_VALUE >= 77.5) {
+                            if (Y < 264) {
+                                if (RANGE_MACRO_VALUE < 47.5) {
+                                    if (Y < 152) {
+                                        if (AVG_MACRO_VALUE < 62.56) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 62.56) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 152) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (RANGE_MACRO_VALUE >= 47.5) {
+                                    zeroCount++;
+                                }
+                            }
+                            else if (Y >= 264) {
+                                if (AVG_MACRO_VALUE < 54.72) {
+                                    if (AVG_MACRO_VALUE < 53.52) {
+                                        if (RANGE_MACRO_VALUE < 59.5) {
+                                            oneCount++;
+                                        }
+                                        else if (RANGE_MACRO_VALUE >= 59.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 53.52) {
                                         if (RANGE_MACRO_VALUE < 57.5) {
-                                            if (X < 8) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 8) {
-                                                oneCount++;
-                                            }
+                                            oneCount++;
                                         }
                                         else if (RANGE_MACRO_VALUE >= 57.5) {
                                             zeroCount++;
                                         }
                                     }
                                 }
-                            }
-                        }
-                        else if (X >= 472) {
-                            if (X < 984) {
-                                if (X < 888) {
-                                    if (RANGE_MACRO_VALUE < 50.5) {
-                                        if (MAX_MACRO_VALUE < 89.5) {
-                                            if (Y < 472) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 472) {
-                                                oneCount++;
-                                            }
+                                else if (AVG_MACRO_VALUE >= 54.72) {
+                                    if (RANGE_MACRO_VALUE < 57.5) {
+                                        if (X < 8) {
+                                            oneCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 89.5) {
-                                            if (Y < 120) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 120) {
-                                                oneCount++;
-                                            }
+                                        else if (X >= 8) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (RANGE_MACRO_VALUE >= 50.5) {
-                                        if (Y < 408) {
-                                            if (X < 568) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 568) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (Y >= 408) {
-                                            if (RANGE_MACRO_VALUE < 58.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 58.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (X >= 888) {
-                                    if (MIN_MACRO_VALUE < 65.5) {
-                                        if (AVG_MACRO_VALUE < 59.05) {
-                                            if (X < 936) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 936) {
-                                                oneCount++;
-                                            }
-                                        }
-                                        else if (AVG_MACRO_VALUE >= 59.05) {
-                                            if (AVG_MACRO_VALUE < 64.35) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 64.35) {
-                                                oneCount++;
-                                            }
-                                        }
-                                    }
-                                    else if (MIN_MACRO_VALUE >= 65.5) {
+                                    else if (RANGE_MACRO_VALUE >= 57.5) {
                                         zeroCount++;
                                     }
                                 }
                             }
-                            else if (X >= 984) {
-                                if (X < 1144) {
-                                    if (Y < 568) {
-                                        if (MIN_MACRO_VALUE < 64.5) {
-                                            if (MAX_MACRO_VALUE < 86.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 86.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (MIN_MACRO_VALUE >= 64.5) {
+                        }
+                    }
+                    else if (X >= 472) {
+                        if (X < 984) {
+                            if (X < 888) {
+                                if (RANGE_MACRO_VALUE < 50.5) {
+                                    if (MAX_MACRO_VALUE < 89.5) {
+                                        if (Y < 472) {
                                             zeroCount++;
                                         }
-                                    }
-                                    else if (Y >= 568) {
-                                        if (MAX_MACRO_VALUE < 95.5) {
-                                            if (X < 1032) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1032) {
-                                                zeroCount++;
-                                            }
+                                        else if (Y >= 472) {
+                                            oneCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 95.5) {
-                                            if (AVG_MACRO_VALUE < 72.22) {
-                                                zeroCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 72.22) {
-                                                oneCount++;
-                                            }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 89.5) {
+                                        if (Y < 120) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 120) {
+                                            oneCount++;
                                         }
                                     }
                                 }
-                                else if (X >= 1144) {
-                                    if (X < 1208) {
-                                        if (AVG_MACRO_VALUE < 57.41) {
+                                else if (RANGE_MACRO_VALUE >= 50.5) {
+                                    if (Y < 408) {
+                                        if (X < 568) {
                                             zeroCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 57.41) {
-                                            if (MAX_MACRO_VALUE < 78.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 78.5) {
-                                                oneCount++;
-                                            }
+                                        else if (X >= 568) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (X >= 1208) {
-                                        if (MIN_MACRO_VALUE < 35.5) {
-                                            if (Y < 560) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 560) {
-                                                oneCount++;
-                                            }
+                                    else if (Y >= 408) {
+                                        if (RANGE_MACRO_VALUE < 58.5) {
+                                            oneCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 35.5) {
-                                            if (Y < 456) {
-                                                oneCount++;
-                                            }
-                                            else if (Y >= 456) {
-                                                oneCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 58.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (X >= 888) {
+                                if (MIN_MACRO_VALUE < 65.5) {
+                                    if (AVG_MACRO_VALUE < 59.05) {
+                                        if (X < 936) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 936) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 59.05) {
+                                        if (AVG_MACRO_VALUE < 64.35) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 64.35) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (MIN_MACRO_VALUE >= 65.5) {
+                                    zeroCount++;
+                                }
+                            }
+                        }
+                        else if (X >= 984) {
+                            if (X < 1144) {
+                                if (Y < 568) {
+                                    if (MIN_MACRO_VALUE < 64.5) {
+                                        if (MAX_MACRO_VALUE < 86.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 86.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 64.5) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (Y >= 568) {
+                                    if (MAX_MACRO_VALUE < 95.5) {
+                                        if (X < 1032) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1032) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 95.5) {
+                                        if (AVG_MACRO_VALUE < 72.22) {
+                                            zeroCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 72.22) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (X >= 1144) {
+                                if (X < 1208) {
+                                    if (AVG_MACRO_VALUE < 57.41) {
+                                        zeroCount++;
+                                    }
+                                    else if (AVG_MACRO_VALUE >= 57.41) {
+                                        if (MAX_MACRO_VALUE < 78.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 78.5) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 1208) {
+                                    if (MIN_MACRO_VALUE < 35.5) {
+                                        if (Y < 560) {
+                                            zeroCount++;
+                                        }
+                                        else if (Y >= 560) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (MIN_MACRO_VALUE >= 35.5) {
+                                        if (Y < 456) {
+                                            oneCount++;
+                                        }
+                                        else if (Y >= 456) {
+                                            oneCount++;
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                    else if (MAX_MACRO_VALUE >= 100.5) {
-                        if (X < 1896) {
-                            if (AVG_MACRO_VALUE < 152.15) {
-                                if (X < 1720) {
-                                    if (AVG_MACRO_VALUE < 54.97) {
-                                        if (X < 392) {
-                                            if (AVG_MACRO_VALUE < 44.74) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 44.74) {
-                                                oneCount++;
-                                            }
+                }
+                else if (MAX_MACRO_VALUE >= 100.5) {
+                    if (X < 1896) {
+                        if (AVG_MACRO_VALUE < 152.15) {
+                            if (X < 1720) {
+                                if (AVG_MACRO_VALUE < 54.97) {
+                                    if (X < 392) {
+                                        if (AVG_MACRO_VALUE < 44.74) {
+                                            oneCount++;
                                         }
-                                        else if (X >= 392) {
-                                            if (RANGE_MACRO_VALUE < 154) {
-                                                zeroCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 154) {
-                                                oneCount++;
-                                            }
+                                        else if (AVG_MACRO_VALUE >= 44.74) {
+                                            oneCount++;
                                         }
                                     }
-                                    else if (AVG_MACRO_VALUE >= 54.97) {
-                                        if (RANGE_MACRO_VALUE < 36.5) {
-                                            if (X < 1208) {
-                                                zeroCount++;
-                                            }
-                                            else if (X >= 1208) {
-                                                zeroCount++;
-                                            }
+                                    else if (X >= 392) {
+                                        if (RANGE_MACRO_VALUE < 154) {
+                                            zeroCount++;
                                         }
-                                        else if (RANGE_MACRO_VALUE >= 36.5) {
-                                            if (RANGE_MACRO_VALUE < 80.5) {
-                                                oneCount++;
-                                            }
-                                            else if (RANGE_MACRO_VALUE >= 80.5) {
-                                                oneCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 154) {
+                                            oneCount++;
                                         }
                                     }
                                 }
-                                else if (X >= 1720) {
-                                    if (MAX_MACRO_VALUE < 108.5) {
-                                        if (MIN_MACRO_VALUE < 40.5) {
+                                else if (AVG_MACRO_VALUE >= 54.97) {
+                                    if (RANGE_MACRO_VALUE < 36.5) {
+                                        if (X < 1208) {
                                             zeroCount++;
                                         }
-                                        else if (MIN_MACRO_VALUE >= 40.5) {
-                                            if (Y < 936) {
-                                                zeroCount++;
-                                            }
-                                            else if (Y >= 936) {
-                                                oneCount++;
-                                            }
+                                        else if (X >= 1208) {
+                                            zeroCount++;
                                         }
                                     }
-                                    else if (MAX_MACRO_VALUE >= 108.5) {
-                                        if (AVG_MACRO_VALUE < 89.25) {
-                                            if (X < 1832) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1832) {
-                                                zeroCount++;
-                                            }
+                                    else if (RANGE_MACRO_VALUE >= 36.5) {
+                                        if (RANGE_MACRO_VALUE < 80.5) {
+                                            oneCount++;
                                         }
-                                        else if (AVG_MACRO_VALUE >= 89.25) {
-                                            if (MIN_MACRO_VALUE < 36.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 36.5) {
-                                                oneCount++;
-                                            }
+                                        else if (RANGE_MACRO_VALUE >= 80.5) {
+                                            oneCount++;
                                         }
                                     }
                                 }
                             }
-                            else if (AVG_MACRO_VALUE >= 152.15) {
-                                if (X < 1592) {
-                                    if (X < 1384) {
-                                        if (Y < 152) {
-                                            if (MAX_MACRO_VALUE < 232.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MAX_MACRO_VALUE >= 232.5) {
-                                                zeroCount++;
-                                            }
-                                        }
-                                        else if (Y >= 152) {
-                                            if (MIN_MACRO_VALUE < 96.5) {
-                                                oneCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 96.5) {
-                                                zeroCount++;
-                                            }
-                                        }
+                            else if (X >= 1720) {
+                                if (MAX_MACRO_VALUE < 108.5) {
+                                    if (MIN_MACRO_VALUE < 40.5) {
+                                        zeroCount++;
                                     }
-                                    else if (X >= 1384) {
-                                        if (Y < 152) {
+                                    else if (MIN_MACRO_VALUE >= 40.5) {
+                                        if (Y < 936) {
                                             zeroCount++;
                                         }
-                                        else if (Y >= 152) {
-                                            if (AVG_MACRO_VALUE < 202.8) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 202.8) {
-                                                zeroCount++;
-                                            }
+                                        else if (Y >= 936) {
+                                            oneCount++;
                                         }
                                     }
                                 }
-                                else if (X >= 1592) {
-                                    if (MAX_MACRO_VALUE < 179.5) {
-                                        if (Y < 1000) {
-                                            if (AVG_MACRO_VALUE < 155.64) {
-                                                oneCount++;
-                                            }
-                                            else if (AVG_MACRO_VALUE >= 155.64) {
-                                                oneCount++;
-                                            }
+                                else if (MAX_MACRO_VALUE >= 108.5) {
+                                    if (AVG_MACRO_VALUE < 89.25) {
+                                        if (X < 1832) {
+                                            oneCount++;
                                         }
-                                        else if (Y >= 1000) {
+                                        else if (X >= 1832) {
                                             zeroCount++;
                                         }
                                     }
-                                    else if (MAX_MACRO_VALUE >= 179.5) {
-                                        if (MAX_MACRO_VALUE < 233.5) {
-                                            if (MIN_MACRO_VALUE < 96.5) {
-                                                zeroCount++;
-                                            }
-                                            else if (MIN_MACRO_VALUE >= 96.5) {
-                                                zeroCount++;
-                                            }
+                                    else if (AVG_MACRO_VALUE >= 89.25) {
+                                        if (MIN_MACRO_VALUE < 36.5) {
+                                            zeroCount++;
                                         }
-                                        else if (MAX_MACRO_VALUE >= 233.5) {
-                                            if (X < 1608) {
-                                                oneCount++;
-                                            }
-                                            else if (X >= 1608) {
-                                                oneCount++;
-                                            }
+                                        else if (MIN_MACRO_VALUE >= 36.5) {
+                                            oneCount++;
                                         }
                                     }
                                 }
                             }
                         }
-                        else if (X >= 1896) {
-                            zeroCount++;
+                        else if (AVG_MACRO_VALUE >= 152.15) {
+                            if (X < 1592) {
+                                if (X < 1384) {
+                                    if (Y < 152) {
+                                        if (MAX_MACRO_VALUE < 232.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MAX_MACRO_VALUE >= 232.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (Y >= 152) {
+                                        if (MIN_MACRO_VALUE < 96.5) {
+                                            oneCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 96.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                                else if (X >= 1384) {
+                                    if (Y < 152) {
+                                        zeroCount++;
+                                    }
+                                    else if (Y >= 152) {
+                                        if (AVG_MACRO_VALUE < 202.8) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 202.8) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (X >= 1592) {
+                                if (MAX_MACRO_VALUE < 179.5) {
+                                    if (Y < 1000) {
+                                        if (AVG_MACRO_VALUE < 155.64) {
+                                            oneCount++;
+                                        }
+                                        else if (AVG_MACRO_VALUE >= 155.64) {
+                                            oneCount++;
+                                        }
+                                    }
+                                    else if (Y >= 1000) {
+                                        zeroCount++;
+                                    }
+                                }
+                                else if (MAX_MACRO_VALUE >= 179.5) {
+                                    if (MAX_MACRO_VALUE < 233.5) {
+                                        if (MIN_MACRO_VALUE < 96.5) {
+                                            zeroCount++;
+                                        }
+                                        else if (MIN_MACRO_VALUE >= 96.5) {
+                                            zeroCount++;
+                                        }
+                                    }
+                                    else if (MAX_MACRO_VALUE >= 233.5) {
+                                        if (X < 1608) {
+                                            oneCount++;
+                                        }
+                                        else if (X >= 1608) {
+                                            oneCount++;
+                                        }
+                                    }
+                                }
+                            }
                         }
+                    }
+                    else if (X >= 1896) {
+                        zeroCount++;
                     }
                 }
             }
         }
+    }
 
     //VOTE
     if(zeroCount > oneCount)
@@ -12683,7 +12807,7 @@ __kernel void DTC_LD_5RUS_TEST(__global unsigned char* frame, const int width, _
     int X = get_global_id(0) * 16;
 	int Y = get_global_id(1) * 16;
 
-    int zeroCount = 0;  //USE COUNTERS TO AVOID BUG ON INTEL GRAPHICS
+    int zeroCount = 0;
     int oneCount = 0;
 
     unsigned char *blockData[256];
@@ -12806,17 +12930,97 @@ __kernel void DTC_LD_5RUS_TEST(__global unsigned char* frame, const int width, _
         int q1Avg, q2Avg, q3Avg, q4Avg, qcenter = 0;
         int q_size = 4;
 
-        q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
-        q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
-        q3Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 0);  // quadrant 3 is left bottom corner so if a 8x8 macroblock then from (0-2, 5-7)
-        q4Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 16 - q_size); // quadrant 4 is the right bottom corner so if a 8x8 macroblock then from (5-7, 5-7)
-        qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+        //int avgQuadrantBlock(int blocksize, unsigned char *blockData, int q_size, int x, int y)
+        //q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
+        
+        int sum = 0;
+        int x = 0;
+        int y = 0;
+        int xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        int ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q1Avg = sum / (q_size * q_size);
+        
+        //q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
+        
+        sum = 0;
+        x = 0;
+        y = 16 - q_size;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q2Avg = sum / (q_size * q_size);
+        
+        //q3Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 0);  // quadrant 3 is left bottom corner so if a 8x8 macroblock then from (0-2, 5-7)
+        
+        sum = 0;
+        x = 16 - q_size;
+        y = 0;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q3Avg = sum / (q_size * q_size);
+        
+        //q4Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 16 - q_size); // quadrant 4 is the right bottom corner so if a 8x8 macroblock then from (5-7, 5-7)
+        
+        sum = 0;
+        x = 16 - q_size;
+        y = 16 - q_size;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q4Avg = sum / (q_size * q_size);
+        
+        //qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+        
+        sum = 0;
+        x = 16 / 2 - 1;
+        y = 16 / 2 - 1;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        qcenter = sum / (q_size * q_size);
 
         if (abs_diff(q1Avg, q2Avg) < 30 && abs_diff(q1Avg, q3Avg) < 30 && abs_diff(q1Avg, q4Avg) && abs_diff(q2Avg, q3Avg) < 30 && abs_diff(q2Avg, q4Avg) < 30 && abs_diff(q3Avg, q4Avg) < 30)
         {
             int qAvg = (q1Avg + q2Avg + q3Avg + q4Avg) / 4;  // average of all quadrants except center
 
-            if (abs_diff(qAvg, qcenter) > 8)    // compare to center quadrant 
+            if (abs_diff(qAvg, qcenter) < 8)    // compare to center quadrant 
             {
                 AVGQUADRANT_MACRO_VALUE = 1;
             }
@@ -12855,9 +13059,52 @@ __kernel void DTC_LD_5RUS_TEST(__global unsigned char* frame, const int width, _
         int q1Avg, q2Avg, qcenter = 0;
         int q_size = 4;
 
-        q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
-        q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
-        qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+        //q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
+        int sum = 0;
+        int x = 0;
+        int y = 0;
+        int xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        int ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+        q1Avg = sum / (q_size * q_size);
+
+        //q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
+        sum = 0;
+        x = 0;
+        y = 16 - q_size;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q2Avg = sum / (q_size * q_size);
+
+        //qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+        sum = 0;
+        x = 16 / 2 - 1;
+        y = 16 / 2 - 1;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        qcenter = sum / (q_size * q_size);
 
         if (abs_diff(q1Avg, q2Avg) < 30)
         {
@@ -14251,17 +14498,97 @@ __kernel void randForestTest(__global unsigned char* frame, const int width, __g
         int q1Avg, q2Avg, q3Avg, q4Avg, qcenter = 0;
         int q_size = 4;
 
-        q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
-        q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
-        q3Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 0);  // quadrant 3 is left bottom corner so if a 8x8 macroblock then from (0-2, 5-7)
-        q4Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 16 - q_size); // quadrant 4 is the right bottom corner so if a 8x8 macroblock then from (5-7, 5-7)
-        qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+        //int avgQuadrantBlock(int blocksize, unsigned char *blockData, int q_size, int x, int y)
+        //q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
+        
+        int sum = 0;
+        int x = 0;
+        int y = 0;
+        int xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        int ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q1Avg = sum / (q_size * q_size);
+        
+        //q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
+        
+        sum = 0;
+        x = 0;
+        y = 16 - q_size;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q2Avg = sum / (q_size * q_size);
+        
+        //q3Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 0);  // quadrant 3 is left bottom corner so if a 8x8 macroblock then from (0-2, 5-7)
+        
+        sum = 0;
+        x = 16 - q_size;
+        y = 0;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q3Avg = sum / (q_size * q_size);
+        
+        //q4Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 16 - q_size); // quadrant 4 is the right bottom corner so if a 8x8 macroblock then from (5-7, 5-7)
+        
+        sum = 0;
+        x = 16 - q_size;
+        y = 16 - q_size;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q4Avg = sum / (q_size * q_size);
+        
+        //qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+        
+        sum = 0;
+        x = 16 / 2 - 1;
+        y = 16 / 2 - 1;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        qcenter = sum / (q_size * q_size);
 
         if (abs_diff(q1Avg, q2Avg) < 30 && abs_diff(q1Avg, q3Avg) < 30 && abs_diff(q1Avg, q4Avg) && abs_diff(q2Avg, q3Avg) < 30 && abs_diff(q2Avg, q4Avg) < 30 && abs_diff(q3Avg, q4Avg) < 30)
         {
             int qAvg = (q1Avg + q2Avg + q3Avg + q4Avg) / 4;  // average of all quadrants except center
 
-            if (abs_diff(qAvg, qcenter) > 8)    // compare to center quadrant 
+            if (abs_diff(qAvg, qcenter) < 8)    // compare to center quadrant 
             {
                 AVGQUADRANT_MACRO_VALUE = 1;
             }
@@ -14300,9 +14627,52 @@ __kernel void randForestTest(__global unsigned char* frame, const int width, __g
         int q1Avg, q2Avg, qcenter = 0;
         int q_size = 4;
 
-        q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
-        q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
-        qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+        //q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
+        int sum = 0;
+        int x = 0;
+        int y = 0;
+        int xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        int ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+        q1Avg = sum / (q_size * q_size);
+
+        //q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
+        sum = 0;
+        x = 0;
+        y = 16 - q_size;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        q2Avg = sum / (q_size * q_size);
+
+        //qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
+        sum = 0;
+        x = 16 / 2 - 1;
+        y = 16 / 2 - 1;
+        xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+        ylimit = y + q_size;
+        for (int i = x; i < xlimit; i++)
+        {
+            for (int j = y; j < ylimit; j++)
+            {
+                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+            }
+        }
+
+        qcenter = sum / (q_size * q_size);
 
         if (abs_diff(q1Avg, q2Avg) < 30)
         {
@@ -14329,6 +14699,7 @@ __kernel void randForestTest(__global unsigned char* frame, const int width, __g
 	int i = (X / 16) + ((int)(Y / 16) * (width / 16));	//numBlock
 
 	//DTC OR OTHER CONVERTED MODEL
+
     //TREE 1
     if (RANGE_MACRO_VALUE < 38) {
             if (MAX_MACRO_VALUE < 166) {
