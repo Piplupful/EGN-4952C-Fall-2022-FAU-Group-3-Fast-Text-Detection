@@ -30,8 +30,8 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
 	int MIN_MACRO_VALUE = 256;
 	int RANGE_MACRO_VALUE = 0;
     int AVGQUADRANT_MACRO_VALUE = 0;
-    int AVG_ROW_DIF = 0;
-    int AVG_COL_DIF = 0;
+    int AVG_ROW = 0;
+    int AVG_COL = 0;
 
 	int offset = Y * width + X;
 
@@ -126,19 +126,19 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
         {
             for(int j = 0; j < 16; j++)
             {
-                AVG_ROW_DIF += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
+                AVG_ROW += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
             }
         }
-        AVG_ROW_DIF = AVG_ROW_DIF / 240; //15 * 16
+        AVG_ROW = AVG_ROW / 240; //15 * 16
 
         for(int i = 0; i < 16; i++)
         {
             for(int j = 0; j < 15; j++)
             {
-                AVG_COL_DIF += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
+                AVG_COL += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
             }
         }
-        AVG_COL_DIF = AVG_COL_DIF / 240; //16 * 15
+        AVG_COL = AVG_COL / 240; //16 * 15
 
         int q1Avg, q2Avg, q3Avg, q4Avg, qcenter = 0;
         int q_size = 4;
@@ -255,19 +255,19 @@ __kernel void RF_8RUC_LD(__global unsigned char* frame, const int width, __globa
         {
             for(int j = 0; j < 16; j++)
             {
-                AVG_ROW_DIF += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
+                AVG_ROW += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
             }
         }
-        AVG_ROW_DIF = AVG_ROW_DIF / 112; //16 * 7
+        AVG_ROW = AVG_ROW / 112; //16 * 7
 
         for(int i = 0; i < 8; i++)
         {
             for(int j = 0; j < 15; j++)
             {
-                AVG_COL_DIF += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
+                AVG_COL += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
             }
         }
-        AVG_COL_DIF = AVG_COL_DIF / 120; //15 * 8
+        AVG_COL = AVG_COL / 120; //15 * 8
 
         int q1Avg, q2Avg, qcenter = 0;
         int q_size = 4;
@@ -12817,8 +12817,8 @@ __kernel void DTC_LD_5RUS_TEST(__global unsigned char* frame, const int width, _
 	int MIN_MACRO_VALUE = 256;
 	int RANGE_MACRO_VALUE = 0;
     int AVGQUADRANT_MACRO_VALUE = 0;
-    int AVG_ROW_DIF = 0;
-    int AVG_COL_DIF = 0;
+    int AVG_ROW = 0;
+    int AVG_COL = 0;
 
 	int offset = Y * width + X;
 
@@ -12913,19 +12913,19 @@ __kernel void DTC_LD_5RUS_TEST(__global unsigned char* frame, const int width, _
         {
             for(int j = 0; j < 16; j++)
             {
-                AVG_ROW_DIF += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
+                AVG_ROW += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
             }
         }
-        AVG_ROW_DIF = AVG_ROW_DIF / 240; //15 * 16
+        AVG_ROW = AVG_ROW / 240; //15 * 16
 
         for(int i = 0; i < 16; i++)
         {
             for(int j = 0; j < 15; j++)
             {
-                AVG_COL_DIF += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
+                AVG_COL += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
             }
         }
-        AVG_COL_DIF = AVG_COL_DIF / 240; //16 * 15
+        AVG_COL = AVG_COL / 240; //16 * 15
 
         int q1Avg, q2Avg, q3Avg, q4Avg, qcenter = 0;
         int q_size = 4;
@@ -13042,19 +13042,19 @@ __kernel void DTC_LD_5RUS_TEST(__global unsigned char* frame, const int width, _
         {
             for(int j = 0; j < 16; j++)
             {
-                AVG_ROW_DIF += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
+                AVG_ROW += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
             }
         }
-        AVG_ROW_DIF = AVG_ROW_DIF / 112; //16 * 7
+        AVG_ROW = AVG_ROW / 112; //16 * 7
 
         for(int i = 0; i < 8; i++)
         {
             for(int j = 0; j < 15; j++)
             {
-                AVG_COL_DIF += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
+                AVG_COL += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
             }
         }
-        AVG_COL_DIF = AVG_COL_DIF / 120; //15 * 8
+        AVG_COL = AVG_COL / 120; //15 * 8
 
         int q1Avg, q2Avg, qcenter = 0;
         int q_size = 4;
@@ -14385,8 +14385,8 @@ __kernel void randForestTest(__global unsigned char* frame, const int width, __g
 	int MIN_MACRO_VALUE = 256;
 	int RANGE_MACRO_VALUE = 0;
     int AVGQUADRANT_MACRO_VALUE = 0;
-    int AVG_ROW_DIF = 0;
-    int AVG_COL_DIF = 0;
+    int AVG_ROW = 0;
+    int AVG_COL = 0;
 
 	int offset = Y * width + X;
 
@@ -14481,19 +14481,19 @@ __kernel void randForestTest(__global unsigned char* frame, const int width, __g
         {
             for(int j = 0; j < 16; j++)
             {
-                AVG_ROW_DIF += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
+                AVG_ROW += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
             }
         }
-        AVG_ROW_DIF = AVG_ROW_DIF / 240; //15 * 16
+        AVG_ROW = AVG_ROW / 240; //15 * 16
 
         for(int i = 0; i < 16; i++)
         {
             for(int j = 0; j < 15; j++)
             {
-                AVG_COL_DIF += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
+                AVG_COL += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
             }
         }
-        AVG_COL_DIF = AVG_COL_DIF / 240; //16 * 15
+        AVG_COL = AVG_COL / 240; //16 * 15
 
         int q1Avg, q2Avg, q3Avg, q4Avg, qcenter = 0;
         int q_size = 4;
@@ -14610,19 +14610,19 @@ __kernel void randForestTest(__global unsigned char* frame, const int width, __g
         {
             for(int j = 0; j < 16; j++)
             {
-                AVG_ROW_DIF += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
+                AVG_ROW += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
             }
         }
-        AVG_ROW_DIF = AVG_ROW_DIF / 112; //16 * 7
+        AVG_ROW = AVG_ROW / 112; //16 * 7
 
         for(int i = 0; i < 8; i++)
         {
             for(int j = 0; j < 15; j++)
             {
-                AVG_COL_DIF += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
+                AVG_COL += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
             }
         }
-        AVG_COL_DIF = AVG_COL_DIF / 120; //15 * 8
+        AVG_COL = AVG_COL / 120; //15 * 8
 
         int q1Avg, q2Avg, qcenter = 0;
         int q_size = 4;
@@ -15771,8 +15771,8 @@ __kernel void DTC_B_REP(__global unsigned char* frame, const int width, __global
 	int MIN_MACRO_VALUE = 256;
 	int RANGE_MACRO_VALUE = 0;
     int AVGQUADRANT_MACRO_VALUE = 0;
-    int AVG_ROW_DIF = 0;
-    int AVG_COL_DIF = 0;
+    int AVG_ROW = 0;
+    int AVG_COL = 0;
 
 	int offset = Y * width + X;
 
@@ -15867,19 +15867,19 @@ __kernel void DTC_B_REP(__global unsigned char* frame, const int width, __global
         {
             for(int j = 0; j < 16; j++)
             {
-                AVG_ROW_DIF += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
+                AVG_ROW += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
             }
         }
-        AVG_ROW_DIF = AVG_ROW_DIF / 240; //15 * 16
+        AVG_ROW = AVG_ROW / 240; //15 * 16
 
         for(int i = 0; i < 16; i++)
         {
             for(int j = 0; j < 15; j++)
             {
-                AVG_COL_DIF += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
+                AVG_COL += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
             }
         }
-        AVG_COL_DIF = AVG_COL_DIF / 240; //16 * 15
+        AVG_COL = AVG_COL / 240; //16 * 15
 
         int q1Avg, q2Avg, q3Avg, q4Avg, qcenter = 0;
         int q_size = 4;
@@ -15916,19 +15916,19 @@ __kernel void DTC_B_REP(__global unsigned char* frame, const int width, __global
         {
             for(int j = 0; j < 16; j++)
             {
-                AVG_ROW_DIF += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
+                AVG_ROW += abs_diff((int)blockData[i * 16 + j], (int)(blockData[((i+1) * 16) + j]));
             }
         }
-        AVG_ROW_DIF = AVG_ROW_DIF / 112; //16 * 7
+        AVG_ROW = AVG_ROW / 112; //16 * 7
 
         for(int i = 0; i < 8; i++)
         {
             for(int j = 0; j < 15; j++)
             {
-                AVG_COL_DIF += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
+                AVG_COL += abs_diff((int)blockData[i * 16 + j], (int)blockData[i * 16 + (j + 1)]);
             }
         }
-        AVG_COL_DIF = AVG_COL_DIF / 120; //15 * 8
+        AVG_COL = AVG_COL / 120; //15 * 8
 
         int q1Avg, q2Avg, qcenter = 0;
         int q_size = 4;
