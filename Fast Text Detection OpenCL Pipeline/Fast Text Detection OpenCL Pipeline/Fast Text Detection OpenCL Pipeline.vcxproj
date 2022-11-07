@@ -213,6 +213,7 @@
   <ItemGroup>
     <Intel_OpenCL_Build_Rules Include="avgBlocks.cl" />
     <Intel_OpenCL_Build_Rules Include="dtc.cl" />
+    <Intel_OpenCL_Build_Rules Include="model.cl" />
     <Intel_OpenCL_Build_Rules Include="rangeDummy.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

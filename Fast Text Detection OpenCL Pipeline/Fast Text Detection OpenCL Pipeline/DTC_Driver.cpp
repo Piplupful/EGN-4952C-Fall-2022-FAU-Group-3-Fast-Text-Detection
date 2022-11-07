@@ -119,10 +119,10 @@ int dtcDriver(uint64_t width, uint64_t height, char fileName[2000], char filePat
 	bool* binMap = new bool[numBlocks];
 	fill_n(binMap, numBlocks, 0);
 
-	OpenCL ocl("dtc.cl");
+	OpenCL ocl("model.cl");
 
 	//INSERT VALID FUNCTION FROM VALID OPENCL FILE, STRING IN 2ND PARAMETER = FUNCTION NAME
-	ocl.kernel = clCreateKernel(ocl.program, "REPTree_15RUS_8D_4C", &err);
+	ocl.kernel = clCreateKernel(ocl.program, "kernelTemplateDebug", &err);
 
 	if (err != CL_SUCCESS)
 	{

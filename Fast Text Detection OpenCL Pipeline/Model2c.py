@@ -1,7 +1,8 @@
 import re,sys,os,math
 from collections import defaultdict
 
-IntList = ['X','Y','AVGQUADRANT_MACRO_VALUE','AVG_MACRO_VALUE', 'RANGE_MACRO_VALUE', 'MAX_MACRO_VALUE', 'MIN_MACRO_VALUE', 'AVG_ROW', 'AVG_COL']
+IntList = ['X','Y','AVGQUADRANT_MACRO_VALUE', 'RANGE_MACRO_VALUE', 'MAX_MACRO_VALUE', 'MIN_MACRO_VALUE', 'SUM_ROW', 'SUM_COL', 'SUM_ROW_COL' ]
+FloatList = ['AVG_MACRO_VALUE', 'AVG_ROW', 'AVG_COL', 'VARIANCE']
 
 if len(sys.argv)<2:
     sys.exit('Usage: %s weka-text-tree-source' % sys.argv[0])
@@ -69,8 +70,9 @@ def footerEnd():
     return foot
 def mainFHeader(treeCount):
     fh =  "\n    bool DTC(\n"
-    fh += "        int X,   int Y,   int AVGQUADRANT_MACRO_VALUE,   int AVG_MACRO_VALUE,       int RANGE_MACRO_VALUE,\n"
-    fh += "        int MAX_MACRO_VALUE,       int MIN_MACRO_VALUE\n"
+    fh += "        int X,   int Y,   int AVGQUADRANT_MACRO_VALUE,   float AVG_MACRO_VALUE,       int RANGE_MACRO_VALUE,\n"
+    fh += "        int MAX_MACRO_VALUE,       int MIN_MACRO_VALUE,      int SUM_ROW,        int SUM_COL,        int SUM_ROW_COL,\n"
+    fh += "        float VARIANCE,       float AVG_ROW,     float AVG_COL\n"
     fh += "        const int RF_DECISION_LEVEL = {};\n\n".format(int(math.floor(treeCount / 2)))
     return fh
 
@@ -164,8 +166,8 @@ def checkType(num):
 def checkType2(varname):
     if(varname in IntList):
         return "int"
-    #elif(varname in mfxI16List):
-    #    return "mfxI16"
+    elif(varname in FloatList):
+        return "float"
 
 def buildLine(line):
     global vartypes

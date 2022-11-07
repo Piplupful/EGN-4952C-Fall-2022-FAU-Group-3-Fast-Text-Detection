@@ -14,6 +14,7 @@ int avgQuadrantBlock(int blocksize, unsigned char *blockData, int q_size, int x,
     }
     return sum / (q_size * q_size);
 }*/
+
 __kernel void REPTree_15RUS_8D_4C(__global unsigned char* frame, const int width, __global bool* binMap)	//16x16 ONLY
 {
     int X = get_global_id(0) * 16;
