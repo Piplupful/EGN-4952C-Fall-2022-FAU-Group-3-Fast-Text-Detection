@@ -38,6 +38,11 @@
 #include "CL\cl.h"
 #include "utils.h"
 
+// OpenCV
+#include <opencv2/core.hpp>
+#include <opencv2/ml/ml.hpp>
+#include <opencv2/core/ocl.hpp>
+
 // For Performance Counters, Runtime Analysis
 #include <Windows.h>
 #include <chrono>
@@ -49,7 +54,7 @@ using std::chrono::milliseconds;
 
 using namespace std;
 
-int rangeMain2DWrite(uint64_t width, uint64_t height, char fileName[2000], char filePath[2000], int thresh, bool print, bool chromaOut)
+int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char filePath[2000])
 {
 	FILE* fp;
 
@@ -111,17 +116,13 @@ int rangeMain2DWrite(uint64_t width, uint64_t height, char fileName[2000], char 
 	auto kernelEndTime = high_resolution_clock::now();
 	duration<double, std::milli> finalKernelRuntime = chrono::milliseconds::zero();
 
-	bool* threshOut;
-	threshOut = new bool[numBlocks];
-	fill_n(threshOut, numBlocks, 0);
+	bool* binMap = new bool[numBlocks];
+	fill_n(binMap, numBlocks, 0);
 
-	OpenCL ocl("rangeDummy.cl");
+	OpenCL ocl("model.cl");
 
 	//INSERT VALID FUNCTION FROM VALID OPENCL FILE, STRING IN 2ND PARAMETER = FUNCTION NAME
-	if(chromaOut)
-		ocl.kernel = clCreateKernel(ocl.program, "rangeThresh2D", &err);
-	else
-		ocl.kernel = clCreateKernel(ocl.program, "rangeThresh2DWrite", &err);
+	ocl.kernel = clCreateKernel(ocl.program, "kernelTemplateDebug", &err);
 
 	if (err != CL_SUCCESS)
 	{
@@ -134,15 +135,17 @@ int rangeMain2DWrite(uint64_t width, uint64_t height, char fileName[2000], char 
 	cl_mem clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, lumaSize, frameBuffer, &err);	//CL_MEM_READ_WRITE, if writing back frame data.
 		//Include more cl_mem buffers before if necessary
 		//	Example: cl_mem clAvgBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks * 8, averages, &err);
-	cl_mem clThreshBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, threshOut, &err);
+	//cl_mem clbinMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, binMap, &err);
+	cl_mem clBinMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, binMap, &err);
 
 	//Kernel Arguements
 	err = clSetKernelArg(ocl.kernel, 0, sizeof(cl_mem), &clFrameBuffer);
 	//Include more Kernel Arguements if necessary. Must include all memory buffers created previously. Single variables (Such as Width), can be directly accessed
 	//	Example: err = clSetKernelArg(kernel, 2, sizeof(int), &width);
-	err = clSetKernelArg(ocl.kernel, 1, sizeof(cl_mem), &clThreshBuffer);
-	err = clSetKernelArg(ocl.kernel, 2, sizeof(int), &width);
-	err = clSetKernelArg(ocl.kernel, 3, sizeof(int), &thresh);
+	//err = clSetKernelArg(ocl.kernel, 1, sizeof(cl_mem), &clbinMap);
+
+	err = clSetKernelArg(ocl.kernel, 1, sizeof(int), &width);
+	err = clSetKernelArg(ocl.kernel, 2, sizeof(cl_mem), &clBinMap);
 
 	//Enqueue and wait
 	//Round in order to handle resolutions not easily divisible by blocksize.
@@ -152,26 +155,26 @@ int rangeMain2DWrite(uint64_t width, uint64_t height, char fileName[2000], char 
 	size_t local[] = { 4, 4 };			//Local Size can be finicky, if left out, OpenCL will choose an appropriate value on it's own, but this may decrease performance.
 		//CL_DEVICE_MAX_WORK_GROUP_SIZE can be used to return maximum local work group size that your device may handle, but depending on the input, this may cause errors.
 
-	FILE* rngOutput;
-	string rngOutputFilePath = "../RNG OUTPUT/";
-	rngOutputFilePath += fileName;
-	rngOutputFilePath = rngOutputFilePath.substr(0, rngOutputFilePath.find_last_of('.'));
-	rngOutputFilePath += "_rngOutput.yuv";
-	fopen_s(&rngOutput, rngOutputFilePath.c_str(), "wb");
+	FILE* dtcOutput;
+	string dtcOutputFilePath = "../DTC OUTPUT/";
+	dtcOutputFilePath += fileName;
+	dtcOutputFilePath = dtcOutputFilePath.substr(0, dtcOutputFilePath.find_last_of('.'));
+	dtcOutputFilePath += "_dtcOutput.yuv";
+	fopen_s(&dtcOutput, dtcOutputFilePath.c_str(), "wb");
 
 	auto opStartTime = high_resolution_clock::now();		//Runtime of entire operation (kernel runtime + memory transfers, etc)
 
 	for (int f = 0; f < frames; f++)
 	{
-		fill_n(threshOut, numBlocks, 0);
+		fill_n(binMap, numBlocks, 0);
 
-		_fseeki64(fp, frameSize* f, SEEK_SET);			//Seek current frame raw data
+		_fseeki64(fp, frameSize * f, SEEK_SET);			//Seek current frame raw data
 		fread(frameBuffer, 1, frameSize, fp);	//read all Values
 
 		clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, lumaSize, frameBuffer, &err);	//Update buffers
 		clSetKernelArg(ocl.kernel, 0, sizeof(cl_mem), &clFrameBuffer);	//Send current frame to GPU
-		clThreshBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, threshOut, &err);	//Reset cl Buffer, otherwise output bleeds together
-		clSetKernelArg(ocl.kernel, 1, sizeof(cl_mem), &clThreshBuffer);
+		clBinMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, binMap, &err);	//Reset cl Buffer, otherwise output bleeds together
+		clSetKernelArg(ocl.kernel, 2, sizeof(cl_mem), &clBinMap);
 
 		kernelStartTime = high_resolution_clock::now();
 		err = clEnqueueNDRangeKernel(ocl.queue, ocl.kernel, 2, NULL, global, local, 0, NULL, &ocl.event);
@@ -188,9 +191,7 @@ int rangeMain2DWrite(uint64_t width, uint64_t height, char fileName[2000], char 
 
 		finalKernelRuntime += (kernelEndTime - kernelStartTime);			//Runtime of only kernel function activity.
 
-		clEnqueueReadBuffer(ocl.queue, clThreshBuffer, CL_TRUE, 0, numBlocks, threshOut, 0, NULL, &ocl.event);
-		if(chromaOut == 0)
-			clEnqueueReadBuffer(ocl.queue, clFrameBuffer, CL_TRUE, 0, lumaSize, frameBuffer, 0, NULL, &ocl.event);
+		clEnqueueReadBuffer(ocl.queue, clBinMap, CL_TRUE, 0, numBlocks, binMap, 0, NULL, &ocl.event);
 		clFinish(ocl.queue);
 
 		//Binary Map Output, as .txt for now
@@ -203,126 +204,122 @@ int rangeMain2DWrite(uint64_t width, uint64_t height, char fileName[2000], char 
 		{
 			for (int i = 0; i < numBlocks; i++)
 			{
-				fwrite(threshOut[i] ? "1" : "0", sizeof(char), 1, outputFile);
+				fwrite(binMap[i] ? "1" : "0", sizeof(char), 1, outputFile);
 			}
 
 			fclose(outputFile);
 		}
 
-		if (chromaOut == 1)
+		//Chroma Manip, Visual Output
+		for (int b = 0; b < (lumaSize / (64 * 64) + 4); b++)
 		{
-			//Chroma Manip
-			for (int b = 0; b < (lumaSize / (64 * 64) + 4); b++)
+			int x = b * 64 % width;
+			int stepY = (int)(b / (width / 64));
+			int y = stepY * 64;	// For better integer truncation (large numbers)
+
+			int blockNum = (x / 16) + ((y / 16) * (width / 16));
+
+			bool trueFlag = 0;
+
+			if (y != 1024)
 			{
-				int x = b * 64 % width;
-				int stepY = (int)(b / (width / 64));
-				int y = stepY * 64;	// For better integer truncation (large numbers)
+				for (int i = 0; i < 4; i++)
+				{
+					if ((binMap[blockNum + i * 120] == 1) || (binMap[blockNum + i * 120 + 1] == 1)
+						|| (binMap[blockNum + i * 120 + 2] == 1) || (binMap[blockNum + i * 120 + 3] == 1))	//Check 4 consequitive 16x16 blocks
+					{
+						trueFlag = 1;
+						break;
+					}
+				}
+			}
+			else
+			{
+				for (int i = 0; i < 3; i++)
+				{
+					if ((binMap[blockNum + i * 120] == 1) || (binMap[blockNum + i * 120 + 1] == 1)
+						|| (binMap[blockNum + i * 120 + 2] == 1) || (binMap[blockNum + i * 120 + 3] == 1))
+					{
+						trueFlag = 1;
+						break;
+					}
+				}
+			}
 
-				int blockNum = (x / 16) + ((y / 16) * (width / 16));
-
-				bool trueFlag = 0;
-
+			if (trueFlag)
+			{
 				if (y != 1024)
 				{
-					for (int i = 0; i < 4; i++)
+					for (int j = 0; j < 64; j++)
 					{
-						if ((threshOut[blockNum + i * 120] == 1) || (threshOut[blockNum + i * 120 + 1] == 1)
-							|| (threshOut[blockNum + i * 120 + 2] == 1) || (threshOut[blockNum + i * 120 + 3] == 1))	//Check 4 consequitive 16x16 blocks
+						for (int i = 0; i < 64; i++)
 						{
-							trueFlag = 1;
-							break;
+							int m = x + i;
+							int n = y + j;
+
+							frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize] = 53;
+							frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize + (lumaSize / 4)] = 34;
 						}
 					}
 				}
 				else
 				{
-					for (int i = 0; i < 3; i++)
+					for (int j = 0; j < 56; j++)
 					{
-						if ((threshOut[blockNum + i * 120] == 1) || (threshOut[blockNum + i * 120 + 1] == 1)
-							|| (threshOut[blockNum + i * 120 + 2] == 1) || (threshOut[blockNum + i * 120 + 3] == 1))
+						for (int i = 0; i < 64; i++)
 						{
-							trueFlag = 1;
-							break;
-						}
-					}
-				}
+							int m = x + i;
+							int n = y + j;
 
-				if (trueFlag)
-				{
-					if (y != 1024)
-					{
-						for (int j = 0; j < 64; j++)
-						{
-							for (int i = 0; i < 64; i++)
-							{
-								int m = x + i;
-								int n = y + j;
-
-								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize] = 53;
-								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize + (lumaSize / 4)] = 34;
-							}
-						}
-					}
-					else
-					{
-						for (int j = 0; j < 56; j++)
-						{
-							for (int i = 0; i < 64; i++)
-							{
-								int m = x + i;
-								int n = y + j;
-
-								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize] = 53;
-								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize + (lumaSize / 4)] = 34;
-							}
-						}
-					}
-				}
-				else
-				{
-					if (y != 1024)
-					{
-						for (int j = 0; j < 64; j++)
-						{
-							for (int i = 0; i < 64; i++)
-							{
-								int m = x + i;
-								int n = y + j;
-
-								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize] = 128;
-								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize + (lumaSize / 4)] = 128;
-							}
-						}
-					}
-					else
-					{
-						for (int j = 0; j < 56; j++)
-						{
-							for (int i = 0; i < 64; i++)
-							{
-								int m = x + i;
-								int n = y + j;
-
-								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize] = 128;
-								frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize + (lumaSize / 4)] = 128;
-							}
+							frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize] = 53;
+							frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize + (lumaSize / 4)] = 34;
 						}
 					}
 				}
 			}
+			else
+			{
+				if (y != 1024)
+				{
+					for (int j = 0; j < 64; j++)
+					{
+						for (int i = 0; i < 64; i++)
+						{
+							int m = x + i;
+							int n = y + j;
+
+							frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize] = 128;
+							frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize + (lumaSize / 4)] = 128;
+						}
+					}
+				}
+				else
+				{
+					for (int j = 0; j < 56; j++)
+					{
+						for (int i = 0; i < 64; i++)
+						{
+							int m = x + i;
+							int n = y + j;
+
+							frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize] = 128;
+							frameBuffer[(n / 2) * (width / 2) + (m / 2) + lumaSize + (lumaSize / 4)] = 128;
+						}
+					}
+				}
+			}
+
 		}
 
 		//YUV Output
-		fwrite(frameBuffer, 1, frameSize, rngOutput);
+		fwrite(frameBuffer, 1, frameSize, dtcOutput);
 		clReleaseMemObject(clFrameBuffer);
 	}
 
 	auto opEndTime = high_resolution_clock::now();
 
-	clReleaseMemObject(clThreshBuffer);
-
-	if (rngOutput != NULL)
-		fclose(rngOutput);
+	if (dtcOutput != NULL)
+		fclose(dtcOutput);
 
 	//Runtime Print outs
 	auto endTime = high_resolution_clock::now();
@@ -332,7 +329,7 @@ int rangeMain2DWrite(uint64_t width, uint64_t height, char fileName[2000], char 
 	FILE* runtimeStat;
 	string csvFileName(fileName);
 	csvFileName = csvFileName.substr(0, csvFileName.find_last_of('.'));
-	csvFileName += "_Range_2D";	//2D Work Group Size Signifier
+	csvFileName += "_DTC";	//2D Work Group Size Signifier
 	string csvFilePath = "../RUNTIME/" + csvFileName + ".csv";
 
 	string csvOut = "\n" + to_string(frames) + "," + to_string(finalKernelRuntime.count())
@@ -354,15 +351,15 @@ int rangeMain2DWrite(uint64_t width, uint64_t height, char fileName[2000], char 
 		fclose(runtimeStat);
 	}
 
-	if (print)
-	{
-		cout << "Total number of frames\t\t=\t" << frames << "\n";
-		cout << "Final Kernel Runtime\t\t=\t" << finalKernelRuntime.count() << "\n";
-		cout << "Average runtime per frame\t=\t" << finalKernelRuntime.count() / frames << "\n";
-		cout << "Final Operation Runtime\t\t=\t" << finalOpRuntime.count() << "\n";
-		cout << "Final Total Runtime\t\t=\t" << finalRuntime.count() << "\n";
+	cout << "Total number of frames\t\t=\t" << frames << "\n";
+	cout << "Final Kernel Runtime\t\t=\t" << finalKernelRuntime.count() << "\n";
+	cout << "Average runtime per frame\t=\t" << finalKernelRuntime.count() / frames << "\n";
+	cout << "Final Operation Runtime\t\t=\t" << finalOpRuntime.count() << "\n";
+	cout << "Final Total Runtime\t\t=\t" << finalRuntime.count() << "\n";
 
-		cout << "\n";
-	}
+	ocl.deviceInfoPrint();
+
+	cout << "\n";
+
 	return 0;
 }

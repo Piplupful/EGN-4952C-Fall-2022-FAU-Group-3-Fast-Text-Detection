@@ -1,4 +1,4 @@
-#include "yuvStatExamples.h"
+#include "textDetect.h"
 #include <iostream>
 #include <string>
 
@@ -21,7 +21,7 @@ int main()
 	//Will investigate before implementing into live server.
 
 	for (int i = 0; i < 20; i++)
-		dtcDriver(width, height, fileName, filePath);
+		textDetectDriver(width, height, fileName, filePath);
 
 	//datasetCreate(width, height, fileName, filePath);
 	//simpleThreshWrite(width, height, fileName, filePath, 0);

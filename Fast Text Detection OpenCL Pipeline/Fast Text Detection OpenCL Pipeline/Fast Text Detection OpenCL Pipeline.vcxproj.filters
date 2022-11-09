@@ -18,16 +18,10 @@
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="avgDriver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="driver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="pipelineTemplate.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="rangeDummyDriver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="yuvFileOpenUtil_impl.cpp">
@@ -42,16 +36,10 @@
     <ClCompile Include="ocl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rangeWriteDriver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="openCVTrain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="csvFileOpenUtil_Impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DTC_Driver.cpp">
+    <ClCompile Include="textDetectDriver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="threshWrite.cpp">
@@ -68,9 +56,6 @@
     <ClInclude Include="simpleYUV.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="yuvStatExamples.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="yuvFileOpenUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -83,14 +68,11 @@
     <ClInclude Include="csvFileOpenUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="textDetect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Intel_OpenCL_Build_Rules Include="avgBlocks.cl">
-      <Filter>OpenCL Files</Filter>
-    </Intel_OpenCL_Build_Rules>
-    <Intel_OpenCL_Build_Rules Include="rangeDummy.cl">
-      <Filter>OpenCL Files</Filter>
-    </Intel_OpenCL_Build_Rules>
     <Intel_OpenCL_Build_Rules Include="dtc.cl">
       <Filter>OpenCL Files</Filter>
     </Intel_OpenCL_Build_Rules>

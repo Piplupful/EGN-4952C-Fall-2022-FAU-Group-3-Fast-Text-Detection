@@ -185,17 +185,13 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="avgDriver.cpp" />
     <ClCompile Include="csvFileOpenUtil_Impl.cpp" />
     <ClCompile Include="datasetCreate.cpp" />
     <ClCompile Include="driver.cpp" />
     <ClCompile Include="frameExtract.cpp" />
     <ClCompile Include="ocl.cpp" />
-    <ClCompile Include="DTC_Driver.cpp" />
-    <ClCompile Include="openCVTrain.cpp" />
+    <ClCompile Include="textDetectDriver.cpp" />
     <ClCompile Include="pipelineTemplate.cpp" />
-    <ClCompile Include="rangeDummyDriver.cpp" />
-    <ClCompile Include="rangeWriteDriver.cpp" />
     <ClCompile Include="simpleYUV_impl.cpp" />
     <ClCompile Include="threshWrite.cpp" />
     <ClCompile Include="utils.cpp" />
@@ -205,16 +201,14 @@
     <ClInclude Include="csvFileOpenUtil.h" />
     <ClInclude Include="ocl.h" />
     <ClInclude Include="ocv.h" />
-    <ClInclude Include="yuvStatExamples.h" />
+    <ClInclude Include="textDetect.h" />
     <ClInclude Include="simpleYUV.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="yuvFileOpenUtil.h" />
   </ItemGroup>
   <ItemGroup>
-    <Intel_OpenCL_Build_Rules Include="avgBlocks.cl" />
     <Intel_OpenCL_Build_Rules Include="dtc.cl" />
     <Intel_OpenCL_Build_Rules Include="model.cl" />
-    <Intel_OpenCL_Build_Rules Include="rangeDummy.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
