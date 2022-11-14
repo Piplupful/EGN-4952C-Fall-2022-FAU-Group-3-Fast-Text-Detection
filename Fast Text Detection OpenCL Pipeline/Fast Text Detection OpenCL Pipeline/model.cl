@@ -16,8 +16,13 @@ __kernel void kernelTemplateDebug(__global unsigned char* frame, const int width
 	int MIN_MACRO_VALUE = 256;
 	int RANGE_MACRO_VALUE = 0;
     float VARIANCE = 0;
-    //calculation to predict if 16x16 block contains text, developed by Nelson Mendez
-    int AVGQUADRANT_MACRO_VALUE = 0;
+    //Quadrant Features, developed by Nelson Mendez
+    int Q1SUM, Q2SUM, Q3SUM, Q4SUM, QCENTERSUM = 0;
+    float Q1AVG, Q2AVG, Q3AVG, Q4AVG, QCENTERAVG = 0;
+    int Q12SUM_DIFFERENCE, Q13SUM_DIFFERENCE, Q14SUM_DIFFERENCE, Q1CENTER_AVGDIFFERENCE = 0;
+    float Q23SUM_DIFFERENCE, Q24SUM_DIFFERENCE, Q2CENTER_AVGDIFFERENCE = 0;
+    float Q34SUM_DIFFERENCE, Q3CENTER_AVGDIFFERENCE = 0;
+    float Q4CENTER_AVGDIFFERENCE = 0;
     //Sum and Average of Difference between subsequent luma values by row or by column
     int SUM_ROW = 0;
     int SUM_COL = 0;
@@ -121,10 +126,22 @@ __kernel void kernelTemplateDebug(__global unsigned char* frame, const int width
         //VARIANCE
         for (int i = 0; i < 16; i++)
         {
-	        for (int j = 0; j < 16; j++)
-	        {
-		        VARIANCE += ((int)blockData[i * 16 + j] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + j] - AVG_MACRO_VALUE);
-	        }
+		    VARIANCE += ((int)blockData[i * 16] - AVG_MACRO_VALUE) * ((int)blockData[i * 16] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 1] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 1] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 2] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 2] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 3] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 3] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 4] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 4] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 5] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 5] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 6] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 6] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 7] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 7] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 8] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 8] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 9] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 9] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 10] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 10] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 11] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 11] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 12] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 12] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 13] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 13] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 14] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 14] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 15] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 15] - AVG_MACRO_VALUE);
         }
 
         VARIANCE /= 256;
@@ -150,14 +167,11 @@ __kernel void kernelTemplateDebug(__global unsigned char* frame, const int width
 
         SUM_ROW_COL = SUM_ROW + SUM_COL;
 
-        //AVGQUADRANT_MACRO_VALUE CALCULATIONS
-        int q1Avg, q2Avg, q3Avg, q4Avg, qcenter = 0;
-        int q_size = 4;
+        //AVGQUADRANT CALCULATIONS
+        int q_size = 6;
 
-        //int avgQuadrantBlock(int blocksize, unsigned char *blockData, int q_size, int x, int y)
-        //q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
+        //Q1, TOP LEFT
         
-        int sum = 0;
         int x = 0;
         int y = 0;
         int xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
@@ -166,15 +180,14 @@ __kernel void kernelTemplateDebug(__global unsigned char* frame, const int width
         {
             for (int j = y; j < ylimit; j++)
             {
-                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+                Q1SUM += (int)blockData[i * 16 + j];    // add each luma value to sum
             }
         }
 
-        q1Avg = sum / (q_size * q_size);
+        Q1AVG = Q1SUM / (q_size * q_size);
         
-        //q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
-        
-        sum = 0;
+        //Q2, TOP RIGHT
+
         x = 0;
         y = 16 - q_size;
         xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
@@ -183,15 +196,14 @@ __kernel void kernelTemplateDebug(__global unsigned char* frame, const int width
         {
             for (int j = y; j < ylimit; j++)
             {
-                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+                Q2SUM += (int)blockData[i * 16 + j];    // add each luma value to sum
             }
         }
 
-        q2Avg = sum / (q_size * q_size);
+        Q2AVG = Q2SUM / (q_size * q_size);
         
-        //q3Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 0);  // quadrant 3 is left bottom corner so if a 8x8 macroblock then from (0-2, 5-7)
+        //Q3, BOTTOM LEFT
         
-        sum = 0;
         x = 16 - q_size;
         y = 0;
         xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
@@ -200,15 +212,14 @@ __kernel void kernelTemplateDebug(__global unsigned char* frame, const int width
         {
             for (int j = y; j < ylimit; j++)
             {
-                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+                Q3SUM += (int)blockData[i * 16 + j];    // add each luma value to sum
             }
         }
 
-        q3Avg = sum / (q_size * q_size);
+        Q3AVG = Q3SUM / (q_size * q_size);
         
-        //q4Avg = avgQuadrantBlock(16, blockData, q_size, 16 - q_size, 16 - q_size); // quadrant 4 is the right bottom corner so if a 8x8 macroblock then from (5-7, 5-7)
+        //Q4, BOTTOM RIGHT
         
-        sum = 0;
         x = 16 - q_size;
         y = 16 - q_size;
         xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
@@ -217,15 +228,15 @@ __kernel void kernelTemplateDebug(__global unsigned char* frame, const int width
         {
             for (int j = y; j < ylimit; j++)
             {
-                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+                Q4SUM += (int)blockData[i * 16 + j];    // add each luma value to sum
             }
         }
 
-        q4Avg = sum / (q_size * q_size);
+        Q4AVG = Q4SUM / (q_size * q_size);
         
-        //qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
-        
-        sum = 0;
+        //QCENTER
+
+        q_size = 3;
         x = 16 / 2 - 1;
         y = 16 / 2 - 1;
         xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
@@ -234,29 +245,26 @@ __kernel void kernelTemplateDebug(__global unsigned char* frame, const int width
         {
             for (int j = y; j < ylimit; j++)
             {
-                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+                QCENTERSUM += (int)blockData[i * 16 + j];    // add each luma value to sum
             }
         }
 
-        qcenter = sum / (q_size * q_size);
+        QCENTERAVG = QCENTERSUM / (q_size * q_size);
 
-        if (abs_diff(q1Avg, q2Avg) < 30 && abs_diff(q1Avg, q3Avg) < 30 && abs_diff(q1Avg, q4Avg) && abs_diff(q2Avg, q3Avg) < 30 && abs_diff(q2Avg, q4Avg) < 30 && abs_diff(q3Avg, q4Avg) < 30)
-        {
-            int qAvg = (q1Avg + q2Avg + q3Avg + q4Avg) / 4;  // average of all quadrants except center
+        //SUM AND AVERAGES FOR AVGQUADRANT CALCULATED, NOW GET SUM AND AVG DIFFERENCES
+        Q12SUM_DIFFERENCE = abs_diff(Q1SUM, Q2SUM);
+        Q13SUM_DIFFERENCE = abs_diff(Q1SUM, Q3SUM);
+        Q14SUM_DIFFERENCE = abs_diff(Q1SUM, Q4SUM);
 
-            if (abs_diff(qAvg, qcenter) < 8)    // compare to center quadrant 
-            {
-                AVGQUADRANT_MACRO_VALUE = 1;
-            }
-            else
-            {
-                AVGQUADRANT_MACRO_VALUE = 0;
-            }
-        }
-        else
-        {
-            AVGQUADRANT_MACRO_VALUE = 0;
-        }
+        Q23SUM_DIFFERENCE = abs_diff(Q2SUM, Q3SUM);
+        Q24SUM_DIFFERENCE = abs_diff(Q2SUM, Q4SUM);
+
+        Q34SUM_DIFFERENCE = abs_diff(Q3SUM, Q4SUM);
+
+        Q1CENTER_AVGDIFFERENCE = fabs(Q1AVG - QCENTERAVG);
+        Q2CENTER_AVGDIFFERENCE = fabs(Q2AVG - QCENTERAVG);
+        Q3CENTER_AVGDIFFERENCE = fabs(Q3AVG - QCENTERAVG);
+        Q4CENTER_AVGDIFFERENCE = fabs(Q4AVG - QCENTERAVG);
     }
 	else
     {
@@ -269,10 +277,22 @@ __kernel void kernelTemplateDebug(__global unsigned char* frame, const int width
         //VARIANCE
         for (int i = 0; i < 8; i++)
         {
-	        for (int j = 0; j < 16; j++)
-	        {
-		        VARIANCE += ((int)blockData[i * 16 + j] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + j] - AVG_MACRO_VALUE);
-	        }
+	        VARIANCE += ((int)blockData[i * 16] - AVG_MACRO_VALUE) * ((int)blockData[i * 16] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 1] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 1] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 2] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 2] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 3] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 3] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 4] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 4] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 5] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 5] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 6] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 6] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 7] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 7] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 8] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 8] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 9] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 9] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 10] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 10] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 11] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 11] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 12] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 12] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 13] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 13] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 14] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 14] - AVG_MACRO_VALUE);
+		    VARIANCE += ((int)blockData[i * 16 + 15] - AVG_MACRO_VALUE) * ((int)blockData[i * 16 + 15] - AVG_MACRO_VALUE);
         }
 
         VARIANCE /= 128.0;
@@ -298,12 +318,11 @@ __kernel void kernelTemplateDebug(__global unsigned char* frame, const int width
 
         SUM_ROW_COL = SUM_ROW + SUM_COL;
 
-        //AVGQUADRANT_MACRO_VALUE CALCULATIONS
-        int q1Avg, q2Avg, qcenter = 0;
-        int q_size = 4;
+        ////AVGQUADRANT CALCULATIONS
+        int q_size = 6;
 
-        //q1Avg = avgQuadrantBlock(16, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
-        int sum = 0;
+        //Q1, TOP LEFT
+
         int x = 0;
         int y = 0;
         int xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
@@ -312,13 +331,13 @@ __kernel void kernelTemplateDebug(__global unsigned char* frame, const int width
         {
             for (int j = y; j < ylimit; j++)
             {
-                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+                Q1SUM += (int)blockData[i * 16 + j];    // add each luma value to sum
             }
         }
-        q1Avg = sum / (q_size * q_size);
+        Q1AVG = Q1SUM / (q_size * q_size);
 
-        //q2Avg = avgQuadrantBlock(16, blockData, q_size, 0, 16 - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
-        sum = 0;
+        //Q2, TOP RIGHT
+
         x = 0;
         y = 16 - q_size;
         xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
@@ -327,14 +346,15 @@ __kernel void kernelTemplateDebug(__global unsigned char* frame, const int width
         {
             for (int j = y; j < ylimit; j++)
             {
-                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+                Q2SUM += (int)blockData[i * 16 + j];    // add each luma value to sum
             }
         }
 
-        q2Avg = sum / (q_size * q_size);
+        Q2AVG = Q2SUM / (q_size * q_size);
 
-        //qcenter = avgQuadrantBlock(16, blockData, 2, 16 / 2 - 1, 16 / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant
-        sum = 0;
+        //QCENTER
+
+        q_size = 3;
         x = 16 / 2 - 1;
         y = 16 / 2 - 1;
         xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
@@ -343,34 +363,22 @@ __kernel void kernelTemplateDebug(__global unsigned char* frame, const int width
         {
             for (int j = y; j < ylimit; j++)
             {
-                sum += (int)blockData[i * 16 + j];    // add each luma value to sum
+                QCENTERSUM += (int)blockData[i * 16 + j];    // add each luma value to sum
             }
         }
 
-        qcenter = sum / (q_size * q_size);
+        QCENTERAVG = QCENTERSUM / (q_size * q_size);
 
-        if (abs_diff(q1Avg, q2Avg) < 30)
-        {
-            int qAvg = (q1Avg + q2Avg) / 2;  // average of all quadrants except center
+        //SUM AND AVERAGES FOR AVGQUADRANT CALCULATED, NOW GET SUM AND AVG DIFFERENCES
+        Q12SUM_DIFFERENCE = abs_diff(Q1SUM, Q2SUM);
 
-            if (abs_diff(qAvg, qcenter) > 8)    // compare to center quadrant 
-            {
-                AVGQUADRANT_MACRO_VALUE = 1;
-            }
-            else
-            {
-                AVGQUADRANT_MACRO_VALUE = 0;
-            }
-        }
-        else
-        {
-            AVGQUADRANT_MACRO_VALUE = 0;
-        }
+        Q1CENTER_AVGDIFFERENCE = fabs(Q1AVG - QCENTERAVG);
+        Q2CENTER_AVGDIFFERENCE = fabs(Q2AVG - QCENTERAVG);
     }
 
 	//All statistics gathered.
 	int i = (X / 16) + ((int)(Y / 16) * (width / 16));	//numBlock
 
     //DTC OR OTHER CONVERTED MODEL
-
+    
 }
