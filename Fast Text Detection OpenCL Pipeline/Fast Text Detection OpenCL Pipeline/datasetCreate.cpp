@@ -7,68 +7,140 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <tuple>
 #include "SimpleYUV.h"
-
 using namespace std;
 
-//blocksize, array with macroblock, size of corner quadrant, x,y position of macroblock
-double avgQuadrantBlock(int blocksize, unsigned char* blockData, int q_size, int x, int y)
+int sumRowDif(unsigned char* blockData, int width, int height)
+{
+	int difSum = 0;
+
+	for (int i = 0; i < height - 1; i++)
+	{
+		for (int j = 0; j < width; j++)
+		{
+			int val = blockData[i * width + j] - blockData[((i + 1) * width) + j];
+			difSum += abs(val);
+		}
+	}
+	return difSum;
+}
+
+int sumColDif(unsigned char* blockData, int width, int height)
+{
+	int difSum = 0;
+
+	for (int i = 0; i < height; i++)
+	{
+		for (int j = 0; j < width - 1; j++)
+		{
+			int val = blockData[i * width + j] - blockData[i * width + (j + 1)];
+			difSum += abs(val);
+		}
+	}
+	return difSum;
+}
+
+int sumRowColDif(unsigned char* blockData, int width, int height)
+{
+	int difRowSum = sumRowDif(blockData, width, height);
+
+	int difColSum = sumColDif(blockData, width, height);;
+
+	return difRowSum + difColSum;
+}
+
+float varianceBlock(unsigned char* blockData, int width, int height)
+{
+	float avg = averageYValOfBlock(blockData, width);
+	float var = 0;
+
+	for (int i = 0; i < height; i++)
+	{
+		for (int j = 0; j < width; j++)
+		{
+			var += (blockData[i * width + j] - avg) * (blockData[i * width + j] - avg);
+		}
+	}
+
+	return var / (width * height);
+}
+
+tuple<double, double> avgQuadrantBlock(int blocksize, unsigned char* blockData, int q_size, int x, int y)
 {
 	double sum = 0;
-	int xlimit = x + q_size;    // limiters of the loops so that we only get a quadrant of size q_size x q_size
+	int xlimit = x + q_size;
 	int ylimit = y + q_size;
 	for (int i = x; i < xlimit; i++)
 	{
 		for (int j = y; j < ylimit; j++)
 		{
-			//cout << blockData[i * blocksize + j] << " ";
-			sum += blockData[i * blocksize + j];    // add each luma value to sum
+			// cout << blockData[i*blocksize+j] << " ";
+			sum += blockData[i * blocksize + j];
 		}
 	}
-	return sum / (q_size * q_size);
+	//return sum / (q_size * q_size);
+	return make_tuple(sum, sum / (q_size * q_size));
 }
 
-// The main function that calls its specific average quadrant function above
-						// block size, array of macroblock, frame buffer, width, height of frame
-int basicCharOutput(int blocksize, unsigned char* blockData, int width, int height)
+tuple<float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float> basicCharOutput(int blocksize, unsigned char* blockData, unsigned char* frameBuffer, int width, int height)
 {
-
-	if (blocksize < 4 || ((log(blocksize) / log(2)) != int(log(blocksize) / log(2))))  // make sure number of blocks is power of 2
+	if (blocksize < 4 || ((log(blocksize) / log(2)) != int(log(blocksize) / log(2))))
 	{
 		cout << "Error, given block size is not compatible with function" << endl;
-		return -1;
 	}
 	else
 	{
-		// Variable that will hold averages
-		float q1Avg, q2Avg, q3Avg, q4Avg, qcenter = 0;
-		// Makes sure that the size of the quadrant is duable
+		float q1Avg, q2Avg, q3Avg, q4Avg, qcenterAvg = 0;
+		float q1sum, q2sum, q3sum, q4sum, qcentersum = 0;
+		//int q_size = log(blocksize) / log(2);
 		int q_size = 6;
 		// cout << q_size << endl;
-		q1Avg = avgQuadrantBlock(blocksize, blockData, q_size, 0, 0);   // quadrant 1 is left top corner so start at 0,0 of macroblock
-		q2Avg = avgQuadrantBlock(blocksize, blockData, q_size, 0, blocksize - q_size);  // quadrant 2 is right top corner so if a 8x8 macroblock then from (5-7, 0-2)
-		q3Avg = avgQuadrantBlock(blocksize, blockData, q_size, blocksize - q_size, 0);  // quadrant 3 is left bottom corner so if a 8x8 macroblock then from (0-2, 5-7)
-		q4Avg = avgQuadrantBlock(blocksize, blockData, q_size, blocksize - q_size, blocksize - q_size); // quadrant 4 is the right bottom corner so if a 8x8 macroblock then from (5-7, 5-7)
-		qcenter = avgQuadrantBlock(blocksize, blockData, 2, blocksize / 2 - 1, blocksize / 2 - 1); // This retrieves the average of the center in a 2x2 quadrant 
-		//cout << q1Avg << " " << q2Avg << " " << q3Avg << " " << q4Avg << " " << qcenter << endl;
-		// possible best solution is 30 difference in luma
-		if (abs(q1Avg - q2Avg) < 30 && abs(q1Avg - q3Avg) < 30 && abs(q1Avg - 4) && abs(q2Avg - q3Avg) < 30 && abs(q2Avg - q4Avg) < 30 && abs(q3Avg - q4Avg) < 30)
-		{
-			double qAvg = (q1Avg + q2Avg + q3Avg + q4Avg) / 4;  // average of all quadrants except center
-			//cout << qAvg << endl;
-			if (abs(qAvg - qcenter) > 8)    // compare to center quadrant 
-			{
-				return 1;
-			}
-			else
-			{
-				return 0;
-			}
-		}
-		else
-		{
-			return 0;
-		}
+		tie(q1sum, q1Avg) = avgQuadrantBlock(blocksize, blockData, q_size, 0, 0);
+		tie(q2sum, q2Avg) = avgQuadrantBlock(blocksize, blockData, q_size, 0, blocksize - q_size);
+		tie(q3sum, q3Avg) = avgQuadrantBlock(blocksize, blockData, q_size, blocksize - q_size, 0);
+		tie(q4sum, q4Avg) = avgQuadrantBlock(blocksize, blockData, q_size, blocksize - q_size, blocksize - q_size);
+		tie(qcentersum, qcenterAvg) = avgQuadrantBlock(blocksize, blockData, 3, blocksize / 2 - 1, blocksize / 2 - 1);
+		//cout << q1Avg << " " << q2Avg << " " << q3Avg << " " << q4Avg << " " << qcenterAvg << endl;
+		//cout << q1sum << " " << q2sum << " " << q3sum << " " << q4sum << " " << qcentersum << endl;
+
+		float q12sum_difference, q13sum_difference, q14sum_difference, q1center_AvgDifference = 0;
+		q12sum_difference = abs(q1sum - q2sum);
+		q13sum_difference = abs(q1sum - q3sum);
+		q14sum_difference = abs(q1sum - q4sum);
+		//cout << q12sum_difference << " " << q13sum_difference << " " << q14sum_difference << " " << q1center_AvgDifference << endl;
+
+		float q23sum_difference, q24sum_difference, q2center_AvgDifference = 0;
+		q23sum_difference = abs(q2sum - q3sum);
+		q24sum_difference = abs(q2sum - q4sum);
+		//cout << q23sum_difference << " " << q24sum_difference << endl;
+
+		float q34sum_difference, q3center_AvgDifference = 0;
+		q34sum_difference = abs(q3sum - q4sum);
+		//cout << q34sum_difference << endl;
+
+		float q4center_AvgDifference = 0;
+		q1center_AvgDifference = abs(q1Avg - qcenterAvg);
+		q2center_AvgDifference = abs(q2Avg - qcenterAvg);
+		q3center_AvgDifference = abs(q3Avg - qcenterAvg);
+		q4center_AvgDifference = abs(q4Avg - qcenterAvg);
+
+		//cout << q1center_AvgDifference << " " << q2center_AvgDifference << " " << q3center_AvgDifference << " " << q4center_AvgDifference << endl;
+
+		// Return first the absolute difference of sums between the 4 corner quadrants
+		// Then return the difference between average of each corner with center quadrant of 3x3
+
+		// Since in this implementation we have a void the return is commented 
+
+		// Can return the average quantities of each quadrant
+		// return make_tuple(q1Avg, q2Avg, q3Avg, q4Avg, qcenterAvg) 
+		// or sum which I think is ideal but for this only the corners because the center quadrant is much smaller so disproportional 
+		// return make_tuple(q1sum, q2sum, q3sum, q4sum)
+		// or we can do both as to prevent from having to go back and simply in creating the models we can opt either concept 
+
+		// Now return the absolute difference of sums between quadrant first and then between the center
+		//return make_tuple(q12sum_difference, q13sum_difference, q14sum_difference, q23sum_difference, q24sum_difference, q34sum_difference, q1center_AvgDifference, q2center_AvgDifference, q3center_AvgDifference, q4center_AvgDifference);
+		return make_tuple(q1Avg, q2Avg, q3Avg, q4Avg, qcenterAvg, q1sum, q2sum, q3sum, q4sum, q12sum_difference, q13sum_difference, q14sum_difference, q23sum_difference, q24sum_difference, q34sum_difference, q1center_AvgDifference, q2center_AvgDifference, q3center_AvgDifference, q4center_AvgDifference);
 	}
 }
 
@@ -90,7 +162,8 @@ void stats(unsigned char* frameData, int blockSize, int width, int height, int f
 	myfile.open(name, std::ios::app);
 	if (myfile.is_open())
 	{
-		myfile << "X,Y,AVGQUADRANT_MACRO_VALUE,AVG_MACRO_VALUE,AVG_ROW,AVG_COL,RANGE_MACRO_VALUE,MAX_MACRO_VALUE,MIN_MACRO_VALUE" << "\n";
+		//cout << "File is opened" << endl;
+		myfile << "X,Y,Q1AVG,Q2AVG,Q3AVG,Q4AVG,QCENTERAVG,Q1SUM,Q2SUM,Q3SUM,Q4SUM,Q12SUM_DIFFERENCE,Q13SUM_DIFFERENCE,Q14SUM_DIFFERENCE,Q23SUM_DIFFERENCE,Q24SUM_DIFFERENCE,Q34SUM_DIFFERENCE,Q1CENTER_AVGDIFFERENCE,Q2CENTER_AVGDIFFERENCE,Q3CENTER_AVGDIFFERENCE,Q4CENTER_AVGDIFFERENCE,AVG_MACRO_VALUE,AVG_ROW,AVG_COL,VARIANCE,SUM_ROW,SUM_COL,SUM_ROW_COL,RANGE_MACRO_VALUE,MAX_MACRO_VALUE,MIN_MACRO_VALUE" << "\n";
 	}
 	else
 	{
@@ -104,15 +177,20 @@ void stats(unsigned char* frameData, int blockSize, int width, int height, int f
 			for (x = 0; x < width; x = x + blockSize)
 			{
 				getBlock(frameData, blockData, blockSize, x, y, width);
-				double curAvg = averageYValOfBlock(blockData, blockSize);
+				float curAvg = averageYValOfBlock(blockData, blockSize);
 				int minY = minYBlock(blockData, blockSize);
 				int maxY = maxYBlock(blockData, blockSize);
 				int range = rangeInBlock(blockData, blockSize);
-				int avgQ = basicCharOutput(blockSize, blockData, width, height);
-				int avgRow = avgRowDif(blockData, blockSize, blockSize);
-				int avgCol = avgColDif(blockData, blockSize, blockSize);
-				//printf("X = %d, Y = %d, AvgQ = %d Avg = %f, Range = %d, Max = %d, Min = %d\n", x, y, avgQ, curAvg, range, maxY, minY);
-				myfile << x << ", " << y << ", " << avgQ << ", " << curAvg << ", " << avgRow << ", " << avgCol << ", " << range << ", " << maxY << ", " << minY << "\n";
+				float avgRow = avgRowDif(blockData, blockSize, blockSize);
+				float avgCol = avgColDif(blockData, blockSize, blockSize);
+				float variance = varianceBlock(blockData, blockSize, blockSize);
+				int sumRow = sumRowDif(blockData, blockSize, blockSize);
+				int sumCol = sumColDif(blockData, blockSize, blockSize);
+				int sumRowCol = sumRowColDif(blockData, blockSize, blockSize);
+				float q1Avg, q2Avg, q3Avg, q4Avg, qcenterAvg, q1sum, q2sum, q3sum, q4sum, q12sum_difference, q13sum_difference, q14sum_difference, q23sum_difference, q24sum_difference, q34sum_difference, q1center_AvgDifference, q2center_AvgDifference, q3center_AvgDifference, q4center_AvgDifference = 0;
+				tie(q1Avg, q2Avg, q3Avg, q4Avg, qcenterAvg, q1sum, q2sum, q3sum, q4sum, q12sum_difference, q13sum_difference, q14sum_difference, q23sum_difference, q24sum_difference, q34sum_difference, q1center_AvgDifference, q2center_AvgDifference, q3center_AvgDifference, q4center_AvgDifference) = basicCharOutput(blockSize, blockData, frameData, width, height);
+				//printf("X = %d, Y = %d, Avg = %f, AvgRow = %f, AvgCol = %f, Variance = %f, sumRow = %d, sumCol = %d, sumRowCol = %d Range = %d, Max = %d, Min = %d\n", x, y, curAvg, avgRow, avgCol, variance, sumRow, sumCol, sumRowCol, range, maxY, minY);
+				myfile << x << ", " << y << ", " << q1Avg << ", " << q2Avg << ", " << q3Avg << ", " << q4Avg << ", " << qcenterAvg << ", " << q1sum << ", " << q2sum << ", " << q3sum << ", " << q4sum << ", " << q12sum_difference << ", " << q13sum_difference << ", " << q14sum_difference << ", " << q23sum_difference << ", " << q24sum_difference << ", " << q34sum_difference << ", " << q1center_AvgDifference << ", " << q2center_AvgDifference << ", " << q3center_AvgDifference << ", " << q4center_AvgDifference << ", " << curAvg << ", " << avgRow << ", " << avgCol << ", " << variance << ", " << sumRow << ", " << sumCol << ", " << sumRowCol << ", " << range << ", " << maxY << ", " << minY << "\n";
 			}
 		}
 	}
@@ -182,7 +260,9 @@ int datasetCreate(uint64_t width, uint64_t height, char fileName[2000], char fil
 
 	int num[] = { 0, 429, 527, 410, 1131, 1567, 1741, 1834, 2042, 2210, 2479, 2755, 2963, 3536, 3580 }; //Change based on Frames
 
-	for (int i = 0; i < 15; i++)
+	int len = sizeof(num) / sizeof(num[0]);
+
+	for (int i = 0; i < len; i++)
 	{
 		int x = num[i];
 		_fseeki64(fp, frameSize * x, SEEK_SET);
