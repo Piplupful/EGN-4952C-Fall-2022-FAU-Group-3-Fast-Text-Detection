@@ -1,8 +1,8 @@
 import re,sys,os,math
 from collections import defaultdict
 
-IntList = ['X','Y','AVGQUADRANT_MACRO_VALUE', 'RANGE_MACRO_VALUE', 'MAX_MACRO_VALUE', 'MIN_MACRO_VALUE', 'SUM_ROW', 'SUM_COL', 'SUM_ROW_COL' ]
-FloatList = ['AVG_MACRO_VALUE', 'AVG_ROW', 'AVG_COL', 'VARIANCE']
+IntList = ['X','Y','AVGQUADRANT_MACRO_VALUE', 'RANGE_MACRO_VALUE', 'MAX_MACRO_VALUE', 'MIN_MACRO_VALUE', 'SUM_ROW', 'SUM_COL', 'SUM_ROW_COL', 'Q1SUM', 'Q2SUM', 'Q3SUM', 'Q4SUM', 'Q12SUM_DIFF', 'Q13SUM_DIFF', 'Q14SUM_DIFF', 'Q23SUM_DIFF', 'Q24SUM_DIFF', 'Q34SUM_DIFF']
+FloatList = ['AVG_MACRO_VALUE', 'AVG_ROW', 'AVG_COL', 'VARIANCE', 'Q1AVG', 'Q2AVG', 'Q3AVG', 'Q4AVG', 'QCENTERAVG', 'Q1CENT_AVGDIFF', 'Q2CENT_AVGDIFF', 'Q3CENT_AVGDIFF', 'Q4CENT_AVGDIFF']
 
 if len(sys.argv)<2:
     sys.exit('Usage: %s weka-text-tree-source' % sys.argv[0])
