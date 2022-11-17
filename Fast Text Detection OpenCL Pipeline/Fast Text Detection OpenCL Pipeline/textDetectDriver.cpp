@@ -42,6 +42,14 @@
 #include <opencv2/core.hpp>
 #include <opencv2/ml/ml.hpp>
 #include <opencv2/core/ocl.hpp>
+#include "opencv2/opencv.hpp"
+#include "opencv2/opencv_modules.hpp"
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc.hpp> 
+#include <opencv2/imgproc/imgproc.hpp>
 
 // For Performance Counters, Runtime Analysis
 #include <Windows.h>
@@ -98,8 +106,31 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 	unsigned char* frameBuffer;
 	frameBuffer = new unsigned char[frameSize];
 
+	unsigned char* frameBufferLuma;
+	frameBufferLuma = new unsigned char[lumaSize]; //Buffer for Y layer Specifically
+
 	_fseeki64(fp, frameSize * frameNum, SEEK_SET);
 	int r = fread(frameBuffer, 1, frameSize, fp);
+
+	_fseeki64(fp, frameSize * frameNum, SEEK_SET);
+	int j = fread(frameBufferLuma, 1, lumaSize, fp);
+
+	cv::Mat Y_Layer = cv::Mat(height, width, CV_8UC1, frameBufferLuma, cv::Mat::AUTO_STEP);
+	cv::Mat simpleThrImg;
+
+	cv::threshold(Y_Layer, simpleThrImg, 127, 255, cv::THRESH_BINARY);
+	unsigned char* thresholdedBuffer = simpleThrImg.data;
+
+	cv::namedWindow("Input", 0);
+	cv::resizeWindow("Input", 1280, 720);
+	cv::imshow("Input", Y_Layer);
+
+	cv::namedWindow("Output", 0);
+	cv::resizeWindow("Output", 1280, 720);
+	cv::imshow("Output", simpleThrImg);
+
+	cv::waitKey(0);
+	cv::destroyAllWindows();
 
 	if (r < frameSize)
 	{
@@ -132,7 +163,7 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 	}
 
 	//Memory Buffers
-	cl_mem clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, lumaSize, frameBuffer, &err);	//CL_MEM_READ_WRITE, if writing back frame data.
+	cl_mem clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, lumaSize, thresholdedBuffer, &err);	//CL_MEM_READ_WRITE, if writing back frame data.
 		//Include more cl_mem buffers before if necessary
 		//	Example: cl_mem clAvgBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks * 8, averages, &err);
 	//cl_mem clbinMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, binMap, &err);
@@ -171,7 +202,15 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 		_fseeki64(fp, frameSize * f, SEEK_SET);			//Seek current frame raw data
 		fread(frameBuffer, 1, frameSize, fp);	//read all Values
 
-		clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, lumaSize, frameBuffer, &err);	//Update buffers
+		_fseeki64(fp, frameSize * f, SEEK_SET);
+		fread(frameBufferLuma, 1, lumaSize, fp);
+
+		Y_Layer = cv::Mat(height, width, CV_8UC1, frameBufferLuma, cv::Mat::AUTO_STEP);
+		cv::threshold(Y_Layer, simpleThrImg, 127, 255, cv::THRESH_BINARY);
+		thresholdedBuffer = simpleThrImg.data;
+
+
+		clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, lumaSize, thresholdedBuffer, &err);	//Update buffers
 		clSetKernelArg(ocl.kernel, 0, sizeof(cl_mem), &clFrameBuffer);	//Send current frame to GPU
 		clBinMap = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, numBlocks, binMap, &err);	//Reset cl Buffer, otherwise output bleeds together
 		clSetKernelArg(ocl.kernel, 2, sizeof(cl_mem), &clBinMap);

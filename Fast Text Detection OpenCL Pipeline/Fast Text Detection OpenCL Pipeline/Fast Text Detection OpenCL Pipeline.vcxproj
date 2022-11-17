@@ -165,7 +165,7 @@
       <Device>1</Device>
     </Intel_OpenCL_Build_Rules>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(INTELOCLSDKROOT)include;D:\OpenCV\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(INTELOCLSDKROOT)include;C:\Users\user\Documents\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__x86_64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
@@ -176,7 +176,7 @@
       <PrecompiledHeader />
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(INTELOCLSDKROOT)lib\x64;D:\OpenCV\opencv\build\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(INTELOCLSDKROOT)lib\x64;C:\Users\user\Documents\opencv\build\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>OpenCL.lib;opencv_world460d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
