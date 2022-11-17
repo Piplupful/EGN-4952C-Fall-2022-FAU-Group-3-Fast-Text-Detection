@@ -159,7 +159,7 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 	OpenCL ocl("model.cl");
 
 	//INSERT VALID FUNCTION FROM VALID OPENCL FILE, STRING IN 2ND PARAMETER = FUNCTION NAME
-	ocl.kernel = clCreateKernel(ocl.program, "randForestThreshV1", &err);
+	ocl.kernel = clCreateKernel(ocl.program, "REPTreeThreshV1", &err);
 
 	if (err != CL_SUCCESS)
 	{
