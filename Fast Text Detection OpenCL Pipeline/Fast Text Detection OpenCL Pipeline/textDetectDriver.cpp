@@ -121,6 +121,7 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 	cv::threshold(Y_Layer, simpleThrImg, 127, 255, cv::THRESH_BINARY);
 	unsigned char* thresholdedBuffer = simpleThrImg.data;
 
+	/*DEBUG
 	cv::namedWindow("Input", 0);
 	cv::resizeWindow("Input", 1280, 720);
 	cv::imshow("Input", Y_Layer);
@@ -131,6 +132,7 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 
 	cv::waitKey(0);
 	cv::destroyAllWindows();
+	*/
 
 	if (r < frameSize)
 	{
@@ -146,6 +148,10 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 	auto kernelStartTime = high_resolution_clock::now();	//Runtime of Kernel (Enqueue, and queue finish)
 	auto kernelEndTime = high_resolution_clock::now();
 	duration<double, std::milli> finalKernelRuntime = chrono::milliseconds::zero();
+
+	auto conversionStartTime = high_resolution_clock::now();
+	auto conversionEndTime = high_resolution_clock::now();
+	duration<double, std::milli> finalConversionRuntime = chrono::milliseconds::zero();
 
 	bool* binMap = new bool[numBlocks];
 	fill_n(binMap, numBlocks, 0);
@@ -205,10 +211,13 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 		_fseeki64(fp, frameSize * f, SEEK_SET);
 		fread(frameBufferLuma, 1, lumaSize, fp);
 
+		conversionStartTime = high_resolution_clock::now();
 		Y_Layer = cv::Mat(height, width, CV_8UC1, frameBufferLuma, cv::Mat::AUTO_STEP);
 		cv::threshold(Y_Layer, simpleThrImg, 127, 255, cv::THRESH_BINARY);
 		thresholdedBuffer = simpleThrImg.data;
+		conversionEndTime = high_resolution_clock::now();
 
+		finalConversionRuntime += (conversionEndTime - conversionStartTime);
 
 		clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, lumaSize, thresholdedBuffer, &err);	//Update buffers
 		clSetKernelArg(ocl.kernel, 0, sizeof(cl_mem), &clFrameBuffer);	//Send current frame to GPU
@@ -372,7 +381,7 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 	string csvFilePath = "../RUNTIME/" + csvFileName + ".csv";
 
 	string csvOut = "\n" + to_string(frames) + "," + to_string(finalKernelRuntime.count())
-		+ "," + to_string(finalKernelRuntime.count() / frames) + "," + to_string(finalOpRuntime.count()) + "," + to_string(finalRuntime.count());
+		+ "," + to_string(finalKernelRuntime.count() / frames) + "," + to_string(finalOpRuntime.count()) + "," + to_string(finalRuntime.count()) + "," + to_string(finalConversionRuntime.count());
 
 	fopen_s(&runtimeStat, csvFilePath.c_str(), "a");	//Mode "a" just adds onto existing file. No overwriting completely.
 
@@ -382,7 +391,7 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 		int csvSize = ftell(runtimeStat);
 		if (csvSize == 0)
 		{
-			string colName = "Frames,Kernel Runtime,Avg per Frame,Operation,Total";
+			string colName = "Frames,Kernel Runtime,Avg per Frame,Operation,Total,Conversion";
 			fwrite(colName.c_str(), 1, colName.size(), runtimeStat);
 		}
 
@@ -395,6 +404,7 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 	cout << "Average runtime per frame\t=\t" << finalKernelRuntime.count() / frames << "\n";
 	cout << "Final Operation Runtime\t\t=\t" << finalOpRuntime.count() << "\n";
 	cout << "Final Total Runtime\t\t=\t" << finalRuntime.count() << "\n";
+	cout << "Threshold Conversion Runtime\t\t=\t" << finalRuntime.count() << "\n";
 
 	ocl.deviceInfoPrint();
 

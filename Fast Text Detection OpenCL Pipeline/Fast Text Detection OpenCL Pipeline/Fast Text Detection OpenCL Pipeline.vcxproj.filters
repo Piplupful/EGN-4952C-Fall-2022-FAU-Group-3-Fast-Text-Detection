@@ -73,9 +73,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Intel_OpenCL_Build_Rules Include="dtc.cl">
-      <Filter>OpenCL Files</Filter>
-    </Intel_OpenCL_Build_Rules>
     <Intel_OpenCL_Build_Rules Include="model.cl">
       <Filter>OpenCL Files</Filter>
     </Intel_OpenCL_Build_Rules>
