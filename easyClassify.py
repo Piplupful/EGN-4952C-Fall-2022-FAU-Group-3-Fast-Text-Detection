@@ -16,7 +16,7 @@ def draw_boxes(image, bounds):
         draw.line([*p0, *p1, *p2, *p3, *p0], fill=123, width=2)
     return np.asarray(image)
     
-frameNums = [0, 124, 270, 410, 755, 920, 1026, 1283, 1429, 1785, 1987, 2350, 2800, 3000, 3345] # change based on frames selected
+frameNums = [0, 429, 527, 410, 1131, 1567, 1741, 1834, 2042, 2210, 2479, 2755, 2963, 3536, 3580] # change based on frames selected
 
 fileName = "EuroTruckSim_1920x1080p60" # change based on video selected
 
