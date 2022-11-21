@@ -14,18 +14,17 @@ int main()
 	char fileName[2000];
 	char filePath[2000];
 
-	//File Explorer Functionality, Easier YUV File Selection, Width/Height found by filename (YUV Standard)
-	openYUVFile(&width, &height, fileName, filePath);
+	string binaryOutputFilePath = "../OUTPUT/";
+	string visualOutputFilePath = "../DTC OUTPUT/";
 
+	//Open YUV File
+	openYUVFile_Win(&width, &height, fileName, filePath);
+
+	//Initialize OpenCL Object, with .cl File Name, Kernel Function name, and Width of YUV Frame.
+
+	//Loop for multiple runs. Text detection driver function.
 	for (int i = 0; i < 1; i++)
 		textDetectDriver(width, height, fileName, filePath);
-
-	//datasetCreate(width, height, fileName, filePath);
-	//simpleThreshWrite(width, height, fileName, filePath, 0);
-
-	std::string holdOutput;
-	std::cout << "Press enter to end.";
-	std::getline(std::cin, holdOutput);
 
 	return 0;
 }

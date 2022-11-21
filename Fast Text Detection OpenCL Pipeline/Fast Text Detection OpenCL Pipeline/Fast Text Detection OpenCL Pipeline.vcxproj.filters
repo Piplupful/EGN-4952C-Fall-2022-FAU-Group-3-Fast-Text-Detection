@@ -21,9 +21,6 @@
     <ClCompile Include="driver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pipelineTemplate.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="yuvFileOpenUtil_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -34,9 +31,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ocl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="csvFileOpenUtil_Impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="textDetectDriver.cpp">
@@ -65,17 +59,11 @@
     <ClInclude Include="ocv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="csvFileOpenUtil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="textDetect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Intel_OpenCL_Build_Rules Include="dtc.cl">
-      <Filter>OpenCL Files</Filter>
-    </Intel_OpenCL_Build_Rules>
     <Intel_OpenCL_Build_Rules Include="model.cl">
       <Filter>OpenCL Files</Filter>
     </Intel_OpenCL_Build_Rules>

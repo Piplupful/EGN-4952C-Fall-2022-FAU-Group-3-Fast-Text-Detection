@@ -185,20 +185,17 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="csvFileOpenUtil_Impl.cpp" />
     <ClCompile Include="datasetCreate.cpp" />
     <ClCompile Include="driver.cpp" />
     <ClCompile Include="frameExtract.cpp" />
     <ClCompile Include="ocl.cpp" />
     <ClCompile Include="textDetectDriver.cpp" />
-    <ClCompile Include="pipelineTemplate.cpp" />
     <ClCompile Include="simpleYUV_impl.cpp" />
     <ClCompile Include="threshWrite.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="yuvFileOpenUtil_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="csvFileOpenUtil.h" />
     <ClInclude Include="ocl.h" />
     <ClInclude Include="ocv.h" />
     <ClInclude Include="textDetect.h" />
@@ -207,7 +204,6 @@
     <ClInclude Include="yuvFileOpenUtil.h" />
   </ItemGroup>
   <ItemGroup>
-    <Intel_OpenCL_Build_Rules Include="dtc.cl" />
     <Intel_OpenCL_Build_Rules Include="model.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

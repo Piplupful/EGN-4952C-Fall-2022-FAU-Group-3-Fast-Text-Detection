@@ -5,7 +5,7 @@
 
 using namespace std;
 
-int openYUVFile(uint64_t* width, uint64_t* height, char* fileName, char* filePath)
+int openYUVFile_Win(uint64_t* width, uint64_t* height, char* fileName, char* filePath)
 {
 	const COMDLG_FILTERSPEC c_rgSaveTypes[] =
 	{
