@@ -11,20 +11,35 @@ int main()
 {
 	uint64_t width = 0;
 	uint64_t height = 0;
-	char fileName[2000];
-	char filePath[2000];
 
-	string binaryOutputFilePath = "../OUTPUT/";
-	string visualOutputFilePath = "../DTC OUTPUT/";
+	string inputFilePath;
+	string yuvFileName;
+	string outputFilePath;
+
+	int numRuns;
+
+	//TEMPORARY UNTIL ARGV IMPLEMENTED
+	inputFilePath = "D:/xiph/50 Frame YUVs/";
+	yuvFileName = "GTAV_1920x1080p60_50Frame.yuv";
+	outputFilePath = "../OUTPUT/";
+	numRuns = 20;
+	//TEMP
 
 	//Open YUV File
-	openYUVFile_Win(&width, &height, fileName, filePath);
+	FILE* fp = openYUVFile(&width, &height, inputFilePath, yuvFileName);
+
+	if (fp == NULL)
+	{
+		cout << "FILE POINTER NULL" << endl;
+		exit(1);
+	}
 
 	//Initialize OpenCL Object, with .cl File Name, Kernel Function name, and Width of YUV Frame.
+	OpenCL ocl("model.cl", "kernelTemplateDebug", width);
 
 	//Loop for multiple runs. Text detection driver function.
-	for (int i = 0; i < 1; i++)
-		textDetectDriver(width, height, fileName, filePath);
+	for (int i = 0; i < numRuns; i++)
+		textDetectDriver(&fp, ocl, yuvFileName, width, height, outputFilePath);
 
 	return 0;
 }

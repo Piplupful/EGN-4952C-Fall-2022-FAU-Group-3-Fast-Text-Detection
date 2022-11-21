@@ -8,8 +8,7 @@ using namespace std;
 class OpenCL
 {
 public:
-	OpenCL(string clFile);
-	~OpenCL();
+	OpenCL(string clFile, string funcName, int width);
 	void deviceInfoPrint();
 
 	cl_platform_id platform;

@@ -5,7 +5,7 @@
 
 using namespace std;
 
-OpenCL::OpenCL(string clFile)
+OpenCL::OpenCL(string clFile, string funcName, int width)
 {
 	int err;
 	char* source = NULL;	//Used by util.cpp, from Intel OpenCL SDK. Stores .cl files for use in program and kernel creation.
@@ -62,17 +62,21 @@ OpenCL::OpenCL(string clFile)
 		exit(err);
 	}
 
-	event = NULL;
-	kernel = NULL;
-}
+	kernel = clCreateKernel(program, funcName.c_str(), &err);
+	if (err != CL_SUCCESS)
+	{
+		cerr << "Error: Failed to create kernel from .cl file.\n";
+		exit(err);
+	}
 
-OpenCL::~OpenCL()
-{
-	clReleaseEvent(event);
-	clReleaseKernel(kernel);
-	clReleaseCommandQueue(queue);
-	clReleaseProgram(program);
-	clReleaseContext(context);
+	err = clSetKernelArg(kernel, 1, sizeof(int), &width);
+	if (err != CL_SUCCESS)
+	{
+		cerr << "Error: Failed to set kernel arg.\n";
+		exit(err);
+	}
+
+	event = NULL;
 }
 
 void OpenCL::deviceInfoPrint()

@@ -54,21 +54,11 @@ using std::chrono::milliseconds;
 
 using namespace std;
 
-int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char filePath[2000])
+int textDetectDriver(FILE** filePointer, OpenCL ocl, string yuvName, uint64_t width, uint64_t height, string outputPath)
 {
-	FILE* fp;
+	FILE* fp = *filePointer;
 
 	uint64_t blockSize = 16; //blockSize x blockSize
-
-	//Open File through fopen_s, filepath found through File Explorer.
-	if (filePath != NULL)
-		fopen_s(&fp, filePath, "rb");
-
-	if (fp == NULL)
-	{
-		cout << "Error, Returned NULL fp.\n";
-		return 2;
-	}
 
 	//YUV File Parameter Setup
 	_fseeki64(fp, 0, SEEK_END);
@@ -90,6 +80,9 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 	}
 
 	const uint64_t numBlocks = lumaSize / (blockSize * blockSize);
+
+	char fileName[2000];
+	strcpy(fileName, yuvName.c_str());
 
 	cout << fileName << " " << width << "x" << height << ", Frames = " << frames << endl;
 	cout << "=================================================================" << endl;
@@ -119,18 +112,6 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 	bool* binMap = new bool[numBlocks];
 	fill_n(binMap, numBlocks, 0);
 
-	OpenCL ocl("model.cl");
-
-	//INSERT VALID FUNCTION FROM VALID OPENCL FILE, STRING IN 2ND PARAMETER = FUNCTION NAME
-	ocl.kernel = clCreateKernel(ocl.program, "kernelTemplateDebug", &err);
-
-	if (err != CL_SUCCESS)
-	{
-		cerr << "Error: Failed to create kernel.\n";
-		fclose(fp);
-		exit(err);
-	}
-
 	//Memory Buffers
 	cl_mem clFrameBuffer = clCreateBuffer(ocl.context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, lumaSize, frameBuffer, &err);	//CL_MEM_READ_WRITE, if writing back frame data.
 		//Include more cl_mem buffers before if necessary
@@ -144,7 +125,6 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 	//	Example: err = clSetKernelArg(kernel, 2, sizeof(int), &width);
 	//err = clSetKernelArg(ocl.kernel, 1, sizeof(cl_mem), &clbinMap);
 
-	err = clSetKernelArg(ocl.kernel, 1, sizeof(int), &width);
 	err = clSetKernelArg(ocl.kernel, 2, sizeof(cl_mem), &clBinMap);
 
 	//Enqueue and wait
@@ -156,10 +136,10 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 		//CL_DEVICE_MAX_WORK_GROUP_SIZE can be used to return maximum local work group size that your device may handle, but depending on the input, this may cause errors.
 
 	FILE* dtcOutput;
-	string dtcOutputFilePath = "../DTC OUTPUT/";
+	string dtcOutputFilePath = outputPath;
 	dtcOutputFilePath += fileName;
 	dtcOutputFilePath = dtcOutputFilePath.substr(0, dtcOutputFilePath.find_last_of('.'));
-	dtcOutputFilePath += "_dtcOutput.yuv";
+	dtcOutputFilePath += "_visualOutput.yuv";
 	fopen_s(&dtcOutput, dtcOutputFilePath.c_str(), "wb");
 
 	auto opStartTime = high_resolution_clock::now();		//Runtime of entire operation (kernel runtime + memory transfers, etc)
@@ -196,7 +176,7 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 
 		//Binary Map Output, as .txt for now
 		FILE* outputFile;
-		string outputFilePath = "../OUTPUT/" + to_string(f) + ".txt";
+		string outputFilePath = outputPath + to_string(f) + ".txt";
 
 		fopen_s(&outputFile, outputFilePath.c_str(), "w+");
 
@@ -329,8 +309,8 @@ int textDetectDriver(uint64_t width, uint64_t height, char fileName[2000], char 
 	FILE* runtimeStat;
 	string csvFileName(fileName);
 	csvFileName = csvFileName.substr(0, csvFileName.find_last_of('.'));
-	csvFileName += "_DTC";	//2D Work Group Size Signifier
-	string csvFilePath = "../RUNTIME/" + csvFileName + ".csv";
+	csvFileName += "_Runtime";	//2D Work Group Size Signifier
+	string csvFilePath = outputPath + csvFileName + ".csv";
 
 	string csvOut = "\n" + to_string(frames) + "," + to_string(finalKernelRuntime.count())
 		+ "," + to_string(finalKernelRuntime.count() / frames) + "," + to_string(finalOpRuntime.count()) + "," + to_string(finalRuntime.count());
