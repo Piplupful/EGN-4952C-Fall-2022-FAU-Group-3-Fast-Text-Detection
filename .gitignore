@@ -1,9 +1,10 @@
-
 *.yuv
 *.txt
 *.csv
 *.xlsx
-*.zip
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
 .vs/
 x64/
 Fast Text Detection OpenCL Pipeline/.vs
