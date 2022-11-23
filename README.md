@@ -12,22 +12,22 @@ Leonardo Osorio 	losorio2019@fau.edu
 
 External Tools/Libraries used:
 - OpenCL, Intel SDK. For data parallelism.
-    https://www.intel.com/content/www/us/en/developer/tools/opencl-sdk/choose-download.html
+https://www.intel.com/content/www/us/en/developer/tools/opencl-sdk/choose-download.html
 - EasyOCR, which requires Python and Pandas. Used for ground truth classification through easyClassify.py script.
-    https://github.com/JaidedAI/EasyOCR
-    pip install easyocr
+https://github.com/JaidedAI/EasyOCR
+pip install easyocr
 - OpenCV, latest version. Used for Simple Threshold functionality, which is used as a preprocessing step in one of our pipelines.
-    https://opencv.org/
+https://opencv.org/
 - FFMPEG. For video format conversion.
-    https://ffmpeg.org/
-    FFMPEG COMMANDS TO NOTE:
-    convert .y4m to .yuv
-    ffmpeg -i CSGO.y4m -pix_fmt yuv420p CSGO.yuv
-    convert .yuv to .mp4:
-    ffmpeg -f rawvideo -pix_fmt yuv420p -video_size 1920x1080 -framerate 60 -i CSGO.yuv -f mp4 CSGO_Output.mp4
+https://ffmpeg.org/
+FFMPEG COMMANDS TO NOTE:
+convert .y4m to .yuv
+ffmpeg -i CSGO.y4m -pix_fmt yuv420p CSGO.yuv
+convert .yuv to .mp4:
+ffmpeg -f rawvideo -pix_fmt yuv420p -video_size 1920x1080 -framerate 60 -i CSGO.yuv -f mp4 CSGO_Output.mp4
 - WEKA, for ML Model creation. Dataset developed by the end of the semester available in our repo in a .zip file.
-    Available in both .CSV and .ARFF formats.
-    https://www.cs.waikato.ac.nz/ml/index.html
+Available in both .CSV and .ARFF formats.
+https://www.cs.waikato.ac.nz/ml/index.html
 
 Repository for Group 3 Fast Text Detection, Fall 2022, at FAU.
 
