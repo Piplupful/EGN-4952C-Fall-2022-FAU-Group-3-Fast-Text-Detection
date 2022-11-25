@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 	}
 
 	//Initialize OpenCL Object, with .cl File Name, Kernel Function name, and Width of YUV Frame.
-	OpenCL ocl("model.cl", "kernelTemplateDebug", width);
+	OpenCL ocl("model.cl", "DTC_15F_9D_RD", width);
 	//Width, for the purposes of this project, is set as Kernel Parameter 1.
 	//Within the Text Detection Driver, Parameter 0 is the frame buffer, and Parameter 2 is the binary map used for our output.
 
