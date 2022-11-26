@@ -16,18 +16,22 @@ int main(int argc, char* argv[])
 	string inputFilePath;
 	string yuvFileName;
 	string outputFilePath;
+	string clFile;
+	string clModel;
 
 	int numRuns;
 
-	if (argc >= 5)
+	if (argc >= 7)
 	{
 		cout << "USING PROVIDED VALUES" << endl;
 		inputFilePath = argv[1];
 		yuvFileName = argv[2];
 		outputFilePath = argv[3];
 		numRuns = atoi(argv[4]);
-		//Example Command Line Input: D:\xiph\50_Frame\ STARCRAFT_1920x1080p60_50Frame.yuv ../OUTPUT/ 5
-		//							Input File Path		YUV Input File Name		Output File Path	Number of Runs
+		clFile = argv[5];
+		clModel = argv[6];
+		//Example Command Line Input: D:\xiph\50_Frame\ STARCRAFT_1920x1080p60_50Frame.yuv ../OUTPUT/ 5 model.cl DTC_15F_9D_RD
+		//							Input File Path		YUV Input File Name		Output File Path	Number of Runs		.cl File Name		Model Name (Function in .cl File)
 	}
 	else //Default values.
 	{
@@ -36,6 +40,8 @@ int main(int argc, char* argv[])
 		yuvFileName = "GTAV_1920x1080p60_50Frame.yuv";
 		outputFilePath = "../OUTPUT/";
 		numRuns = 1;
+		clFile = "model.cl";
+		clModel = "DTC_15F_9D_RD";
 	}
 
 	//Open YUV File
@@ -48,7 +54,7 @@ int main(int argc, char* argv[])
 	}
 
 	//Initialize OpenCL Object, with .cl File Name, Kernel Function name, and Width of YUV Frame.
-	OpenCL ocl("model.cl", "DTC_15F_9D_RD", width);
+	OpenCL ocl(clFile, clModel, width);
 	//Width, for the purposes of this project, is set as Kernel Parameter 1.
 	//Within the Text Detection Driver, Parameter 0 is the frame buffer, and Parameter 2 is the binary map used for our output.
 
