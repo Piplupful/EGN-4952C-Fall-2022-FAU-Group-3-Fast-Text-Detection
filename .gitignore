@@ -10,6 +10,9 @@ x64/
 Fast Text Detection OpenCL Pipeline/.vs
 Fast Text Detection OpenCL Pipeline/x64
 
+!build.txt
+!test.txt
+
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudio
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudio
 

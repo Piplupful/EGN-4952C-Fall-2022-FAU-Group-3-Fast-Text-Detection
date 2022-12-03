@@ -1,0 +1,16 @@
+How to Test:
+    -Follow Visual Studio based instructions in build.txt.
+    -Command line arguements should include input folder, yuv input file name, output folder, number of runs of detection driver, opencl file, and opencl function name with implmented model. Otherwise, default parameters used, which can also be used for testing. YUV file used in default parameters included in Deliverables.
+    -Run in debug. If any errors, most likely OpenCV, follow OpenCV instructions in build.txt to resolve.
+    -Output will be in specified output folder or in ../OUTPUT/
+    -Output includes: Visual Output YUV video (use VOOYA to view raw YUV footage, it's paid software provided to us by our sponsor), Runtime Statistics in a CSV file (per video, each row per run), and text files with binary output per frame.
+    -KernelTemplateDebug results in no good visual output, besides a black and white version (luma only) version of the original YUV. Else, implemented model's will result in good visual output.
+    
+    -If setup via command line (running compiled version of our code), follow command line instructions for best results.
+    
+Visual Output Explained:
+    -If a 16x16 pixel block is detected as text, the entire 64x64 block it is within is set in it's chroma layer to green, else it's grey. This was suggested to us by our sponsor to have a good visual way of seeing how our text detection functions.
+    
+Preferred Video Parameters:
+    -1920x1080p, any frames per second, but this was all tested at 60fps.
+    -Longer files result in longer runtime, so if you want a quick test, pass in a small YUV file (50-200 frames)

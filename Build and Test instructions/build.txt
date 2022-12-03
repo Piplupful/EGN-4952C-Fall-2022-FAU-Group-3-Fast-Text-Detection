@@ -1,0 +1,71 @@
+Required Installation for Main Project Implementation:
+Visual Studio 2017 or 2019, C++ Standard Package
+Intel OpenCL SDK: https://www.intel.com/content/www/us/en/developer/tools/opencl-sdk/overview.html
+    Note: Install OpenCL SDK after VS, as the installation hooks onto your VS installation.
+OpenCV: https://opencv.org/
+
+Installation for Dataset Creation:
+Python 3.X
+EasyOCR: https://github.com/JaidedAI/EasyOCR
+Pandas Python Library
+FFMPEG, conversion needed found in frame.txt, in dataset files.
+
+Installation for Model Creation:
+WEKA: https://www.cs.waikato.ac.nz/ml/weka/
+Python 3.x (For model2c.py script)
+
+Note: While the Intel OpenCL SDK will attach itself to your Visual Studio, OpenCV needs to be manually added under solution properties.
+Guide on how to: https://www.youtube.com/watch?v=unSce_GPwto
+Walkthrough: Add file path of OpenCV vc15/bin to System Environment Variables.
+               In Solution Properties:
+                -C/C++, Additional Include Libraries: OpenCV/build/include
+                -Linker, General, Additional Library Directories: OpenCV/build/x64/vc15/lib
+                -Linker, Input, Additional Dependencies: OpenCV/build/x64/vc15/lib/opencv_world4XX.lib
+                
+Optional Install, to view YUV files:
+    -Vooya. Provided to us by our sponsor, this is paid software.
+                
+Hardware Required:
+    Any computer/system with an OpenCL compatible Graphics Processing Unit (GPU).
+    This project was tested against an Intel HD 630, an Intel Iris PRO 580, an NVIDIA 1050ti, and an Intel ARC 750. Check Intel OpenCL SDK for more details.
+                
+Build Instructions:
+    Our final implemenation takes in multiple command line arguements, example below:
+Example Command Line Input: D:\xiph\50_Frame\ STARCRAFT_1920x1080p60_50Frame.yuv ../OUTPUT/ 5 model.cl DTC_15F_9D_RD
+Input File Path		YUV Input File Name		Output File Path	Number of Runs		.cl File Name		Model Name (Function in .cl File)
+
+    Command Line Input can be either done on Command Line execution or in a batch file, or within Visual Studio when running in debug (Solution Properties, Debugging, Arguements).
+    
+    Running in Visual Studio:
+        -Open up VS solution file, and fix any errors as per instructions above (OpenCV setup primarily).
+        -Setup VS Command Line arguments like shown above.
+        -Input is any YUV file, preferably one of video game footage.
+        -Models can be found in .cl files. Implementation needs to follow sepreate instructions.
+        -Run in debug, output will all be in specified output folder after run is complete.
+        -kernelTemplateDebug is only raw calculations, no visual output will be shown. Two models included from Normal route.
+        
+        Note: Our repository's Implementation Testing branches do not include the command line setup above, and are seperated into the normal and thresholding route, and contain many more models implemented for testing.
+        
+Dataset Creation:
+    -Provide YUV file to dataset creation code (older version saved in repo and our C++ implementation, as a seperate file and function).
+    -Set specified frames (around 15 total), as integers into the script. (At the moment, hard-coded)
+    -Output will be CSV's of statistics for dataset features for each frame specified, compiled for that video. Run on multiple videos as needed.
+    
+    -EasyOCR, using easyClassify.py. Include script, with the frames you used previously for that video, in a folder with an MP4 converted version of the original YUV video file (Use FFMPEG, command found in frame.txt), and the statistic output from the previous step.
+    -Result is a compiled CSV file, all frames combined, including classification (under CLASS feature).
+    
+    -Repeat above steps for as many YUV videos as needed, use combineCSV.py on the final output from the previous step of all videos processed, in a seperate folder. Example: if you have CSV files with the statistics and classifications for multiple videos, like XIPH DERF's GTAV, Rust, Minecraft, etc, put them all into a folder with the combineCSV.py script.
+    
+    Dataset used with WEKA to create ML models.
+    
+WEKA and Datasets Provided:
+    -ARFF files have class balancing filters applied, while the CSV's are the raw data we got earlier in this project.
+    -Models developed through WEKA. Save Text output into a text file for conversion (model2c.py), but remove statistics above and below the printed classifier.
+    
+Model2c.py and Model Implementation Instructions:
+    -When WEKA models are saved into a text file as above, run model2c.py, a script provided by our Intel Sponsor, Sebastian Possos, and it will result in a .cpp file with the model converted into usable C++ code.
+    -We have not developed a nicer way of handling this, since we implemented our models directly into kernel functions. Copy and paste the code of each DTC function (if it's a model with multiple trees, they are numbered one after another, else it's just one function), into a new kernel function in a .cl file. Use Kernel Template as a guide, place converted code after the statistics are calcluated, marked by comments.
+    
+    Note: If multiple trees, change binmap[i] = 0 or 1 to zeroCount++ or oneCount++ (notepad++'s replace all function helps with this).
+    
+    -If the .cl file is able to be processed and no errors are returned, call the new kernel function you created to test the model. Command line input found above if done on our cleaned up code, which is here in the Deliverables.
