@@ -10,7 +10,7 @@ Student Developers:
 - Nelson Mendez:
     - nmendez2019@fau.edu
 - Jared Klein:
-    - kleinj2020@fau.edu
+    - kleinjared12@gmail.com, kleinj2020@fau.edu
 - Mykyta Palamarchuk:
     - mpalamarchuk2019@fau.edu
 - Leonardo Osorio:
