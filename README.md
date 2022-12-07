@@ -4,11 +4,16 @@ Sponsor: Sebastian Possos, Intel
 sebastian.possos@intel.com
 
 Student Developers:
-Leonardo Martinez,	leonardomart2020@fau.edu
-Nelson Mendez,		nmendez2019@fau.edu
-Jared Klein 		kleinj2020@fau.edu
-Mykyta Palamarchuk 	mpalamarchuk2019@fau.edu
-Leonardo Osorio 	losorio2019@fau.edu
+Leonardo Martinez:
+    - Leos32111@gmail.com, leonardomart2020@fau.edu
+Nelson Mendez:
+    - nmendez2019@fau.edu
+Jared Klein:
+    - kleinj2020@fau.edu
+Mykyta Palamarchuk:
+    - mpalamarchuk2019@fau.edu
+Leonardo Osorio:
+    - losorio2019@fau.edu
 
 External Tools/Libraries used:
 - OpenCL, Intel SDK. For data parallelism.
