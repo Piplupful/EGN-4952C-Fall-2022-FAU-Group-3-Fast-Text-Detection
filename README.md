@@ -4,15 +4,16 @@ Sponsor: Sebastian Possos, Intel
 sebastian.possos@intel.com
 
 Student Developers:
-Leonardo Martinez:
+
+- Leonardo Martinez:
     - Leos32111@gmail.com, leonardomart2020@fau.edu
-Nelson Mendez:
+- Nelson Mendez:
     - nmendez2019@fau.edu
-Jared Klein:
+- Jared Klein:
     - kleinj2020@fau.edu
-Mykyta Palamarchuk:
+- Mykyta Palamarchuk:
     - mpalamarchuk2019@fau.edu
-Leonardo Osorio:
+- Leonardo Osorio:
     - losorio2019@fau.edu
 
 External Tools/Libraries used:
