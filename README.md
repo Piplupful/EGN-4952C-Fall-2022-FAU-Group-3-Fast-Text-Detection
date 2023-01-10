@@ -12,7 +12,7 @@ Student Developers:
 - Jared Klein:
     - kleinjared12@gmail.com, kleinj2020@fau.edu
 - Mykyta Palamarchuk:
-    - mpalamarchuk2019@fau.edu
+    - palamarchuk.mykyta@gmail.com, mpalamarchuk2019@fau.edu
 - Leonardo Osorio:
     - losorio2019@fau.edu
 
